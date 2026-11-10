@@ -249,11 +249,17 @@ def _openaq_get(
     sleep: Callable[[float], None],
     attempts: int = 5,
 ) -> Any:
-    """GET with pacing, waiting out rate limits and retrying server errors."""
+    """GET with pacing, waiting out rate limits and retrying network and server errors."""
     response = None
     for attempt in range(attempts):
         sleep(OPENAQ_SECONDS_BETWEEN_REQUESTS)
-        response = http_get(url, params=params, headers={"X-API-Key": api_key}, timeout=90)
+        try:
+            response = http_get(url, params=params, headers={"X-API-Key": api_key}, timeout=90)
+        except (requests.ConnectionError, requests.Timeout):
+            if attempt == attempts - 1:
+                raise
+            sleep(5 * (attempt + 1))
+            continue
         if response.status_code == 429:
             sleep(int(response.headers.get("x-ratelimit-reset", 60)) + 1)
         elif response.status_code >= 500:

@@ -158,6 +158,28 @@ def test_rate_limit_waits_then_retries(api, fake_response):
     assert 21 in api.waits
 
 
+def test_network_errors_are_retried(api):
+    api.fill(PM25, end=START)
+    real_call = api.__call__
+    failures = [requests.ConnectionError("reset"), requests.Timeout("slow")]
+
+    def flaky(url, params, headers, timeout):
+        if failures:
+            raise failures.pop(0)
+        return real_call(url, params, headers, timeout)
+
+    frame = fetch_openaq_hours(PM25, START.date(), START.date(), "k", flaky, api.sleep)
+    assert len(frame) == 1
+
+
+def test_persistent_network_errors_are_raised(api):
+    def down(url, params, headers, timeout):
+        raise requests.ConnectionError("down")
+
+    with pytest.raises(requests.ConnectionError):
+        fetch_openaq_hours(PM25, START.date(), START.date(), "k", down, api.sleep)
+
+
 def test_client_errors_are_raised(api, fake_response):
     api.queue = [fake_response({}, status_code=401)]
     with pytest.raises(requests.HTTPError):
