@@ -20,6 +20,7 @@ def calls(monkeypatch, tmp_path):
     monkeypatch.setattr("pm25.__main__.backfill_open_meteo", open_meteo)
     monkeypatch.setattr("pm25.__main__.backfill_openaq", openaq)
     monkeypatch.setenv("PM25_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("PM25_MODELS_DIR", str(tmp_path / "models"))
     monkeypatch.setenv("REFERENCE_START", "2024-01-01")
     monkeypatch.setenv("OPENAQ_START", "2021-05-01")
     monkeypatch.setenv("OPENAQ_API_KEY", "test-key")
@@ -51,7 +52,7 @@ def test_open_meteo_alone_needs_no_key(calls, monkeypatch):
     assert calls["openaq"] == []
 
 
-@pytest.mark.parametrize("command", ["train", "predict"])
+@pytest.mark.parametrize("command", ["train", "predict", "report"])
 def test_commands_explain_when_input_data_is_missing(calls, command):
     assert main([command]) == 2
 

@@ -1,6 +1,6 @@
 PYTHON ?= .venv/bin/python
 
-.PHONY: install test backfill train predict publish pipeline
+.PHONY: install test backfill train predict report publish pipeline
 
 install:
 	$(PYTHON) -m pip install -e ".[dev]"
@@ -17,7 +17,10 @@ train:
 predict:
 	$(PYTHON) -m pm25 predict
 
+report:
+	$(PYTHON) -m pm25 report
+
 publish:
 	$(PYTHON) -m pm25 publish
 
-pipeline: backfill train predict
+pipeline: backfill train predict report

@@ -21,7 +21,8 @@ from pm25.ingest import (
 )
 from pm25.predict import FORECAST_FILENAME, build_forecast, write_forecast
 from pm25.publish import publish_forecast, service_account_token
-from pm25.train import load_registry, run_training
+from pm25.report import REPORT_FILENAME, build_report
+from pm25.train import METRICS_FILENAME, load_registry, run_training
 
 log = logging.getLogger("pm25")
 
@@ -97,6 +98,23 @@ def _predict(args: argparse.Namespace, config: Config) -> int:
     return 0
 
 
+def _report(args: argparse.Namespace, config: Config) -> int:
+    forecast_path = config.models_dir / FORECAST_FILENAME
+    metrics_path = config.models_dir / METRICS_FILENAME
+    if not forecast_path.exists() or not metrics_path.exists():
+        log.error("No forecast or metrics found, run train and predict first")
+        return 2
+    forecast = json.loads(forecast_path.read_text(encoding="utf-8"))
+    text = build_report(forecast, json.loads(metrics_path.read_text(encoding="utf-8")))
+    (config.models_dir / REPORT_FILENAME).write_text(text, encoding="utf-8")
+    # Keep every day's report on the data branch, which survives between runs.
+    history = config.data_dir.parent / "reports" / f"{forecast['as_of']}.md"
+    history.parent.mkdir(parents=True, exist_ok=True)
+    history.write_text(text, encoding="utf-8")
+    log.info("Wrote %s and %s", config.models_dir / REPORT_FILENAME, history)
+    return 0
+
+
 def _publish(args: argparse.Namespace, config: Config) -> int:
     if not (config.firebase_db_url and config.firebase_service_account_json):
         log.error("Firebase credentials are not set, see .env.example")
@@ -123,6 +141,7 @@ def main(argv: list[str] | None = None) -> int:
 
     commands.add_parser("train", help="evaluate, then promote methods").set_defaults(handler=_train)
     commands.add_parser("predict", help="write forecast.json").set_defaults(handler=_predict)
+    commands.add_parser("report", help="write the daily report").set_defaults(handler=_report)
     commands.add_parser("publish", help="send forecast.json to Firebase").set_defaults(
         handler=_publish
     )
