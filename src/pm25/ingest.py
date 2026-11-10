@@ -1,15 +1,19 @@
-"""Idempotent ingestion of Open-Meteo air quality and weather data.
+"""Idempotent ingestion of OpenAQ station data and Open-Meteo model data.
+
+OpenAQ supplies measured concentrations, which are the forecast target.
+Open-Meteo supplies weather and modelled pollutants, which are features only.
 
 Every series is stored as CSV with UTC timestamps. A run finds the hours that
-are missing locally, fetches only those, and upserts by timestamp, so repeating
-a run never creates duplicates.
+are missing locally, fetches only those, and upserts by key, so repeating a run
+never creates duplicates.
 """
 
 from __future__ import annotations
 
 import os
 import tempfile
-from collections.abc import Callable, Iterable, Mapping
+import time as time_module
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
@@ -31,18 +35,20 @@ def load_series(path: Path) -> pd.DataFrame:
     return frame
 
 
-def upsert(path: Path, new: pd.DataFrame) -> int:
-    """Merge rows into a stored series and return how many new timestamps were added.
+def upsert(path: Path, new: pd.DataFrame, keys: Sequence[str] = (TIME,)) -> int:
+    """Merge rows into a stored series and return how many new keys were added.
 
     The file is replaced atomically, so a crash cannot leave it half written.
-    On a timestamp conflict the incoming row wins.
+    On a key conflict the incoming row wins.
     """
     if new.empty:
         return 0
     old = load_series(path)
     combined = pd.concat([old, new], ignore_index=True) if not old.empty else new
     combined = (
-        combined.drop_duplicates(TIME, keep="last").sort_values(TIME).reset_index(drop=True)
+        combined.drop_duplicates(list(keys), keep="last")
+        .sort_values(list(keys))
+        .reset_index(drop=True)
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
@@ -194,4 +200,141 @@ def backfill_open_meteo(
     for first, last in _date_ranges(gaps, HOUR):
         frame = fetch_open_meteo(source, latitude, longitude, first, last, http_get)
         added += upsert(path, frame[(frame[TIME] >= start) & (frame[TIME] <= end)])
+    return added
+
+
+# --- OpenAQ station data ---
+
+OPENAQ_URL = "https://api.openaq.org/v3/sensors/{sensor_id}/hours"
+OPENAQ_FILENAME = "openaq_hourly.csv"
+SENSOR = "sensor_id"
+PARAMETER = "parameter"
+VALUE = "value"
+OPENAQ_SECONDS_BETWEEN_REQUESTS = 1.05  # The free tier allows 60 requests per minute
+MAX_PLAUSIBLE_CONCENTRATION = 1000.0
+
+
+@dataclass(frozen=True)
+class OpenAQSensor:
+    sensor_id: int
+    parameter: str
+    location_id: int
+
+
+# Fixed panel of Air4Thai reference monitors within 25 km of central Bangkok.
+# They were chosen for reporting steadily from 2021 to now. The panel must stay
+# fixed: a changing set of stations would look like a change in air quality.
+OPENAQ_PANEL = (
+    OpenAQSensor(1304255, "pm25", 701),
+    OpenAQSensor(1304120, "pm25", 2375),
+    OpenAQSensor(1304207, "pm25", 906),
+    OpenAQSensor(1304205, "pm25", 2167),
+    OpenAQSensor(1304222, "pm25", 5545),
+    OpenAQSensor(1304328, "pm25", 225612),
+    OpenAQSensor(1304077, "pm25", 225629),
+    OpenAQSensor(1304404, "pm25", 225637),
+    OpenAQSensor(1304152, "pm25", 225650),
+    OpenAQSensor(1304128, "pm25", 225653),
+    OpenAQSensor(1304406, "pm10", 225629),
+    OpenAQSensor(1304308, "pm10", 225637),
+    OpenAQSensor(1304271, "pm10", 225650),
+)
+
+
+def _openaq_get(
+    http_get: Callable[..., Any],
+    url: str,
+    params: Mapping[str, Any],
+    api_key: str,
+    sleep: Callable[[float], None],
+    attempts: int = 5,
+) -> Any:
+    """GET with pacing, waiting out rate limits and retrying server errors."""
+    response = None
+    for attempt in range(attempts):
+        sleep(OPENAQ_SECONDS_BETWEEN_REQUESTS)
+        response = http_get(url, params=params, headers={"X-API-Key": api_key}, timeout=90)
+        if response.status_code == 429:
+            sleep(int(response.headers.get("x-ratelimit-reset", 60)) + 1)
+        elif response.status_code >= 500:
+            sleep(5 * (attempt + 1))
+        else:
+            break
+    response.raise_for_status()
+    return response
+
+
+def fetch_openaq_hours(
+    sensor: OpenAQSensor,
+    first: date,
+    last: date,
+    api_key: str,
+    http_get: Callable[..., Any] = requests.get,
+    sleep: Callable[[float], None] = time_module.sleep,
+    page_size: int = 1000,
+) -> pd.DataFrame:
+    """Fetch hourly averages for whole UTC days, labelled by the start of each hour.
+
+    Missing, negative and implausibly large values are dropped, so those hours
+    stay visible as gaps instead of entering the target.
+    """
+    rows = []
+    page = 1
+    while True:
+        response = _openaq_get(
+            http_get,
+            OPENAQ_URL.format(sensor_id=sensor.sensor_id),
+            {
+                "datetime_from": f"{first.isoformat()}T00:00:00Z",
+                "datetime_to": f"{last.isoformat()}T23:59:59Z",
+                "limit": page_size,
+                "page": page,
+            },
+            api_key,
+            sleep,
+        )
+        results = response.json()["results"]
+        rows.extend((item["period"]["datetimeFrom"]["utc"], item["value"]) for item in results)
+        if len(results) < page_size:
+            break
+        page += 1
+
+    frame = pd.DataFrame(rows, columns=[TIME, VALUE])
+    frame[TIME] = pd.to_datetime(frame[TIME], utc=True)
+    frame[VALUE] = pd.to_numeric(frame[VALUE], errors="coerce")
+    frame = frame[frame[VALUE].between(0.0, MAX_PLAUSIBLE_CONCENTRATION)].copy()
+    frame[SENSOR] = sensor.sensor_id
+    frame[PARAMETER] = sensor.parameter
+    return frame[[TIME, SENSOR, PARAMETER, VALUE]]
+
+
+def backfill_openaq(
+    data_dir: Path,
+    api_key: str,
+    start: pd.Timestamp,
+    end: pd.Timestamp,
+    lookback_days: int = 14,
+    sensors: Sequence[OpenAQSensor] = OPENAQ_PANEL,
+    http_get: Callable[..., Any] = requests.get,
+    sleep: Callable[[float], None] = time_module.sleep,
+) -> int:
+    """Fetch only the station hours missing locally and return how many were added.
+
+    Stations have long permanent outages, so older gaps are not searched again
+    on every run. Only the lookback window is, which also picks up late reports.
+    Loading runs oldest first and saves as it goes, so an interrupted first load
+    resumes from the last stored hour.
+    """
+    path = data_dir / OPENAQ_FILENAME
+    stored = load_series(path)
+    added = 0
+    for sensor in sensors:
+        mine = stored[stored[SENSOR] == sensor.sensor_id] if SENSOR in stored else stored
+        window_start = start
+        if not mine.empty:
+            window_start = max(start, min(mine[TIME].max(), end - pd.Timedelta(days=lookback_days)))
+        gaps = find_gaps(mine[TIME], window_start, end, HOUR)
+        for first, last in _date_ranges(gaps, HOUR, max_days=365):
+            frame = fetch_openaq_hours(sensor, first, last, api_key, http_get, sleep)
+            added += upsert(path, frame[frame[TIME] <= end], keys=(TIME, SENSOR))
     return added
