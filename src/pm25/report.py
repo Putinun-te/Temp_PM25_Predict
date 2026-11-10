@@ -176,10 +176,15 @@ def write_pdf(
     def cell(value: Any) -> str:
         return "n/a" if value is None or pd.isna(value) else f"{float(value):.1f}"
 
+    def horizon(row: pd.Series) -> str:
+        if row["kind"] == "monthly":
+            return f"+{row['label']} month"
+        return str(row["label"])
+
     body = [
         [
             row["period"],
-            str(row["label"]),
+            horizon(row),
             row["target"].upper().replace("PM25", "PM2.5"),
             cell(row["value"]),
             f"{cell(row['low'])} to {cell(row['high'])}",
@@ -187,7 +192,7 @@ def write_pdf(
         ]
         for _, row in table.iterrows()
     ]
-    table_axis = figure.add_axes([0.07, 0.52, 0.86, 0.38])
+    table_axis = figure.add_axes([0.07, 0.6, 0.86, 0.3])
     table_axis.axis("off")
     grid = table_axis.table(
         cellText=body,
@@ -201,7 +206,7 @@ def write_pdf(
     grid.scale(1, 1.4)
 
     if plot is not None and plot.exists():
-        image_axis = figure.add_axes([0.05, 0.12, 0.9, 0.36])
+        image_axis = figure.add_axes([0.05, 0.2, 0.9, 0.38])
         image_axis.imshow(plt.imread(plot))
         image_axis.axis("off")
 

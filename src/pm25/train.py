@@ -255,13 +255,21 @@ def _save_plot(frame: pd.DataFrame, method: str, path: Path) -> None:
     import matplotlib.pyplot as plt
 
     recent = frame[frame.index > frame.index.max() - pd.Timedelta(days=365)]
+    # A daily calendar leaves missing days empty, so lines break instead of bridging gaps.
+    recent = recent.asfreq("D")
     figure, axis = plt.subplots(figsize=(11, 4), layout="constrained")
     axis.plot(recent.index, recent["actual"], color="#222222", linewidth=1.4, label="Measured")
-    axis.plot(recent.index, recent[method], color="#d1495b", linewidth=1.2, label=method)
+    axis.plot(
+        recent.index,
+        recent[method],
+        color="#d1495b",
+        linewidth=1.2,
+        label=method.replace("_", " ").capitalize(),
+    )
     axis.plot(
         recent.index, recent["persistence"], color="#8d99ae", linewidth=0.9, label="Persistence"
     )
-    axis.set_title("PM2.5 one day ahead, out-of-sample walk-forward predictions")
+    axis.set_title("PM2.5 tomorrow, out-of-sample walk-forward predictions")
     axis.set_ylabel("PM2.5 (µg/m³)")
     axis.spines[["top", "right"]].set_visible(False)
     axis.legend(frameon=False, ncols=3, loc="upper center")
@@ -317,8 +325,9 @@ def run_training(
             )
             registry["daily"][slot] = entry
             report["daily"][slot] = slot_report
-            if slot == "pm25_h1":
-                plot_frame, plot_method = frame, entry["method"]
+            if slot == "pm25_h2":
+                # Plot the best model against persistence even when persistence is published.
+                plot_frame, plot_method = frame, slot_report["best_candidate"]
 
     monthly = monthly_targets(targets)
     for target in TARGETS:
