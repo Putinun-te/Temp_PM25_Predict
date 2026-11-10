@@ -9,9 +9,13 @@ description = "PM2.5 and PM10 forecasting pipeline for Bangkok built on public d
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "google-auth==2.62.1",
+    "joblib==1.6.0",
+    "matplotlib==3.11.2",
     "numpy==2.5.4",
     "pandas==3.1.1",
     "requests==2.34.2",
+    "scikit-learn==1.9.1",
 ]
 
 [project.optional-dependencies]
