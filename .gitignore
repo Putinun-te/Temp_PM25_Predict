@@ -1,0 +1,21 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# Local settings: only the template may be committed
+.env
+.env.*
+!.env.example
+
+# Generated data and models are published outside the main branch
+data/
+models/
+*.joblib
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.vscode/
