@@ -68,6 +68,7 @@ jobs:
         env:
           REMOTE: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
         run: |
+          mkdir -p state/data state/models
           cd state
           rm -rf .git
           git init -q -b data
