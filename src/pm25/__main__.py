@@ -21,8 +21,17 @@ from pm25.ingest import (
 )
 from pm25.predict import FORECAST_FILENAME, build_forecast, write_forecast
 from pm25.publish import publish_forecast, service_account_token
-from pm25.report import REPORT_FILENAME, build_report
-from pm25.train import METRICS_FILENAME, load_registry, run_training
+from pm25.report import (
+    CSV_FILENAME,
+    HISTORY_FILENAME,
+    PDF_FILENAME,
+    REPORT_FILENAME,
+    append_history,
+    build_report,
+    forecast_table,
+    write_pdf,
+)
+from pm25.train import METRICS_FILENAME, PLOT_FILENAME, load_registry, run_training
 
 log = logging.getLogger("pm25")
 
@@ -106,12 +115,20 @@ def _report(args: argparse.Namespace, config: Config) -> int:
         return 2
     forecast = json.loads(forecast_path.read_text(encoding="utf-8"))
     text = build_report(forecast, json.loads(metrics_path.read_text(encoding="utf-8")))
+    table = forecast_table(forecast)
     (config.models_dir / REPORT_FILENAME).write_text(text, encoding="utf-8")
-    # Keep every day's report on the data branch, which survives between runs.
-    history = config.data_dir.parent / "reports" / f"{forecast['as_of']}.md"
-    history.parent.mkdir(parents=True, exist_ok=True)
-    history.write_text(text, encoding="utf-8")
-    log.info("Wrote %s and %s", config.models_dir / REPORT_FILENAME, history)
+    table.to_csv(config.models_dir / CSV_FILENAME, index=False)
+    write_pdf(
+        config.models_dir / PDF_FILENAME, forecast, table, config.models_dir / PLOT_FILENAME
+    )
+
+    # The data branch survives between runs, so these accumulate. PDFs stay in
+    # artifacts only, because a year of them would be far larger than the text.
+    reports = config.data_dir.parent / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    (reports / f"{forecast['as_of']}.md").write_text(text, encoding="utf-8")
+    append_history(reports / HISTORY_FILENAME, table)
+    log.info("Wrote the report to %s and %s", config.models_dir, reports)
     return 0
 
 

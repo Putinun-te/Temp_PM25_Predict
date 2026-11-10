@@ -1,4 +1,6 @@
-from pm25.report import build_report
+import pandas as pd
+
+from pm25.report import append_history, build_report, forecast_table, write_pdf
 
 
 def forecast(status="ok", value=13.9):
@@ -16,6 +18,7 @@ def forecast(status="ok", value=13.9):
     }
     monthly = {
         "month": "2026-12",
+        "months_ahead": 1,
         "pm25": 30.0,
         "pm25_low": 25.0,
         "pm25_high": 35.0,
@@ -65,3 +68,35 @@ def test_report_warns_about_stale_data_and_missing_values():
     text = build_report(forecast(status="stale", value=None), METRICS)
     assert "Warning: the newest station data is 3 days old" in text
     assert "| n/a | n/a |" in text
+
+
+def test_csv_has_one_row_per_value():
+    table = forecast_table(forecast())
+    assert len(table) == 4
+    today = table[(table["period"] == "2026-11-11") & (table["target"] == "pm25")].iloc[0]
+    assert (today["value"], today["low"], today["high"], today["method"]) == (13.9, 8.5, 19.3, "persistence")
+
+
+def test_history_appends_new_days_and_replaces_a_rerun(tmp_path):
+    path = tmp_path / "history.csv"
+    append_history(path, forecast_table(forecast()))
+    append_history(path, forecast_table(forecast()))
+    assert len(pd.read_csv(path)) == 4
+
+    next_day = forecast()
+    next_day["as_of"] = "2026-11-12"
+    append_history(path, forecast_table(next_day))
+    assert len(pd.read_csv(path)) == 8
+
+
+def test_pdf_is_written_and_small(tmp_path):
+    path = tmp_path / "report.pdf"
+    write_pdf(path, forecast(), forecast_table(forecast()))
+    assert path.read_bytes().startswith(b"%PDF")
+    assert path.stat().st_size < 200_000
+
+
+def test_pdf_handles_missing_values(tmp_path):
+    path = tmp_path / "report.pdf"
+    write_pdf(path, forecast(status="stale", value=None), forecast_table(forecast(value=None)))
+    assert path.exists()
