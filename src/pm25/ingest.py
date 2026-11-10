@@ -75,3 +75,123 @@ def find_gaps(
     inside = index[(index >= start) & (index <= end)]
     points = [start - step, *inside, end + step]
     return [(low, high) for low, high in zip(points, points[1:]) if high - low > step * tolerance]
+
+
+# --- Open-Meteo reference data ---
+
+
+@dataclass(frozen=True)
+class OpenMeteoSource:
+    """One Open-Meteo endpoint and the mapping from its variables to our columns."""
+
+    filename: str
+    url: str
+    variables: Mapping[str, str]
+
+
+AIR_QUALITY = OpenMeteoSource(
+    filename="openmeteo_air_quality.csv",
+    url="https://air-quality-api.open-meteo.com/v1/air-quality",
+    variables={
+        "pm2_5": "om_pm25",
+        "pm10": "om_pm10",
+        "nitrogen_dioxide": "om_no2",
+        "ozone": "om_o3",
+        "sulphur_dioxide": "om_so2",
+        "carbon_monoxide": "om_co",
+    },
+)
+
+WEATHER = OpenMeteoSource(
+    filename="openmeteo_weather.csv",
+    url="https://archive-api.open-meteo.com/v1/archive",
+    variables={
+        "temperature_2m": "om_temp_c",
+        "relative_humidity_2m": "om_rh_pct",
+        "precipitation": "om_precip_mm",
+        "wind_speed_10m": "om_wind_kmh",
+        "wind_direction_10m": "om_wind_deg",
+    },
+)
+
+
+def _date_ranges(
+    gaps: Iterable[tuple[pd.Timestamp, pd.Timestamp]],
+    step: pd.Timedelta,
+    max_days: int = 90,
+) -> list[tuple[date, date]]:
+    """Convert exclusive gaps to inclusive date ranges, merged and split into small requests."""
+    spans = sorted(
+        (min(first, last), max(first, last))
+        for first, last in (((low + step).date(), (high - step).date()) for low, high in gaps)
+    )
+    merged: list[tuple[date, date]] = []
+    for first, last in spans:
+        if merged and first <= merged[-1][1] + timedelta(days=1):
+            merged[-1] = (merged[-1][0], max(merged[-1][1], last))
+        else:
+            merged.append((first, last))
+
+    chunks: list[tuple[date, date]] = []
+    for first, last in merged:
+        while first <= last:
+            stop = min(first + timedelta(days=max_days - 1), last)
+            chunks.append((first, stop))
+            first = stop + timedelta(days=1)
+    return chunks
+
+
+def fetch_open_meteo(
+    source: OpenMeteoSource,
+    latitude: float,
+    longitude: float,
+    first: date,
+    last: date,
+    http_get: Callable[..., Any] = requests.get,
+) -> pd.DataFrame:
+    """Fetch hourly UTC values and drop hours where every variable is null.
+
+    Null hours must not be stored: they would look filled and never be retried
+    once the source publishes them.
+    """
+    response = http_get(
+        source.url,
+        params={
+            "latitude": latitude,
+            "longitude": longitude,
+            "hourly": ",".join(source.variables),
+            "start_date": first.isoformat(),
+            "end_date": last.isoformat(),
+            "timezone": "GMT",
+        },
+        timeout=60,
+    )
+    response.raise_for_status()
+    hourly = response.json()["hourly"]
+    frame = pd.DataFrame({TIME: pd.to_datetime(hourly["time"], utc=True)})
+    for api_name, column in source.variables.items():
+        frame[column] = pd.to_numeric(pd.Series(hourly.get(api_name)), errors="coerce")
+    return frame.dropna(subset=list(source.variables.values()), how="all")
+
+
+def backfill_open_meteo(
+    source: OpenMeteoSource,
+    data_dir: Path,
+    latitude: float,
+    longitude: float,
+    start: pd.Timestamp,
+    end: pd.Timestamp,
+    http_get: Callable[..., Any] = requests.get,
+) -> int:
+    """Fetch only the hours missing from [start, end] and return how many were added.
+
+    Open-Meteo returns whole days, so hours after `end` are removed. Those are
+    forecasts, and storing them as history would leak the future into training.
+    """
+    path = data_dir / source.filename
+    gaps = find_gaps(load_series(path)[TIME], start, end, HOUR)
+    added = 0
+    for first, last in _date_ranges(gaps, HOUR):
+        frame = fetch_open_meteo(source, latitude, longitude, first, last, http_get)
+        added += upsert(path, frame[(frame[TIME] >= start) & (frame[TIME] <= end)])
+    return added
