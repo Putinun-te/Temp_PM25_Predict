@@ -3,7 +3,8 @@ PYTHON ?= .venv/bin/python
 .PHONY: install test backfill train predict report publish pipeline
 
 install:
-	$(PYTHON) -m pip install -e ".[dev]"
+	$(PYTHON) -m pip install -r requirements.txt -r requirements-dev.txt
+	$(PYTHON) -m pip install -e . --no-deps
 
 test:
 	$(PYTHON) -m pytest
