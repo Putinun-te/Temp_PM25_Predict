@@ -35,7 +35,8 @@ flowchart LR
 |---|---|---|---|
 | OpenAQ, Air4Thai reference monitors | Forecast target | Hourly PM2.5 at 10 stations and PM10 at 3 stations | Free API key |
 | Open-Meteo Air Quality | Feature | PM2.5, NO2, O3, SO2 and CO from the CAMS global model | No key |
-| Open-Meteo Historical Weather | Feature | Temperature, humidity, precipitation and wind | No key |
+| Open-Meteo Historical Weather | Feature, and the target for temperature and humidity | Temperature, humidity, precipitation and wind from 2021 | No key |
+| TMD Weather Forecast API | Reference shown next to our forecast | Hourly temperature and humidity forecast, 3 km model | Free token |
 
 The daily target is the median across a fixed panel of stations, so one faulty station cannot move it. A station-day needs 18 hours of data, and a city-day needs at least 5 PM2.5 stations or 2 PM10 stations. Days are Bangkok local days. Gaps in the measured target are never filled with model data.
 
@@ -130,7 +131,7 @@ The first OpenAQ load takes about 30 minutes because requests are paced for the 
 | Report history | `reports/<date>.md` and `reports/forecast_history.csv` on the `data` branch |
 | Model artifacts | Model, registry and metrics, kept 7 days |
 
-Repository secrets: `OPENAQ_API_KEY`, `FIREBASE_DB_URL` and `FIREBASE_SERVICE_ACCOUNT_JSON` (the JSON key of a service account with the Firebase Realtime Database Admin role).
+Repository secrets: `OPENAQ_API_KEY`, `TMD_API_TOKEN` (optional), `FIREBASE_DB_URL` and `FIREBASE_SERVICE_ACCOUNT_JSON` (the JSON key of a service account with the Firebase Realtime Database Admin role).
 
 Cost and limits for a public repository: GitHub-hosted standard runners are free with no minute limit. Scheduled runs can start late when GitHub is busy, and GitHub disables schedules in public repositories after 60 days without repository activity. Artifacts can be kept up to 90 days; this workflow keeps them 7.
 
@@ -173,15 +174,21 @@ Recommended Realtime Database rules, which let anyone read forecasts and nobody 
 
 ### What each forecast uses
 
-Each target and horizon is a slot. A slot publishes a fitted model only after the model passes the promotion gate; otherwise it publishes the best baseline. The table shows the run of 2026-11-11.
+Each target and horizon is a slot. A slot publishes a fitted model only after the model passes the promotion gate; otherwise it publishes the best baseline. The gate runs daily, so the published method can change. The table shows the run of 2026-11-11.
 
 | Slot | Published method |
 |---|---|
-| PM2.5 today | Persistence (yesterday's value) |
+| PM2.5 today | Gradient boosting |
 | PM2.5 tomorrow | Random forest |
-| PM10 today | Persistence |
-| PM10 tomorrow | Random forest |
+| PM10 today and tomorrow | Random forest |
+| Temperature and humidity today | Persistence (yesterday's value) |
+| Temperature and humidity tomorrow | Random forest |
 | Monthly PM2.5 and PM10, 1 to 3 months ahead | Climatology (mean of the same calendar month) |
+| Monthly temperature and humidity | Climatology or damped anomaly, whichever passes the gate |
+
+Temperature and humidity are trained and scored against Open-Meteo history from 2021, which is a model reanalysis and not a station measurement. Compared with station records from 2023 to 2026, it reads about 1 °C cooler than central Bangkok. Measured temperature that is free and updated daily was not found.
+
+The Thai Meteorological Department (TMD) forecast for today and tomorrow is published next to ours as `tmd_*` fields. It is an independent 3 km weather model, and its accuracy against Bangkok stations has not been measured here.
 
 ### How it is evaluated
 
@@ -193,18 +200,22 @@ Each target and horizon is a slot. A slot publishes a fitted model only after th
 
 ### Results
 
-Out-of-sample walk-forward results from the 2026-11-11 run, about 1,150 days per daily slot from May 2022 to November 2026. MAE and RMSE are in µg/m³. Skill is the share of persistence error removed.
+Out-of-sample walk-forward results from the 2026-11-11 run. Air quality slots cover about 1,150 days and weather slots about 1,650 days, ending November 2026. Skill is the share of persistence error removed.
 
-| Slot | Method | MAE | RMSE | R² | Persistence MAE | Skill |
+| Slot | Best model | MAE | RMSE | R² | Persistence MAE | Skill |
 |---|---|---|---|---|---|---|
-| PM2.5 today | Random forest, not published | 3.31 | 4.78 | 0.80 | 3.45 | 4 % |
-| PM2.5 tomorrow | Random forest | 4.69 | 6.69 | 0.61 | 5.28 | 11 % |
-| PM10 today | Random forest, not published | 4.92 | 6.88 | 0.80 | 4.89 | −1 % |
-| PM10 tomorrow | Random forest | 6.86 | 9.49 | 0.62 | 7.47 | 8 % |
+| PM2.5 today (µg/m³) | Gradient boosting | 3.21 | 4.61 | 0.81 | 3.45 | 7 % |
+| PM2.5 tomorrow (µg/m³) | Random forest | 4.64 | 6.52 | 0.63 | 5.28 | 12 % |
+| PM10 today (µg/m³) | Random forest | 4.81 | 6.78 | 0.81 | 4.89 | 2 % |
+| PM10 tomorrow (µg/m³) | Random forest | 6.89 | 9.46 | 0.62 | 7.47 | 8 % |
+| Temperature today (°C) | Random forest, not published | 0.59 | 0.78 | 0.79 | 0.59 | 1 % |
+| Temperature tomorrow (°C) | Random forest | 0.83 | 1.07 | 0.59 | 0.86 | 3 % |
+| Humidity today (%) | Random forest, not published | 3.50 | 4.68 | 0.82 | 3.44 | −2 % |
+| Humidity tomorrow (%) | Random forest | 4.81 | 6.37 | 0.66 | 4.89 | 2 % |
 
-PM2.5 tomorrow by season of the target date (MAE, model against persistence): cool haze season November to February 7.0 against 8.4, hot season March to May 5.9 against 5.8, rainy season June to October 2.7 against 3.2.
+PM2.5 tomorrow by season of the target date (MAE, model against persistence): cool haze season November to February 7.0 against 8.4, hot season March to May 5.7 against 5.8, rainy season June to October 2.7 against 3.2.
 
-Monthly climatology errors over 25 to 27 out-of-sample months: MAE 2.8 to 3.0 µg/m³ for PM2.5 and 4.4 to 4.5 µg/m³ for PM10. A damped-anomaly method was tested and gave no meaningful improvement.
+Monthly errors over 25 to 27 out-of-sample months for air quality and about 40 months for weather: MAE 2.8 to 3.0 µg/m³ for PM2.5, 4.4 to 4.5 µg/m³ for PM10, 0.8 °C for temperature and 3.5 to 3.7 % for humidity.
 
 For context, the Open-Meteo CAMS value for the same day, which is hindsight rather than a forecast, has a PM2.5 MAE of 11.0 against the station panel. The model reads high for Bangkok.
 
