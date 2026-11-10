@@ -43,15 +43,56 @@ Modelled PM10 from Open-Meteo is not used, because its ratio to PM2.5 changes ab
 
 ## Run locally
 
+### Requirements
+
+Python 3.12 or newer. Library versions are pinned in `requirements.txt`, so every install gets the same versions.
+
+| Library | Used for |
+|---|---|
+| pandas, numpy | Data handling |
+| scikit-learn, joblib | Models and saving them |
+| matplotlib | Evaluation plot and PDF report |
+| requests | Calls to OpenAQ, Open-Meteo and Firebase |
+| google-auth | Service account login for Firebase publishing |
+| pytest | Tests (`requirements-dev.txt`) |
+
+### Install
+
+macOS or Linux:
+
 ```bash
 python3.12 -m venv .venv
-make install
-make test
+source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+pip install -e . --no-deps
+pytest
+```
+
+Windows (PowerShell):
+
+```powershell
+py -3.12 -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt -r requirements-dev.txt
+pip install -e . --no-deps
+pytest
+```
+
+The last install line makes the `pm25` package and its `python -m pm25` commands available. `make install` and `make test` do the same on macOS and Linux.
+
+### Run
+
+```bash
 cp .env.example .env    # then fill in the values
 set -a; source .env; set +a
-make pipeline           # backfill, train, predict
-make publish            # optional, needs Firebase credentials
+python -m pm25 backfill
+python -m pm25 train
+python -m pm25 predict
+python -m pm25 report
+python -m pm25 publish  # optional, needs Firebase credentials
 ```
+
+`make pipeline` runs backfill, train, predict and report in one go.
 
 The first OpenAQ load takes about 30 minutes because requests are paced for the free tier. Later runs only fetch new hours.
 
