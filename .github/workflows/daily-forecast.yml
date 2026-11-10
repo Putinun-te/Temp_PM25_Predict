@@ -2,10 +2,10 @@ name: Daily forecast
 
 on:
   workflow_dispatch:
-  # Keep disabled until the first manual run has been reviewed.
-  # 19:30 UTC is 02:30 in Bangkok, after the previous local day is complete.
-  # schedule:
-  #   - cron: "30 19 * * *"
+  schedule:
+    # 00:17 UTC is 07:17 in Bangkok. An off-minute avoids the busiest start
+    # times; GitHub may still start scheduled runs some minutes late.
+    - cron: "17 0 * * *"
 
 permissions:
   contents: write # Needed only to update the data branch
@@ -22,9 +22,9 @@ jobs:
       PM25_DATA_DIR: state/data
       PM25_MODELS_DIR: state/models
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -56,31 +56,50 @@ jobs:
       - name: Predict
         run: python -m pm25 predict
 
+      - name: Write daily report
+        run: |
+          python -m pm25 report
+          cat state/models/report.md >> "$GITHUB_STEP_SUMMARY"
+          echo "REPORT_DATE=$(python -c "import json; print(json.load(open('state/models/forecast.json'))['as_of'])")" >> "$GITHUB_ENV"
+
       - name: Publish to Firebase
         env:
           FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
         run: python -m pm25 publish
 
-      # The data branch keeps a single commit, so daily updates cannot grow the repository.
-      - name: Save data and models
+      # The data branch keeps a single commit, so daily updates cannot grow its history.
+      # Daily reports accumulate in its reports/ folder.
+      - name: Save data, models and reports
         if: ${{ !cancelled() }}
         env:
           REMOTE: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
         run: |
-          mkdir -p state/data state/models
+          mkdir -p state/data state/models state/reports
           cd state
           rm -rf .git
           git init -q -b data
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data models
-          git commit -q -m "Update data and models"
+          git add data models reports
+          git commit -q -m "Update data, models and reports"
           git push --force "$REMOTE" data
+
+      - name: Upload daily report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: daily-report-${{ env.REPORT_DATE || github.run_id }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            state/models/report.md
+            state/models/forecast.json
+            state/models/walk_forward.png
 
       - name: Upload model and metrics
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: model-and-metrics
           retention-days: 7
@@ -88,6 +107,4 @@ jobs:
           path: |
             state/models/metrics.json
             state/models/registry.json
-            state/models/forecast.json
-            state/models/walk_forward.png
             state/models/*.joblib
