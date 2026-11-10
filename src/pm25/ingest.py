@@ -121,6 +121,47 @@ WEATHER = OpenMeteoSource(
 )
 
 
+OPEN_METEO_SECONDS_BETWEEN_REQUESTS = 0.2
+
+
+def get_with_retry(
+    http_get: Callable[..., Any],
+    url: str,
+    params: Mapping[str, Any],
+    sleep: Callable[[float], None],
+    pause: float,
+    headers: Mapping[str, str] | None = None,
+    attempts: int = 5,
+    timeout: float = 120,
+) -> Any:
+    """GET with pacing, waiting out rate limits and retrying network and server errors.
+
+    Shared CI runners see slow or refused connections now and then, so one
+    failed request must not end the whole run.
+    """
+    options: dict[str, Any] = {"params": params, "timeout": timeout}
+    if headers:
+        options["headers"] = headers
+    response = None
+    for attempt in range(attempts):
+        sleep(pause)
+        try:
+            response = http_get(url, **options)
+        except (requests.ConnectionError, requests.Timeout):
+            if attempt == attempts - 1:
+                raise
+            sleep(5 * (attempt + 1))
+            continue
+        if response.status_code == 429:
+            sleep(int(response.headers.get("x-ratelimit-reset", 60)) + 1)
+        elif response.status_code >= 500:
+            sleep(5 * (attempt + 1))
+        else:
+            break
+    response.raise_for_status()
+    return response
+
+
 def _date_ranges(
     gaps: Iterable[tuple[pd.Timestamp, pd.Timestamp]],
     step: pd.Timedelta,
@@ -154,15 +195,17 @@ def fetch_open_meteo(
     first: date,
     last: date,
     http_get: Callable[..., Any] = requests.get,
+    sleep: Callable[[float], None] = time_module.sleep,
 ) -> pd.DataFrame:
     """Fetch hourly UTC values and drop hours where every variable is null.
 
     Null hours must not be stored: they would look filled and never be retried
     once the source publishes them.
     """
-    response = http_get(
+    response = get_with_retry(
+        http_get,
         source.url,
-        params={
+        {
             "latitude": latitude,
             "longitude": longitude,
             "hourly": ",".join(source.variables),
@@ -170,9 +213,9 @@ def fetch_open_meteo(
             "end_date": last.isoformat(),
             "timezone": "GMT",
         },
-        timeout=60,
+        sleep,
+        pause=OPEN_METEO_SECONDS_BETWEEN_REQUESTS,
     )
-    response.raise_for_status()
     hourly = response.json()["hourly"]
     frame = pd.DataFrame({TIME: pd.to_datetime(hourly["time"], utc=True)})
     for api_name, column in source.variables.items():
@@ -188,6 +231,7 @@ def backfill_open_meteo(
     start: pd.Timestamp,
     end: pd.Timestamp,
     http_get: Callable[..., Any] = requests.get,
+    sleep: Callable[[float], None] = time_module.sleep,
 ) -> int:
     """Fetch only the hours missing from [start, end] and return how many were added.
 
@@ -198,7 +242,7 @@ def backfill_open_meteo(
     gaps = find_gaps(load_series(path)[TIME], start, end, HOUR)
     added = 0
     for first, last in _date_ranges(gaps, HOUR):
-        frame = fetch_open_meteo(source, latitude, longitude, first, last, http_get)
+        frame = fetch_open_meteo(source, latitude, longitude, first, last, http_get, sleep)
         added += upsert(path, frame[(frame[TIME] >= start) & (frame[TIME] <= end)])
     return added
 
@@ -247,27 +291,15 @@ def _openaq_get(
     params: Mapping[str, Any],
     api_key: str,
     sleep: Callable[[float], None],
-    attempts: int = 5,
 ) -> Any:
-    """GET with pacing, waiting out rate limits and retrying network and server errors."""
-    response = None
-    for attempt in range(attempts):
-        sleep(OPENAQ_SECONDS_BETWEEN_REQUESTS)
-        try:
-            response = http_get(url, params=params, headers={"X-API-Key": api_key}, timeout=90)
-        except (requests.ConnectionError, requests.Timeout):
-            if attempt == attempts - 1:
-                raise
-            sleep(5 * (attempt + 1))
-            continue
-        if response.status_code == 429:
-            sleep(int(response.headers.get("x-ratelimit-reset", 60)) + 1)
-        elif response.status_code >= 500:
-            sleep(5 * (attempt + 1))
-        else:
-            break
-    response.raise_for_status()
-    return response
+    return get_with_retry(
+        http_get,
+        url,
+        params,
+        sleep,
+        pause=OPENAQ_SECONDS_BETWEEN_REQUESTS,
+        headers={"X-API-Key": api_key},
+    )
 
 
 def fetch_openaq_hours(

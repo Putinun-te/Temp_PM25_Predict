@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+import requests
 
 from pm25.ingest import AIR_QUALITY, TIME, backfill_open_meteo, load_series, upsert
 
@@ -31,7 +32,20 @@ def api(fake_response):
 
 
 def run(api, tmp_path, start="2024-01-01 00:00", end="2024-01-03 23:00"):
-    return backfill_open_meteo(AIR_QUALITY, tmp_path, 13.75, 100.5, utc(start), utc(end), api)
+    return backfill_open_meteo(
+        AIR_QUALITY, tmp_path, 13.75, 100.5, utc(start), utc(end), api, sleep=lambda _: None
+    )
+
+
+def test_a_timed_out_request_is_retried(api, tmp_path):
+    failures = [requests.Timeout("handshake timed out")]
+
+    def flaky(url, params, timeout):
+        if failures:
+            raise failures.pop(0)
+        return api(url, params, timeout)
+
+    assert run(flaky, tmp_path) == 72
 
 
 def test_first_run_fetches_the_whole_window(api, tmp_path):
