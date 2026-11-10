@@ -21,6 +21,7 @@ def calls(monkeypatch, tmp_path):
     monkeypatch.setattr("pm25.__main__.backfill_openaq", openaq)
     monkeypatch.setenv("PM25_DATA_DIR", str(tmp_path))
     monkeypatch.setenv("PM25_MODELS_DIR", str(tmp_path / "models"))
+    monkeypatch.setenv("PM25_ENV_FILE", str(tmp_path / "no.env"))
     monkeypatch.setenv("REFERENCE_START", "2024-01-01")
     monkeypatch.setenv("OPENAQ_START", "2021-05-01")
     monkeypatch.setenv("OPENAQ_API_KEY", "test-key")

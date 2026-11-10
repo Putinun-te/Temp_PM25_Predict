@@ -5,11 +5,13 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
+from pathlib import Path
 
 import pandas as pd
 
-from pm25.config import Config
+from pm25.config import Config, load_env_file
 from pm25.features import TIMEZONE, daily_exogenous, daily_targets
 from pm25.ingest import (
     AIR_QUALITY,
@@ -166,6 +168,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
+    load_env_file(Path(os.environ.get("PM25_ENV_FILE", ".env")))
     return args.handler(args, Config.from_env())
 
 

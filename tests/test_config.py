@@ -2,7 +2,32 @@ from pathlib import Path
 
 import pandas as pd
 
-from pm25.config import Config
+from pm25.config import Config, load_env_file
+
+
+def test_env_file_is_loaded_without_overriding_existing_values(tmp_path, monkeypatch):
+    path = tmp_path / ".env"
+    path.write_text(
+        "# comment\n\nPM25_TEST_A=from-file\nPM25_TEST_B=\"quoted value\"\n"
+        "PM25_TEST_C={\"a\": \"b=c\"}\nPM25_TEST_KEEP=from-file\nnot a setting\n",
+        encoding="utf-8",
+    )
+    for name in ("PM25_TEST_A", "PM25_TEST_B", "PM25_TEST_C"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("PM25_TEST_KEEP", "from-shell")
+    load_env_file(path)
+    import os
+
+    assert os.environ["PM25_TEST_A"] == "from-file"
+    assert os.environ["PM25_TEST_B"] == "quoted value"
+    assert os.environ["PM25_TEST_C"] == '{"a": "b=c"}'
+    assert os.environ["PM25_TEST_KEEP"] == "from-shell"
+    for name in ("PM25_TEST_A", "PM25_TEST_B", "PM25_TEST_C"):
+        monkeypatch.delenv(name)
+
+
+def test_missing_env_file_is_ignored(tmp_path):
+    load_env_file(tmp_path / "missing.env")
 
 
 def test_reads_values_from_environment():
