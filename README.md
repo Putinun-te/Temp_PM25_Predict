@@ -78,35 +78,57 @@ pip install -e . --no-deps
 pytest
 ```
 
-The last install line makes the `pm25` package and its `python -m pm25` commands available. `make install` and `make test` do the same on macOS and Linux.
+If PowerShell refuses to run the activation script, allow local scripts for your user once:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+The last install line makes the `pm25` package and its `python -m pm25` commands available. On macOS and Linux, `make install` and `make test` do the same.
 
 ### Run
 
+Create your settings file, then open `.env` and fill in the values. Commands read `.env` automatically, so there is nothing to load by hand.
+
+macOS or Linux:
+
 ```bash
-cp .env.example .env    # then fill in the values
-set -a; source .env; set +a
+cp .env.example .env
+```
+
+Windows (PowerShell):
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Then run the pipeline with the virtual environment active. These commands are the same on every platform:
+
+```bash
 python -m pm25 backfill
 python -m pm25 train
 python -m pm25 predict
 python -m pm25 report
-python -m pm25 publish  # optional, needs Firebase credentials
+python -m pm25 publish
 ```
 
-`make pipeline` runs backfill, train, predict and report in one go.
+`publish` is optional and needs Firebase credentials. On macOS and Linux, `make pipeline` runs backfill, train, predict and report in one go. Values already set in the shell or in CI take priority over `.env`.
 
 The first OpenAQ load takes about 30 minutes because requests are paced for the free tier. Later runs only fetch new hours.
 
 ## Automation
 
-`.github/workflows/daily-forecast.yml` runs the pipeline. It is manual only (`workflow_dispatch`) until the schedule line is uncommented.
+`.github/workflows/daily-forecast.yml` runs the pipeline every morning and can also be started by hand (`workflow_dispatch`).
 
 | Setting | Value |
 |---|---|
-| Schedule (commented out) | 19:30 UTC, which is 02:30 in Bangkok |
+| Schedule | 00:17 UTC, which is 07:17 in Bangkok; GitHub may start it some minutes late |
 | Overlap | A concurrency group stops two runs overlapping |
 | Timeout | 60 minutes |
-| State | Data and models live on a `data` branch that always holds a single commit |
-| Artifacts | Model, registry, metrics, forecast and plot, kept 7 days |
+| State | Data, models and reports live on a `data` branch that always holds a single commit |
+| Daily report | Markdown, CSV and PDF in the run summary and the `daily-report-<date>` artifact, kept 30 days |
+| Report history | `reports/<date>.md` and `reports/forecast_history.csv` on the `data` branch |
+| Model artifacts | Model, registry and metrics, kept 7 days |
 
 Repository secrets: `OPENAQ_API_KEY`, `FIREBASE_DB_URL` and `FIREBASE_SERVICE_ACCOUNT_JSON` (the JSON key of a service account with the Firebase Realtime Database Admin role).
 
