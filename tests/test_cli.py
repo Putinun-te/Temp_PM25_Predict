@@ -33,6 +33,7 @@ def test_backfill_covers_every_source_from_its_own_start(calls, tmp_path):
     assert [call["source"] for call in calls["open_meteo"]] == [AIR_QUALITY, WEATHER]
     assert calls["open_meteo"][0]["data_dir"] == tmp_path
     assert calls["open_meteo"][0]["start"] == pd.Timestamp("2024-01-01", tz="UTC")
+    assert calls["open_meteo"][1]["start"] == pd.Timestamp("2021-01-01", tz="UTC")
     assert calls["openaq"][0]["start"] == pd.Timestamp("2021-05-01", tz="UTC")
 
 

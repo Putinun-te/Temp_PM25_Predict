@@ -14,6 +14,10 @@ from pm25.ingest import PARAMETER, SENSOR, TIME, VALUE
 
 TIMEZONE = "Asia/Bangkok"
 TARGETS = ("pm25", "pm10")
+# Weather targets come from Open-Meteo history, a model reanalysis, not a station.
+WEATHER_TARGETS = ("temp_c", "rh_pct")
+ALL_TARGETS = TARGETS + WEATHER_TARGETS
+UNITS = {"pm25": "ug/m3", "pm10": "ug/m3", "temp_c": "C", "rh_pct": "%"}
 MIN_HOURS_PER_DAY = 18
 MIN_STATIONS = {"pm25": 5, "pm10": 2}
 MIN_DAYS_PER_MONTH = 20
@@ -99,6 +103,12 @@ def daily_exogenous(
         wind_v=("wind_v", "mean"),
     )
     return air_daily.join(wx_daily, how="outer").reindex(columns=list(EXOGENOUS_COLUMNS))
+
+
+def with_weather_targets(targets: pd.DataFrame, exogenous: pd.DataFrame) -> pd.DataFrame:
+    """Add daily temperature and humidity as extra targets on the same calendar."""
+    weather = exogenous.reindex(columns=list(WEATHER_TARGETS)).reindex(targets.index)
+    return targets.join(weather)
 
 
 def build_features(

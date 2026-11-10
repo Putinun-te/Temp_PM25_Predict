@@ -29,11 +29,12 @@ from pm25.evaluate import (
     walk_forward_predict,
 )
 from pm25.features import (
-    TARGETS,
+    ALL_TARGETS,
     build_features,
     build_labels,
     daily_baselines,
     monthly_targets,
+    with_weather_targets,
 )
 
 DAILY_HORIZONS = (1, 2)
@@ -287,6 +288,7 @@ def run_training(
     """Evaluate every slot, update the registry and write metrics.json and a plot."""
     models_dir.mkdir(parents=True, exist_ok=True)
     registry = load_registry(models_dir)
+    targets = with_weather_targets(targets, exogenous)
     report: dict[str, Any] = {
         "generated_at": now,
         "as_of": as_of.date().isoformat(),
@@ -296,7 +298,7 @@ def run_training(
                 "last_day": targets[target].last_valid_index().date().isoformat(),
                 "valid_days": int(targets[target].notna().sum()),
             }
-            for target in TARGETS
+            for target in ALL_TARGETS
         },
         "daily": {},
         "monthly": {},
@@ -304,7 +306,7 @@ def run_training(
 
     plot_frame = None
     plot_method = None
-    for target in TARGETS:
+    for target in ALL_TARGETS:
         for horizon in DAILY_HORIZONS:
             slot = f"{target}_h{horizon}"
             features = build_features(targets, exogenous, horizon)
@@ -330,7 +332,7 @@ def run_training(
                 plot_frame, plot_method = frame, slot_report["best_candidate"]
 
     monthly = monthly_targets(targets)
-    for target in TARGETS:
+    for target in ALL_TARGETS:
         for horizon in MONTHLY_HORIZONS:
             slot = f"{target}_m{horizon}"
             entry, slot_report = train_monthly(monthly[target], horizon)

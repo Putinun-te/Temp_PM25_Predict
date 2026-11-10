@@ -10,8 +10,10 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import requests
 
 from pm25.config import Config, load_env_file
+from pm25.tmd import fetch_tmd_daily
 from pm25.features import TIMEZONE, daily_exogenous, daily_targets
 from pm25.ingest import (
     AIR_QUALITY,
@@ -68,8 +70,12 @@ def _backfill(args: argparse.Namespace, config: Config) -> int:
     override = pd.Timestamp(args.start, tz="UTC") if args.start else None
 
     if args.source in ("all", "open-meteo"):
-        start = override if override is not None else config.reference_start
-        for source in (AIR_QUALITY, WEATHER):
+        # Weather history goes back further than modelled air quality, which starts in 2022.
+        for source, default_start in (
+            (AIR_QUALITY, config.reference_start),
+            (WEATHER, config.weather_start),
+        ):
+            start = override if override is not None else default_start
             added = backfill_open_meteo(
                 source, config.data_dir, config.latitude, config.longitude, start, end
             )
@@ -104,7 +110,16 @@ def _predict(args: argparse.Namespace, config: Config) -> int:
     if not registry["daily"]:
         log.error("No trained methods found, run the train command first")
         return 2
-    forecast = build_forecast(*inputs, registry, config.models_dir, as_of, _generated_at())
+    tmd = {}
+    if config.tmd_api_token:
+        try:
+            tmd = fetch_tmd_daily(config.tmd_api_token, config.latitude, config.longitude, as_of)
+        except requests.RequestException as error:
+            # The TMD reference is optional, so its outage must not stop the forecast.
+            log.warning("TMD forecast unavailable: %s", type(error).__name__)
+    else:
+        log.info("TMD_API_TOKEN is not set, skipping the TMD weather forecast")
+    forecast = build_forecast(*inputs, registry, config.models_dir, as_of, _generated_at(), tmd)
     log.info("Wrote %s", write_forecast(forecast, config.models_dir))
     return 0
 

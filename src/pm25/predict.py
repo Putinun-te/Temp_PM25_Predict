@@ -11,16 +11,18 @@ import numpy as np
 import pandas as pd
 
 from pm25.features import (
-    TARGETS,
+    ALL_TARGETS,
+    UNITS,
     build_features,
     daily_baselines,
     monthly_forecast,
     monthly_targets,
+    with_weather_targets,
 )
 from pm25.train import CANDIDATES, model_path
 
 FORECAST_FILENAME = "forecast.json"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 DAILY_LABELS = {1: "today", 2: "tomorrow"}
 MONTHS_AHEAD = (1, 2, 3)
 
@@ -44,17 +46,17 @@ def _daily_row(
     exogenous: pd.DataFrame,
     registry: dict[str, Any],
     models_dir: Path,
+    tmd: dict[str, dict[str, float]],
 ) -> dict[str, Any]:
     target_date = origin + pd.Timedelta(days=horizon)
-    row: dict[str, Any] = {
-        "date": target_date.date().isoformat(),
-        "label": DAILY_LABELS[horizon],
-        "horizon_days": horizon,
-    }
+    date_key = target_date.date().isoformat()
+    row: dict[str, Any] = {"date": date_key, "label": DAILY_LABELS[horizon], "horizon_days": horizon}
     features = build_features(targets, exogenous, horizon).loc[[origin]]
-    for target in TARGETS:
+    for target in ALL_TARGETS:
         slot = f"{target}_h{horizon}"
-        entry = registry["daily"][slot]
+        entry = registry["daily"].get(slot)
+        if entry is None:
+            continue
         method = entry["method"]
         if method in CANDIDATES:
             value = joblib.load(model_path(models_dir, slot)).predict(features)[0]
@@ -62,6 +64,9 @@ def _daily_row(
             value = daily_baselines(targets[target], horizon)[method].loc[origin]
         _with_range(row, target, value, entry["residual_q80"])
         row[f"{target}_method"] = method
+    # The TMD forecast is a separate reference, kept under its own names.
+    for name, value in tmd.get(date_key, {}).items():
+        row[f"tmd_{name}"] = value
     return row
 
 
@@ -75,8 +80,10 @@ def _monthly_row(
     horizon = months_ahead + 1
     month = origin + pd.DateOffset(months=horizon)
     row: dict[str, Any] = {"month": month.strftime("%Y-%m"), "months_ahead": months_ahead}
-    for target in TARGETS:
-        entry = registry["monthly"][f"{target}_m{horizon}"]
+    for target in ALL_TARGETS:
+        entry = registry["monthly"].get(f"{target}_m{horizon}")
+        if entry is None:
+            continue
         history = monthly[target][monthly.index <= origin]
         value = monthly_forecast(history, month, horizon)[entry["method"]]
         _with_range(row, target, value, entry["residual_q80"])
@@ -91,8 +98,10 @@ def build_forecast(
     models_dir: Path,
     as_of: pd.Timestamp,
     generated_at: str,
+    tmd: dict[str, dict[str, float]] | None = None,
 ) -> dict[str, Any]:
     """Return the forecast document, using only data complete before `as_of`."""
+    targets = with_weather_targets(targets, exogenous)
     origin = as_of - pd.Timedelta(days=1)
     latest = targets["pm25"].last_valid_index()
     age_days = (origin - latest).days
@@ -104,9 +113,9 @@ def build_forecast(
         "latest_data_date": latest.date().isoformat(),
         "data_age_days": age_days,
         "status": "ok" if age_days == 0 else "stale",
-        "units": "ug/m3",
+        "units": dict(UNITS),
         "daily": [
-            _daily_row(origin, horizon, targets, exogenous, registry, models_dir)
+            _daily_row(origin, horizon, targets, exogenous, registry, models_dir, tmd or {})
             for horizon in DAILY_LABELS
         ],
         "monthly": [_monthly_row(ahead, as_of, monthly, registry) for ahead in MONTHS_AHEAD],
