@@ -94,6 +94,8 @@ jobs:
           if-no-files-found: warn
           path: |
             state/models/report.md
+            state/models/report.csv
+            state/models/report.pdf
             state/models/forecast.json
             state/models/walk_forward.png
 
