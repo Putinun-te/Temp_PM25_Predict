@@ -51,6 +51,17 @@ def test_open_meteo_alone_needs_no_key(calls, monkeypatch):
     assert calls["openaq"] == []
 
 
+@pytest.mark.parametrize("command", ["train", "predict"])
+def test_commands_explain_when_input_data_is_missing(calls, command):
+    assert main([command]) == 2
+
+
+def test_publish_needs_firebase_credentials(calls, monkeypatch):
+    monkeypatch.delenv("FIREBASE_DB_URL", raising=False)
+    monkeypatch.delenv("FIREBASE_SERVICE_ACCOUNT_JSON", raising=False)
+    assert main(["publish"]) == 2
+
+
 @pytest.mark.parametrize("source", ["all", "openaq"])
 def test_missing_key_fails_before_any_download(calls, monkeypatch, source):
     monkeypatch.delenv("OPENAQ_API_KEY")

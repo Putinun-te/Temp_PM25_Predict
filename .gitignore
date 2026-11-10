@@ -10,9 +10,10 @@ __pycache__/
 .env.*
 !.env.example
 
-# Generated data and models are published outside the main branch
+# Generated data and models live on the data branch, never on main
 data/
 models/
+state/
 *.joblib
 
 # OS and editors
