@@ -34,7 +34,17 @@ flowchart LR
 - Main: https://app-pm25-forecast-1716.azurewebsites.net (Azure App Service, free F1 plan)
 - Backup: https://stpm25webd0b881.z23.web.core.windows.net (Azure Blob Storage static website)
 
-Both serve the same static page in `dashboard/`, which reads the `data` branch directly. `deploy-dashboard-pages.yml` publishes the same page to GitHub Pages once Azure is removed.
+Both serve the same Next.js static export from `web/` (TypeScript, React, Chart.js). The page is plain files with no server, and it fetches the `data` branch in the browser, so each morning's forecast appears without a rebuild. Types in `web/lib/types.ts` mirror the forecast document, so a schema change on the Python side fails the TypeScript build. `deploy-dashboard-pages.yml` publishes the same build to GitHub Pages once Azure is removed.
+
+To work on the dashboard locally:
+
+```bash
+cd web
+npm ci
+npm run dev      # http://localhost:3000
+npm test
+npm run build    # static files in web/out
+```
 
 ## Azure resources
 
