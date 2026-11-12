@@ -14,6 +14,7 @@ __pycache__/
 data/
 models/
 state/
+reports/
 *.joblib
 
 # OS and editors
