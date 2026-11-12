@@ -196,6 +196,53 @@ def _report(args: argparse.Namespace, config: Config) -> int:
     return 0
 
 
+def _load_sql(args: argparse.Namespace, config: Config) -> int:
+    """Copy bronze, silver and gold into Azure SQL. Skipped when Azure is not configured."""
+    if not config.azure_sql_server:
+        log.info("AZURE_SQL_SERVER is not set, skipping the warehouse load")
+        return 0
+    import mssql_python
+
+    from pm25.warehouse import (
+        BRONZE_TABLES,
+        GOLD_HISTORY,
+        GOLD_METRICS,
+        SILVER_DAILY,
+        Warehouse,
+        connection_string,
+        metrics_frame,
+    )
+
+    silver_path = layer(config.data_dir, SILVER) / DAILY_FILENAME
+    history_path = layer(config.data_dir, GOLD) / HISTORY_FILENAME
+    metrics_path = config.models_dir / METRICS_FILENAME
+    if not silver_path.exists():
+        log.error("Silver data is missing, run the check command first")
+        return 2
+
+    connection = mssql_python.connect(
+        connection_string(config.azure_sql_server, config.azure_sql_database)
+    )
+    try:
+        warehouse = Warehouse(connection)
+        warehouse.ensure_schema()
+        bronze = layer(config.data_dir, BRONZE)
+        for filename, table in BRONZE_TABLES.items():
+            count = warehouse.load_bronze(table, load_series(bronze / filename))
+            log.info("%s: wrote %d rows", table.name, count)
+        silver = pd.read_csv(silver_path)
+        log.info("%s: wrote %d rows", SILVER_DAILY.name, warehouse.replace(SILVER_DAILY, silver))
+        if history_path.exists():
+            history = pd.read_csv(history_path)
+            log.info("%s: wrote %d rows", GOLD_HISTORY.name, warehouse.replace(GOLD_HISTORY, history))
+        if metrics_path.exists():
+            metrics = metrics_frame(json.loads(metrics_path.read_text(encoding="utf-8")))
+            log.info("%s: wrote %d rows", GOLD_METRICS.name, warehouse.replace(GOLD_METRICS, metrics))
+    finally:
+        connection.close()
+    return 0
+
+
 def _publish(args: argparse.Namespace, config: Config) -> int:
     if not (config.firebase_db_url and config.firebase_service_account_json):
         log.error("Firebase credentials are not set, see .env.example")
@@ -226,6 +273,9 @@ def main(argv: list[str] | None = None) -> int:
     commands.add_parser("train", help="evaluate, then promote methods").set_defaults(handler=_train)
     commands.add_parser("predict", help="write forecast.json").set_defaults(handler=_predict)
     commands.add_parser("report", help="write the daily report").set_defaults(handler=_report)
+    commands.add_parser("load-sql", help="copy the layers into Azure SQL").set_defaults(
+        handler=_load_sql
+    )
     commands.add_parser("publish", help="send forecast.json to Firebase").set_defaults(
         handler=_publish
     )

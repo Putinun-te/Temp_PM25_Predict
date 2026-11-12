@@ -49,6 +49,8 @@ class Config:
     firebase_db_url: str = field(default="", repr=False)
     firebase_service_account_json: str = field(default="", repr=False)
     tmd_api_token: str = field(default="", repr=False)
+    azure_sql_server: str = ""
+    azure_sql_database: str = "pm25"
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "Config":
@@ -69,4 +71,6 @@ class Config:
             firebase_db_url=env.get("FIREBASE_DB_URL", "").strip(),
             firebase_service_account_json=env.get("FIREBASE_SERVICE_ACCOUNT_JSON", "").strip(),
             tmd_api_token=env.get("TMD_API_TOKEN", "").strip(),
+            azure_sql_server=env.get("AZURE_SQL_SERVER", "").strip(),
+            azure_sql_database=env.get("AZURE_SQL_DATABASE", "pm25").strip() or "pm25",
         )
