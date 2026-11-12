@@ -1,0 +1,52 @@
+:root {
+  --bg: #f7f7f5;
+  --card: #ffffff;
+  --text: #1d1d1b;
+  --muted: #5f5e5a;
+  --line: #e3e1da;
+  --accent: #185fa5;
+  --good: #3b6d11;
+  --warn: #854f0b;
+  --bad: #a32d2d;
+  --forecast: #d1495b;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141413;
+    --card: #1f1f1d;
+    --text: #ecebe6;
+    --muted: #a8a69e;
+    --line: #34332f;
+    --accent: #85b7eb;
+    --good: #97c459;
+    --warn: #ef9f27;
+    --bad: #f09595;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 26px; font-weight: 600; margin: 0 0 4px; }
+h2 { font-size: 18px; font-weight: 600; margin: 32px 0 12px; }
+a { color: var(--accent); }
+.sub { color: var(--muted); font-size: 14px; margin: 0; }
+.badge { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; margin-left: 8px; }
+.badge.ok { color: var(--good); }
+.badge.stale { color: var(--warn); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.label { font-size: 13px; color: var(--muted); }
+.value { font-size: 30px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.unit { font-size: 14px; font-weight: 400; color: var(--muted); }
+.range, .method { font-size: 13px; color: var(--muted); }
+.method { font-size: 12px; margin-top: 4px; }
+.chart { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; height: 320px; }
+table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 14px; }
+th { color: var(--muted); font-weight: 500; }
+.note { font-size: 13px; color: var(--muted); }
+.error { color: var(--bad); margin-top: 16px; }
+@media (max-width: 600px) {
+  .value { font-size: 24px; }
+  th, td { padding: 6px 8px; font-size: 13px; }
+}
