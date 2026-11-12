@@ -1,12 +1,14 @@
 name: Deploy dashboard to Azure
 
-# Main site: App Service free plan (F1). Backup site: Blob Storage static website.
+# Builds the Next.js static export in web/ and ships web/out to:
+#   main site:   App Service free plan (F1)
+#   backup site: Blob Storage static website
 # Runs only while the Azure for Students setup exists (repository variables are set).
 # When Azure is removed, delete the variables and use deploy-dashboard-pages.yml instead.
 on:
   push:
     branches: [main]
-    paths: ["dashboard/**"]
+    paths: ["web/**", ".github/workflows/deploy-dashboard-azure.yml"]
   workflow_dispatch:
 
 permissions:
@@ -22,8 +24,24 @@ jobs:
     if: ${{ vars.AZURE_CLIENT_ID != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
     steps:
       - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install, test and build
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
 
       - uses: azure/login@v3
         with:
@@ -33,11 +51,13 @@ jobs:
 
       - name: Deploy to App Service
         run: |
-          cd dashboard && zip -q -r ../dashboard.zip . && cd ..
+          cd out && zip -q -r ../site.zip . && cd ..
           az webapp deploy -g "${{ vars.AZURE_RESOURCE_GROUP }}" -n "${{ vars.AZURE_WEBAPP_NAME }}" \
-            --src-path dashboard.zip --type zip
+            --src-path site.zip --type zip --clean true
 
       - name: Upload to the Blob Storage backup site
         run: |
+          az storage blob delete-batch --auth-mode login \
+            --account-name "${{ vars.AZURE_STORAGE_ACCOUNT }}" -s '$web'
           az storage blob upload-batch --auth-mode login --overwrite \
-            --account-name "${{ vars.AZURE_STORAGE_ACCOUNT }}" -d '$web' -s dashboard
+            --account-name "${{ vars.AZURE_STORAGE_ACCOUNT }}" -d '$web' -s out
