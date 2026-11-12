@@ -1,5 +1,6 @@
-name: Deploy dashboard to Azure Static Web Apps
+name: Deploy dashboard to Azure
 
+# Main site: App Service free plan (F1). Backup site: Blob Storage static website.
 # Runs only while the Azure for Students setup exists (repository variables are set).
 # When Azure is removed, delete the variables and use deploy-dashboard-pages.yml instead.
 on:
@@ -30,17 +31,13 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      # The deployment token is read at run time, so it is never stored in GitHub.
-      - name: Get deployment token
-        id: token
+      - name: Deploy to App Service
         run: |
-          token=$(az staticwebapp secrets list --name "${{ vars.AZURE_STATIC_WEB_APP }}" --query properties.apiKey -o tsv)
-          echo "::add-mask::$token"
-          echo "value=$token" >> "$GITHUB_OUTPUT"
+          cd dashboard && zip -q -r ../dashboard.zip . && cd ..
+          az webapp deploy -g "${{ vars.AZURE_RESOURCE_GROUP }}" -n "${{ vars.AZURE_WEBAPP_NAME }}" \
+            --src-path dashboard.zip --type zip
 
-      - uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ steps.token.outputs.value }}
-          action: upload
-          app_location: dashboard
-          skip_app_build: true
+      - name: Upload to the Blob Storage backup site
+        run: |
+          az storage blob upload-batch --auth-mode login --overwrite \
+            --account-name "${{ vars.AZURE_STORAGE_ACCOUNT }}" -d '$web' -s dashboard
