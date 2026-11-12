@@ -70,6 +70,7 @@ jobs:
 
       - name: Sign in to Azure
         if: ${{ vars.AZURE_CLIENT_ID != '' }}
+        continue-on-error: true # Azure is optional; it must never block the forecast
         uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
@@ -79,6 +80,7 @@ jobs:
       # The SQL firewall opens for this runner's address only, and closes again below.
       - name: Load the layers into Azure SQL
         if: ${{ vars.AZURE_CLIENT_ID != '' }}
+        continue-on-error: true # Azure is optional; it must never block the forecast
         env:
           AZURE_SQL_SERVER: ${{ vars.AZURE_SQL_SERVER }}
         run: |
