@@ -31,7 +31,7 @@ def calls(monkeypatch, tmp_path):
 def test_backfill_covers_every_source_from_its_own_start(calls, tmp_path):
     assert main(["backfill"]) == 0
     assert [call["source"] for call in calls["open_meteo"]] == [AIR_QUALITY, WEATHER]
-    assert calls["open_meteo"][0]["data_dir"] == tmp_path
+    assert calls["open_meteo"][0]["data_dir"] == tmp_path / "bronze"
     assert calls["open_meteo"][0]["start"] == pd.Timestamp("2024-01-01", tz="UTC")
     assert calls["open_meteo"][1]["start"] == pd.Timestamp("2021-01-01", tz="UTC")
     assert calls["openaq"][0]["start"] == pd.Timestamp("2021-05-01", tz="UTC")
@@ -54,7 +54,7 @@ def test_open_meteo_alone_needs_no_key(calls, monkeypatch):
     assert calls["openaq"] == []
 
 
-@pytest.mark.parametrize("command", ["train", "predict", "report"])
+@pytest.mark.parametrize("command", ["check", "train", "predict", "report"])
 def test_commands_explain_when_input_data_is_missing(calls, command):
     assert main([command]) == 2
 

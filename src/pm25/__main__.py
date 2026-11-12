@@ -15,6 +15,19 @@ import requests
 from pm25.config import Config, load_env_file
 from pm25.tmd import fetch_tmd_daily
 from pm25.features import TIMEZONE, daily_exogenous, daily_targets
+from pm25.layers import (
+    BRONZE,
+    GOLD,
+    QUALITY_FILENAME,
+    SILVER,
+    DAILY_FILENAME,
+    build_silver,
+    layer,
+    migrate_to_medallion,
+    run_checks,
+    write_quality_report,
+    write_silver,
+)
 from pm25.ingest import (
     AIR_QUALITY,
     OPENAQ_FILENAME,
@@ -52,13 +65,22 @@ def _generated_at() -> str:
 def _load_inputs(
     config: Config, as_of: pd.Timestamp
 ) -> tuple[pd.DataFrame, pd.DataFrame] | None:
-    openaq = load_series(config.data_dir / OPENAQ_FILENAME)
-    air_quality = load_series(config.data_dir / AIR_QUALITY.filename)
-    weather = load_series(config.data_dir / WEATHER.filename)
+    frames = _load_bronze(config)
+    if frames is None:
+        return None
+    openaq, air_quality, weather = frames
+    return daily_targets(openaq, as_of), daily_exogenous(air_quality, weather, as_of)
+
+
+def _load_bronze(config: Config) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] | None:
+    bronze = layer(config.data_dir, BRONZE)
+    openaq = load_series(bronze / OPENAQ_FILENAME)
+    air_quality = load_series(bronze / AIR_QUALITY.filename)
+    weather = load_series(bronze / WEATHER.filename)
     if openaq.empty or air_quality.empty or weather.empty:
         log.error("Input data is missing, run the backfill command first")
         return None
-    return daily_targets(openaq, as_of), daily_exogenous(air_quality, weather, as_of)
+    return openaq, air_quality, weather
 
 
 def _backfill(args: argparse.Namespace, config: Config) -> int:
@@ -77,16 +99,39 @@ def _backfill(args: argparse.Namespace, config: Config) -> int:
         ):
             start = override if override is not None else default_start
             added = backfill_open_meteo(
-                source, config.data_dir, config.latitude, config.longitude, start, end
+                source, layer(config.data_dir, BRONZE), config.latitude, config.longitude, start, end
             )
             log.info("%s: added %d rows", source.filename, added)
 
     if args.source in ("all", "openaq"):
         start = override if override is not None else config.openaq_start
         added = backfill_openaq(
-            config.data_dir, config.openaq_api_key, start, end, config.openaq_lookback_days
+            layer(config.data_dir, BRONZE),
+            config.openaq_api_key,
+            start,
+            end,
+            config.openaq_lookback_days,
         )
         log.info("%s: added %d rows", OPENAQ_FILENAME, added)
+    return 0
+
+
+def _check(args: argparse.Namespace, config: Config) -> int:
+    """Gate between bronze and silver: write silver only when the data passes."""
+    frames = _load_bronze(config)
+    if frames is None:
+        return 2
+    now = pd.Timestamp.now(tz="UTC")
+    daily = build_silver(*frames, _as_of())
+    checks = run_checks(*frames, daily, now)
+    report = write_quality_report(layer(config.data_dir, SILVER) / QUALITY_FILENAME, checks, now)
+    for check in checks:
+        level = logging.INFO if check.passed else (logging.ERROR if check.severity == "error" else logging.WARNING)
+        log.log(level, "%s %s: %s", "PASS" if check.passed else "FAIL", check.name, check.detail)
+    if not report["passed"]:
+        log.error("Data quality checks failed, silver was not updated")
+        return 1
+    write_silver(layer(config.data_dir, SILVER) / DAILY_FILENAME, daily)
     return 0
 
 
@@ -144,8 +189,10 @@ def _report(args: argparse.Namespace, config: Config) -> int:
     reports = config.data_dir.parent / "reports"
     reports.mkdir(parents=True, exist_ok=True)
     (reports / f"{forecast['as_of']}.md").write_text(text, encoding="utf-8")
-    append_history(reports / HISTORY_FILENAME, table)
-    log.info("Wrote the report to %s and %s", config.models_dir, reports)
+    gold = layer(config.data_dir, GOLD)
+    append_history(gold / HISTORY_FILENAME, table)
+    (gold / FORECAST_FILENAME).write_text(json.dumps(forecast, indent=2) + "\n", encoding="utf-8")
+    log.info("Wrote the report to %s, %s and %s", config.models_dir, reports, gold)
     return 0
 
 
@@ -173,6 +220,9 @@ def main(argv: list[str] | None = None) -> int:
     backfill.add_argument("--start", help="override the start date, as YYYY-MM-DD (UTC)")
     backfill.set_defaults(handler=_backfill)
 
+    commands.add_parser("check", help="run data quality checks and build silver").set_defaults(
+        handler=_check
+    )
     commands.add_parser("train", help="evaluate, then promote methods").set_defaults(handler=_train)
     commands.add_parser("predict", help="write forecast.json").set_defaults(handler=_predict)
     commands.add_parser("report", help="write the daily report").set_defaults(handler=_report)
@@ -184,7 +234,11 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
     load_env_file(Path(os.environ.get("PM25_ENV_FILE", ".env")))
-    return args.handler(args, Config.from_env())
+    config = Config.from_env()
+    moved = migrate_to_medallion(config.data_dir)
+    if moved:
+        log.info("Moved to the medallion layout: %s", ", ".join(moved))
+    return args.handler(args, config)
 
 
 if __name__ == "__main__":

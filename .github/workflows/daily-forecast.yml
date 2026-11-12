@@ -50,6 +50,9 @@ jobs:
           OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
         run: python -m pm25 backfill
 
+      - name: Check data quality and build silver
+        run: python -m pm25 check
+
       - name: Train and evaluate
         run: python -m pm25 train
 
