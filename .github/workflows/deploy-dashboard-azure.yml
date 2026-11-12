@@ -1,0 +1,46 @@
+name: Deploy dashboard to Azure Static Web Apps
+
+# Runs only while the Azure for Students setup exists (repository variables are set).
+# When Azure is removed, delete the variables and use deploy-dashboard-pages.yml instead.
+on:
+  push:
+    branches: [main]
+    paths: ["dashboard/**"]
+  workflow_dispatch:
+
+permissions:
+  id-token: write # Federated login to Azure, no stored password
+  contents: read
+
+concurrency:
+  group: deploy-dashboard-azure
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: ${{ vars.AZURE_CLIENT_ID != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # The deployment token is read at run time, so it is never stored in GitHub.
+      - name: Get deployment token
+        id: token
+        run: |
+          token=$(az staticwebapp secrets list --name "${{ vars.AZURE_STATIC_WEB_APP }}" --query properties.apiKey -o tsv)
+          echo "::add-mask::$token"
+          echo "value=$token" >> "$GITHUB_OUTPUT"
+
+      - uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ steps.token.outputs.value }}
+          action: upload
+          app_location: dashboard
+          skip_app_build: true

@@ -1,0 +1,32 @@
+name: Deploy dashboard to GitHub Pages
+
+# Fallback host for after Azure for Students ends. The dashboard is the same
+# static page, so nothing else changes. Enable GitHub Pages with "GitHub Actions"
+# as the source, then run this workflow by hand or add a push trigger.
+on:
+  workflow_dispatch:
+
+permissions:
+  pages: write
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-dashboard-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dashboard
+      - id: deployment
+        uses: actions/deploy-pages@v5
