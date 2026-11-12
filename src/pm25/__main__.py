@@ -283,6 +283,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
+    logging.getLogger("azure").setLevel(logging.WARNING)
     load_env_file(Path(os.environ.get("PM25_ENV_FILE", ".env")))
     config = Config.from_env()
     moved = migrate_to_medallion(config.data_dir)

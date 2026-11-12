@@ -101,7 +101,7 @@ def connection_string(server: str, database: str) -> str:
     host = server if "." in server else f"{server}.database.windows.net"
     return (
         f"Server=tcp:{host},1433;Database={database};Encrypt=yes;"
-        "TrustServerCertificate=no;Authentication=ActiveDirectoryDefault;Connection Timeout=60"
+        "TrustServerCertificate=no;Authentication=ActiveDirectoryDefault"
     )
 
 
@@ -189,6 +189,9 @@ class Warehouse:
         cursor = self.connection.cursor()
         if cutoff is not None:
             cursor.execute(f"DELETE FROM {table.name} WHERE {table.time_column} >= ?", _clean(cutoff))
+            # Bulk copy runs on its own session, so the delete must be committed first or
+            # its locks block the copy. A failed copy is repaired by the next run's wider replay.
+            self.connection.commit()
             times = pd.to_datetime(frame[table.time_column], utc=True).dt.tz_localize(None)
             frame = frame[times >= cutoff]
         count = self._insert(table, rows(frame, table.columns))
@@ -196,9 +199,10 @@ class Warehouse:
         return count
 
     def replace(self, table: Table, frame: pd.DataFrame) -> int:
-        """Replace a small table in one transaction."""
+        """Replace a small table. Rerunning repairs any partial replace."""
         cursor = self.connection.cursor()
         cursor.execute(f"DELETE FROM {table.name}")
+        self.connection.commit()
         count = self._insert(table, rows(frame, table.columns))
         self.connection.commit()
         return count
