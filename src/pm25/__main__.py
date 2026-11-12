@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import sys
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -220,9 +221,18 @@ def _load_sql(args: argparse.Namespace, config: Config) -> int:
         log.error("Silver data is missing, run the check command first")
         return 2
 
-    connection = mssql_python.connect(
-        connection_string(config.azure_sql_server, config.azure_sql_database)
-    )
+    # The free tier database pauses when idle and needs up to a minute or two to resume.
+    for attempt in range(8):
+        try:
+            connection = mssql_python.connect(
+                connection_string(config.azure_sql_server, config.azure_sql_database)
+            )
+            break
+        except mssql_python.OperationalError:
+            if attempt == 7:
+                raise
+            log.info("Waiting for the database to resume")
+            time.sleep(20)
     try:
         warehouse = Warehouse(connection)
         warehouse.ensure_schema()
