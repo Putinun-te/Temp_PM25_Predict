@@ -29,6 +29,26 @@ flowchart LR
 | `pm25.predict` | Builds the forecast document |
 | `pm25.publish` | Writes the document to Firebase in one atomic request |
 
+## Live dashboard
+
+- Main: https://app-pm25-forecast-1716.azurewebsites.net (Azure App Service, free F1 plan)
+- Backup: https://stpm25webd0b881.z23.web.core.windows.net (Azure Blob Storage static website)
+
+Both serve the same static page in `dashboard/`, which reads the `data` branch directly. `deploy-dashboard-pages.yml` publishes the same page to GitHub Pages once Azure is removed.
+
+## Azure resources
+
+Everything lives in one resource group, `rg-pm25-forecast`, on an Azure for Students subscription, so it can be deleted in one step without affecting the pipeline.
+
+| Resource | Purpose | Cost |
+|---|---|---|
+| Azure SQL Database, free tier, serverless | Warehouse with `bronze`, `silver` and `gold` schemas and views for Power BI | Free; pauses instead of billing when the monthly allowance is used |
+| App Service plan F1 and web app | Main dashboard | Free |
+| Storage account, static website | Backup dashboard | Free for 12 months, then a few cents |
+| User-assigned managed identity | GitHub Actions signs in with OIDC, scoped to these resources only | Free |
+
+The database accepts Microsoft Entra sign-in only. CI opens the SQL firewall for its own address during the load and removes the rule afterwards. Azure steps never block the forecast or the Firebase publish.
+
 ## Data
 
 | Source | Role | Data | Access |
