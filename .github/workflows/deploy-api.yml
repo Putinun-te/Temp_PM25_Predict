@@ -1,0 +1,73 @@
+name: Deploy API to Azure Functions
+
+# Builds the TypeScript API in api/ and deploys it to an Azure Functions
+# Flex Consumption app. Runs only while the Azure setup exists.
+on:
+  push:
+    branches: [main]
+    paths: ["api/**", ".github/workflows/deploy-api.yml"]
+  workflow_dispatch:
+
+permissions:
+  id-token: write # Federated login to Azure, no stored password
+  contents: read
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: ${{ vars.AZURE_FUNCTIONAPP_NAME != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install, test and build
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
+
+      - name: Package
+        run: |
+          mkdir -p ../package
+          cp -R dist host.json package.json package-lock.json ../package/
+          cd ../package && npm ci --omit=dev && zip -q -r ../api.zip .
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy
+        working-directory: .
+        run: |
+          az functionapp deployment source config-zip -g "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            -n "${{ vars.AZURE_FUNCTIONAPP_NAME }}" --src api.zip -o none
+
+      - name: Smoke test
+        working-directory: .
+        run: |
+          host=$(az functionapp show -g "${{ vars.AZURE_RESOURCE_GROUP }}" -n "${{ vars.AZURE_FUNCTIONAPP_NAME }}" --query defaultHostName -o tsv)
+          for path in help forecast accuracy; do
+            for attempt in 1 2 3 4 5 6; do
+              code=$(curl -s -o /dev/null -w "%{http_code}" "https://$host/api/$path")
+              [ "$code" = "200" ] && break
+              sleep 10
+            done
+            echo "/api/$path -> $code"
+            [ "$code" = "200" ]
+          done

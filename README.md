@@ -48,6 +48,23 @@ npm test
 npm run build    # static files in web/out
 ```
 
+## API
+
+A read-only JSON API runs on Azure Functions (TypeScript, `api/`). It serves the same files as the dashboard from the `data` branch, cached for 10 minutes, with CORS open to any site.
+
+Base URL: https://func-pm25-api-d0b8.azurewebsites.net/api
+
+| Endpoint | Returns |
+|---|---|
+| `/help` | The list of endpoints |
+| `/forecast` | Today, tomorrow and the next three months |
+| `/measured?target=pm25&from=2026-11-01&to=2026-11-12` | Measured Bangkok daily values; `target` is `pm25`, `pm10`, `temp_c` or `rh_pct` |
+| `/forecasts?target=pm25&label=tomorrow&from=…&to=…` | Every published daily forecast in the range |
+| `/accuracy` | Live accuracy over 7, 30 and 90 days |
+| `/stations` | Daily values per reference station for the last 14 days |
+
+Ranges default to the last 30 days and can cover at most 400 days. Bad parameters return 400 with a message. `.github/workflows/deploy-api.yml` tests, builds and deploys on every change to `api/`. After Azure ends, the same JSON stays available directly from the `data` branch on raw.githubusercontent.com.
+
 ## Azure resources
 
 Everything lives in one resource group, `rg-pm25-forecast`, on an Azure for Students subscription, so it can be deleted in one step without affecting the pipeline.
@@ -56,7 +73,8 @@ Everything lives in one resource group, `rg-pm25-forecast`, on an Azure for Stud
 |---|---|---|
 | Azure SQL Database, free tier, serverless | Warehouse with `bronze`, `silver` and `gold` schemas and views for Power BI | Free; pauses instead of billing when the monthly allowance is used |
 | App Service plan F1 and web app | Main dashboard | Free |
-| Storage account, static website | Backup dashboard | Free for 12 months, then a few cents |
+| Storage account, static website | Backup dashboard, and the Functions deployment package | Free for 12 months, then a few cents |
+| Function app, Flex Consumption (`func-pm25-api-d0b8`) | Public read-only API, at most 10 instances of 512 MB, no Application Insights | Monthly free grant of 250,000 executions and 100,000 GB-s per subscription |
 | User-assigned managed identity | GitHub Actions signs in with OIDC, scoped to these resources only | Free |
 
 The database accepts Microsoft Entra sign-in only. CI opens the SQL firewall for its own address during the load and removes the rule afterwards. Azure steps never block the forecast or the Firebase publish.
