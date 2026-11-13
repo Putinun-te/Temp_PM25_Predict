@@ -25,6 +25,8 @@ describe("parameters", () => {
     expect(dateRange(q(""), "2026-11-12")).toEqual({ from: "2026-10-14", to: "2026-11-12" });
     expect(dateRange(q("from=2026-11-01&to=2026-11-05"), "x")).toEqual({ from: "2026-11-01", to: "2026-11-05" });
     expect(() => dateRange(q("from=2026-13-40"), "2026-11-12")).toThrow(BadRequest);
+    expect(() => dateRange(q("from=2026-02-30"), "2026-11-12")).toThrow(BadRequest);
+    expect(dateRange(q("from=2024-02-29&to=2024-03-01"), "x")).toEqual({ from: "2024-02-29", to: "2024-03-01" });
     expect(() => dateRange(q("from=2026-11-05&to=2026-11-01"), "x")).toThrow("from must not be after to");
     expect(() => dateRange(q("from=2024-01-01&to=2026-01-01"), "x")).toThrow("at most 400 days");
   });

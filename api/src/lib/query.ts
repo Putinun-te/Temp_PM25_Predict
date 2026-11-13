@@ -31,7 +31,9 @@ export function toNumber(value: string | undefined): number | null {
 }
 
 function isoDate(value: string, name: string): string {
-  if (!DATE.test(value) || Number.isNaN(Date.parse(`${value}T00:00:00Z`))) {
+  // Date.parse rolls 2026-02-30 over to 1 March, so the date must survive a round trip.
+  const parsed = DATE.test(value) ? new Date(`${value}T00:00:00Z`) : null;
+  if (!parsed || Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
     throw new BadRequest(`${name} must be a date as YYYY-MM-DD`);
   }
   return value;
