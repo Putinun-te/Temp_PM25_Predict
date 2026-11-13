@@ -45,6 +45,19 @@ DDL = [
         as_of DATE NOT NULL, slot VARCHAR(16) NOT NULL, published_method VARCHAR(32),
         best_candidate VARCHAR(32), best_mae FLOAT, persistence_mae FLOAT, skill FLOAT,
         evaluated_days INT, CONSTRAINT pk_model_metrics PRIMARY KEY (as_of, slot))""",
+    """IF OBJECT_ID('gold.live_accuracy') IS NULL CREATE TABLE gold.live_accuracy (
+        as_of DATE NOT NULL, period DATE NOT NULL, label VARCHAR(16) NOT NULL,
+        target VARCHAR(16) NOT NULL, source VARCHAR(16) NOT NULL, method VARCHAR(32),
+        forecast FLOAT, low FLOAT, high FLOAT, actual FLOAT, persistence FLOAT,
+        abs_error FLOAT, persistence_abs_error FLOAT, in_range BIT,
+        CONSTRAINT pk_live_accuracy PRIMARY KEY (as_of, period, target, source))""",
+    """CREATE OR ALTER VIEW gold.v_live_accuracy_30d AS
+        SELECT target, label, source, COUNT(*) AS days, AVG(abs_error) AS mae,
+               AVG(persistence_abs_error) AS persistence_mae,
+               AVG(CAST(in_range AS FLOAT)) AS coverage
+        FROM gold.live_accuracy
+        WHERE period > DATEADD(DAY, -30, (SELECT MAX(period) FROM gold.live_accuracy))
+        GROUP BY target, label, source""",
     """CREATE OR ALTER VIEW gold.v_daily_actual_vs_forecast AS
         SELECT d.date, f.target, d.pm25 AS measured_pm25, d.pm10 AS measured_pm10,
                d.temp_c AS measured_temp_c, d.rh_pct AS measured_rh_pct,
@@ -89,6 +102,11 @@ GOLD_HISTORY = Table(
     "gold.forecast_history",
     ["as_of", "generated_at", "kind", "period", "label", "target", "unit", "value", "low",
      "high", "method"],
+)
+GOLD_ACCURACY = Table(
+    "gold.live_accuracy",
+    ["as_of", "period", "label", "target", "source", "method", "forecast", "low", "high",
+     "actual", "persistence", "abs_error", "persistence_abs_error", "in_range"],
 )
 GOLD_METRICS = Table(
     "gold.model_metrics",
