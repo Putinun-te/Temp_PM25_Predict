@@ -37,6 +37,10 @@ from pm25.ingest import (
     backfill_openaq,
     load_series,
 )
+from pm25.alerts import CHANNELS, decide
+from pm25.firms import FirmsError, backfill_firms, load_daily_fires
+from pm25.health import check_health, render
+from pm25.monitor import ACCURACY_FILENAME, SUMMARY_FILENAME, score_history, summarize
 from pm25.predict import FORECAST_FILENAME, build_forecast, write_forecast
 from pm25.publish import publish_forecast, service_account_token
 from pm25.report import (
@@ -49,6 +53,7 @@ from pm25.report import (
     forecast_table,
     write_pdf,
 )
+from pm25.stations import STATIONS_FILENAME, station_days
 from pm25.train import METRICS_FILENAME, PLOT_FILENAME, load_registry, run_training
 
 log = logging.getLogger("pm25")
@@ -70,7 +75,8 @@ def _load_inputs(
     if frames is None:
         return None
     openaq, air_quality, weather = frames
-    return daily_targets(openaq, as_of), daily_exogenous(air_quality, weather, as_of)
+    fires = load_daily_fires(layer(config.data_dir, BRONZE))
+    return daily_targets(openaq, as_of), daily_exogenous(air_quality, weather, as_of, fires)
 
 
 def _load_bronze(config: Config) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] | None:
@@ -114,6 +120,22 @@ def _backfill(args: argparse.Namespace, config: Config) -> int:
             config.openaq_lookback_days,
         )
         log.info("%s: added %d rows", OPENAQ_FILENAME, added)
+
+    if args.source in ("all", "firms"):
+        if not config.firms_map_key:
+            log.info("FIRMS_MAP_KEY is not set, skipping fire detections")
+        else:
+            try:
+                added = backfill_firms(
+                    layer(config.data_dir, BRONZE),
+                    config.firms_map_key,
+                    override if override is not None else config.firms_start,
+                    pd.Timestamp.now(tz="UTC"),
+                )
+                log.info("FIRMS: added %d hourly rows", added)
+            except FirmsError as error:
+                # Fire data is an optional feature, so an outage must not stop the forecast.
+                log.warning("%s", error)
     return 0
 
 
@@ -123,7 +145,7 @@ def _check(args: argparse.Namespace, config: Config) -> int:
     if frames is None:
         return 2
     now = pd.Timestamp.now(tz="UTC")
-    daily = build_silver(*frames, _as_of())
+    daily = build_silver(*frames, _as_of(), load_daily_fires(layer(config.data_dir, BRONZE)))
     checks = run_checks(*frames, daily, now)
     report = write_quality_report(layer(config.data_dir, SILVER) / QUALITY_FILENAME, checks, now)
     for check in checks:
@@ -193,7 +215,64 @@ def _report(args: argparse.Namespace, config: Config) -> int:
     gold = layer(config.data_dir, GOLD)
     append_history(gold / HISTORY_FILENAME, table)
     (gold / FORECAST_FILENAME).write_text(json.dumps(forecast, indent=2) + "\n", encoding="utf-8")
+    openaq = load_series(layer(config.data_dir, BRONZE) / OPENAQ_FILENAME)
+    if not openaq.empty:
+        stations = station_days(openaq, pd.Timestamp(forecast["as_of"]), forecast["generated_at"])
+        (gold / STATIONS_FILENAME).write_text(json.dumps(stations, indent=1) + "\n", encoding="utf-8")
     log.info("Wrote the report to %s, %s and %s", config.models_dir, reports, gold)
+    return 0
+
+
+def _monitor(args: argparse.Namespace, config: Config) -> int:
+    """Score published forecasts against measurements that have arrived since."""
+    gold = layer(config.data_dir, GOLD)
+    silver_path = layer(config.data_dir, SILVER) / DAILY_FILENAME
+    history_path = gold / HISTORY_FILENAME
+    if not silver_path.exists() or not history_path.exists():
+        log.info("No forecast history or silver data yet, nothing to score")
+        return 0
+    scored = score_history(pd.read_csv(history_path), pd.read_csv(silver_path))
+    scored.to_csv(gold / ACCURACY_FILENAME, index=False)
+    summary = summarize(scored, _generated_at())
+    (gold / SUMMARY_FILENAME).write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    log.info("Scored %d published forecasts, latest date %s", len(scored), summary["latest_scored"])
+    for alert in summary["alerts"]:
+        log.warning("%s", alert)
+    return 0
+
+
+def _read_json(path: Path) -> dict | None:
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+
+def _health(args: argparse.Namespace, config: Config) -> int:
+    """Exit 1 when the published outputs are stale or untrustworthy."""
+    gold = layer(config.data_dir, GOLD)
+    problems = check_health(
+        _read_json(gold / FORECAST_FILENAME),
+        _read_json(layer(config.data_dir, SILVER) / QUALITY_FILENAME),
+        _read_json(gold / SUMMARY_FILENAME),
+        _as_of().date(),
+    )
+    text = render(problems, _as_of().date())
+    if args.output:
+        Path(args.output).write_text(text, encoding="utf-8")
+    for line in text.splitlines():
+        log.log(logging.ERROR if problems else logging.INFO, "%s", line)
+    return 1 if problems else 0
+
+
+def _alert(args: argparse.Namespace, config: Config) -> int:
+    """Send a public alert when tomorrow's PM2.5 is above the Thai standard (scaffold)."""
+    path = config.models_dir / FORECAST_FILENAME
+    if not path.exists():
+        log.error("No forecast found, run the predict command first")
+        return 2
+    alert = decide(json.loads(path.read_text(encoding="utf-8")))
+    if alert is None:
+        log.info("Tomorrow's PM2.5 forecast is within the standard, no alert")
+        return 0
+    CHANNELS[args.channel]().send(alert)
     return 0
 
 
@@ -206,6 +285,7 @@ def _load_sql(args: argparse.Namespace, config: Config) -> int:
 
     from pm25.warehouse import (
         BRONZE_TABLES,
+        GOLD_ACCURACY,
         GOLD_HISTORY,
         GOLD_METRICS,
         SILVER_DAILY,
@@ -245,6 +325,10 @@ def _load_sql(args: argparse.Namespace, config: Config) -> int:
         if history_path.exists():
             history = pd.read_csv(history_path)
             log.info("%s: wrote %d rows", GOLD_HISTORY.name, warehouse.replace(GOLD_HISTORY, history))
+        accuracy_path = layer(config.data_dir, GOLD) / ACCURACY_FILENAME
+        if accuracy_path.exists():
+            accuracy = pd.read_csv(accuracy_path)
+            log.info("%s: wrote %d rows", GOLD_ACCURACY.name, warehouse.replace(GOLD_ACCURACY, accuracy))
         if metrics_path.exists():
             metrics = metrics_frame(json.loads(metrics_path.read_text(encoding="utf-8")))
             log.info("%s: wrote %d rows", GOLD_METRICS.name, warehouse.replace(GOLD_METRICS, metrics))
@@ -273,7 +357,7 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
 
     backfill = commands.add_parser("backfill", help="fetch only the data missing locally")
-    backfill.add_argument("--source", choices=("all", "open-meteo", "openaq"), default="all")
+    backfill.add_argument("--source", choices=("all", "open-meteo", "openaq", "firms"), default="all")
     backfill.add_argument("--start", help="override the start date, as YYYY-MM-DD (UTC)")
     backfill.set_defaults(handler=_backfill)
 
@@ -283,6 +367,15 @@ def main(argv: list[str] | None = None) -> int:
     commands.add_parser("train", help="evaluate, then promote methods").set_defaults(handler=_train)
     commands.add_parser("predict", help="write forecast.json").set_defaults(handler=_predict)
     commands.add_parser("report", help="write the daily report").set_defaults(handler=_report)
+    commands.add_parser("monitor", help="score published forecasts against measurements").set_defaults(
+        handler=_monitor
+    )
+    health = commands.add_parser("health", help="check that today's outputs are fresh")
+    health.add_argument("--output", help="also write the result as Markdown to this file")
+    health.set_defaults(handler=_health)
+    alert = commands.add_parser("alert", help="alert when tomorrow's PM2.5 is high (scaffold)")
+    alert.add_argument("--channel", choices=sorted(CHANNELS), default="console")
+    alert.set_defaults(handler=_alert)
     commands.add_parser("load-sql", help="copy the layers into Azure SQL").set_defaults(
         handler=_load_sql
     )

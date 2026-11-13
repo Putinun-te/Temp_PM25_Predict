@@ -49,6 +49,7 @@ jobs:
       - name: Backfill
         env:
           OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
+          FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }} # Optional: fire features are skipped without it
         run: python -m pm25 backfill
 
       - name: Check data quality and build silver
@@ -67,6 +68,9 @@ jobs:
           python -m pm25 report
           cat state/models/report.md >> "$GITHUB_STEP_SUMMARY"
           echo "REPORT_DATE=$(python -c "import json; print(json.load(open('state/models/forecast.json'))['as_of'])")" >> "$GITHUB_ENV"
+
+      - name: Score published forecasts
+        run: python -m pm25 monitor
 
       - name: Sign in to Azure
         if: ${{ vars.AZURE_CLIENT_ID != '' }}
