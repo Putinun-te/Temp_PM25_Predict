@@ -39,6 +39,7 @@ from pm25.ingest import (
 )
 from pm25.alerts import CHANNELS, decide
 from pm25.firms import FirmsError, backfill_firms, load_daily_fires
+from pm25.gistda import fetch_gistda_bangkok
 from pm25.health import check_health, render
 from pm25.monitor import ACCURACY_FILENAME, SUMMARY_FILENAME, score_history, summarize
 from pm25.predict import FORECAST_FILENAME, build_forecast, write_forecast
@@ -188,6 +189,14 @@ def _predict(args: argparse.Namespace, config: Config) -> int:
     else:
         log.info("TMD_API_TOKEN is not set, skipping the TMD weather forecast")
     forecast = build_forecast(*inputs, registry, config.models_dir, as_of, _generated_at(), tmd)
+    try:
+        gistda = fetch_gistda_bangkok()
+    except (requests.RequestException, ValueError) as error:
+        # The GISTDA reference is optional, so its outage must not stop the forecast.
+        log.warning("GISTDA estimate unavailable: %s", type(error).__name__)
+        gistda = None
+    if gistda:
+        forecast["gistda"] = gistda
     log.info("Wrote %s", write_forecast(forecast, config.models_dir))
     return 0
 
