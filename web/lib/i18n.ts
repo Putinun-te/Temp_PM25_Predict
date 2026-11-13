@@ -43,6 +43,7 @@ const STRINGS = {
     th: "ทุกค่าพยากรณ์ผ่านการทดสอบแบบ walk-forward กับข้อมูลที่โมเดลไม่เคยเห็น และจะใช้โมเดลก็ต่อเมื่อแม่นกว่าการใช้ค่าของเมื่อวาน ค่ารายเดือนเป็นค่าเฉลี่ยตามฤดูกาล อุณหภูมิและความชื้นฝึกจากข้อมูลย้อนหลังของ Open-Meteo ส่วนค่า TMD คือพยากรณ์ของกรมอุตุนิยมวิทยา",
   },
   modelCard: { en: "model card", th: "รายละเอียดโมเดล" },
+  apiNote: { en: "The data is also available as a JSON API:", th: "ข้อมูลทั้งหมดเรียกใช้ผ่าน JSON API ได้ที่" },
   sources: {
     en: "Data: OpenAQ (Air4Thai reference stations), Open-Meteo (CC BY 4.0) and TMD.",
     th: "ข้อมูล: OpenAQ (สถานี Air4Thai), Open-Meteo (CC BY 4.0) และกรมอุตุนิยมวิทยา",
