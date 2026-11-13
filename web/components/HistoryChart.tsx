@@ -10,7 +10,13 @@ function cssVar(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-export default function HistoryChart({ measured, forecasts }: { measured: Point[]; forecasts: Point[] }) {
+interface Props {
+  measured: Point[];
+  forecasts: Point[];
+  labels: { measured: string; forecast: string };
+}
+
+export default function HistoryChart({ measured, forecasts, labels }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -22,9 +28,9 @@ export default function HistoryChart({ measured, forecasts }: { measured: Point[
         // Forecast dates can run past the newest measurement, so the axis covers both.
         labels: Array.from(new Set([...measured, ...forecasts].map((point) => point.x))).sort(),
         datasets: [
-          { label: "Measured", data: measured, borderColor: cssVar("--text"), pointRadius: 0, borderWidth: 1.5, tension: 0.2 },
+          { label: labels.measured, data: measured, borderColor: cssVar("--text"), pointRadius: 0, borderWidth: 1.5, tension: 0.2 },
           {
-            label: "Forecast (issued day before)",
+            label: labels.forecast,
             data: forecasts,
             borderColor: cssVar("--forecast"),
             backgroundColor: cssVar("--forecast"),
@@ -43,7 +49,7 @@ export default function HistoryChart({ measured, forecasts }: { measured: Point[
       },
     });
     return () => chart.destroy();
-  }, [measured, forecasts]);
+  }, [measured, forecasts, labels.measured, labels.forecast]);
 
   return (
     <canvas

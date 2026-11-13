@@ -8,6 +8,8 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const config: NextConfig = {
   output: "export",
   basePath,
+  // Each page becomes <name>/index.html, which every static host serves at /<name>/.
+  trailingSlash: true,
   images: { unoptimized: true },
   reactStrictMode: true,
 };

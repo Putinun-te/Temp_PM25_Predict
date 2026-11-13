@@ -1,4 +1,4 @@
-import type { DailyRow, Forecast, HistoryRow, Point } from "./types";
+import type { AccuracySummary, DailyRow, Forecast, HistoryRow, Point, ScoredForecast, StationsFile } from "./types";
 
 export const DEFAULT_DATA_BASE =
   process.env.NEXT_PUBLIC_DATA_BASE ||
@@ -79,4 +79,45 @@ export async function loadHistory(base: string): Promise<{ daily: DailyRow[]; hi
       .catch(() => [] as HistoryRow[]),
   ]);
   return { daily, history };
+}
+
+export function toScoredRows(records: Record<string, string>[]): ScoredForecast[] {
+  return records.map((row) => ({
+    as_of: row.as_of ?? "",
+    period: row.period ?? "",
+    label: row.label ?? "",
+    target: row.target ?? "",
+    source: row.source ?? "",
+    forecast: toNumber(row.forecast),
+    actual: toNumber(row.actual),
+    abs_error: toNumber(row.abs_error),
+  }));
+}
+
+/** Newest station value for each station, from the last date column. */
+export function latestStationValue(values: (number | null)[] | undefined): number | null {
+  return values?.at(-1) ?? null;
+}
+
+/** Files written by newer pipeline steps may not exist yet, so a 404 means "none". */
+async function fetchOptional<T>(base: string, path: string, parse: (text: string) => T): Promise<T | null> {
+  try {
+    return parse(await fetchText(base, path));
+  } catch {
+    return null;
+  }
+}
+
+export function loadStations(base: string): Promise<StationsFile | null> {
+  return fetchOptional(base, "data/gold/stations.json", (text) => JSON.parse(text) as StationsFile);
+}
+
+export async function loadAccuracy(
+  base: string,
+): Promise<{ summary: AccuracySummary | null; scored: ScoredForecast[] }> {
+  const [summary, scored] = await Promise.all([
+    fetchOptional(base, "data/gold/live_accuracy_summary.json", (text) => JSON.parse(text) as AccuracySummary),
+    fetchOptional(base, "data/gold/live_accuracy.csv", (text) => toScoredRows(parseCsv(text))),
+  ]);
+  return { summary, scored: scored ?? [] };
 }

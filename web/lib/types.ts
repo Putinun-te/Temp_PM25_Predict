@@ -70,3 +70,50 @@ export interface Point {
   x: string;
   y: number;
 }
+
+export interface Station {
+  location_id: number;
+  name: string;
+  locality: string;
+  latitude: number;
+  longitude: number;
+  pm25?: (number | null)[];
+  pm10?: (number | null)[];
+}
+
+export interface StationsFile {
+  generated_at: string;
+  dates: string[];
+  stations: Station[];
+}
+
+export interface AccuracyRow {
+  target: string;
+  label: string;
+  source: "forecast" | "tmd";
+  window_days: number;
+  n: number;
+  mae: number | null;
+  persistence_mae: number | null;
+  skill_vs_persistence: number | null;
+  coverage: number | null;
+}
+
+export interface AccuracySummary {
+  generated_at: string;
+  latest_scored: string | null;
+  windows: number[];
+  rows: AccuracyRow[];
+  alerts: string[];
+}
+
+export interface ScoredForecast {
+  as_of: string;
+  period: string;
+  label: string;
+  target: string;
+  source: string;
+  forecast: number | null;
+  actual: number | null;
+  abs_error: number | null;
+}

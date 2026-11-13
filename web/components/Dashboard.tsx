@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { dataBase, dayBeforeForecasts, loadForecast, loadHistory, measuredSeries } from "@/lib/data";
-import type { Forecast, Point } from "@/lib/types";
+import { dataBase, dayBeforeForecasts, loadForecast, loadHistory, loadStations, measuredSeries } from "@/lib/data";
+import type { Forecast, Point, StationsFile } from "@/lib/types";
+import { AqiLegend } from "./AqiBadge";
 import ForecastCards from "./ForecastCards";
 import HistoryChart from "./HistoryChart";
+import { useLang } from "./LangProvider";
 import MonthlyTable from "./MonthlyTable";
+import StationMap from "./StationMap";
 
 interface Series {
   measured: Point[];
@@ -13,8 +16,10 @@ interface Series {
 }
 
 export default function Dashboard() {
+  const { t } = useLang();
   const [forecast, setForecast] = useState<Forecast | null>(null);
   const [series, setSeries] = useState<Series | null>(null);
+  const [stations, setStations] = useState<StationsFile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -29,34 +34,53 @@ export default function Dashboard() {
         setSeries({ measured, forecasts: dayBeforeForecasts(history, measured) });
       })
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)));
+    loadStations(base).then(setStations);
   }, []);
 
   return (
     <>
-      <h1>Bangkok PM2.5 forecast</h1>
+      <h1>{t("title")}</h1>
       <p className="sub">
         {forecast
-          ? `For ${forecast.as_of}, generated ${forecast.generated_at.replace("T", " ")}, station data up to ${forecast.latest_data_date}`
-          : "Loading…"}
+          ? `${t("forDate")} ${forecast.as_of}, ${t("generated")} ${forecast.generated_at.replace("T", " ")}, ${t("dataUpTo")} ${forecast.latest_data_date}`
+          : t("loading")}
         {forecast && (
           <span className={`badge ${forecast.status}`}>
-            {forecast.status === "ok" ? "Data current" : `Data ${forecast.data_age_days} days old`}
+            {forecast.status === "ok" ? t("dataCurrent") : `${t("dataOld")} ${forecast.data_age_days} ${t("daysOld")}`}
           </span>
         )}
       </p>
-      {error && <p className="error">Could not load the forecast data ({error}).</p>}
+      {error && (
+        <p className="error">
+          {t("loadError")} ({error}).
+        </p>
+      )}
 
-      <h2>Today and tomorrow</h2>
+      <h2>{t("todayTomorrow")}</h2>
       {forecast && <ForecastCards days={forecast.daily} />}
+      <AqiLegend />
 
-      <h2>Measured PM2.5 against our forecast</h2>
-      <div className="chart">{series && <HistoryChart measured={series.measured} forecasts={series.forecasts} />}</div>
-      <p className="note">
-        The line is the measured Bangkok daily median from Air4Thai reference stations. Dots are the forecast
-        issued one day earlier for that date.
-      </p>
+      <h2>{t("measuredVsForecast")}</h2>
+      <div className="chart">
+        {series && (
+          <HistoryChart
+            measured={series.measured}
+            forecasts={series.forecasts}
+            labels={{ measured: t("measured"), forecast: t("forecastDayBefore") }}
+          />
+        )}
+      </div>
+      <p className="note">{t("chartNote")}</p>
 
-      <h2>Next three months</h2>
+      {stations && (
+        <>
+          <h2>{t("stationsMap")}</h2>
+          <StationMap data={stations} />
+          <p className="note">{t("mapNote")}</p>
+        </>
+      )}
+
+      <h2>{t("nextMonths")}</h2>
       {forecast && <MonthlyTable months={forecast.monthly} />}
     </>
   );
