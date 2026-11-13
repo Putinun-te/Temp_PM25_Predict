@@ -1,0 +1,22 @@
+{
+  "name": "pm25-api",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Read-only HTTP API over the Bangkok PM2.5 forecast data branch",
+  "type": "module",
+  "main": "dist/src/functions/*.js",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@azure/functions": "4.17.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}
