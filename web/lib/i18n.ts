@@ -72,6 +72,13 @@ const STRINGS = {
   forecast: { en: "Forecast", th: "พยากรณ์" },
   actual: { en: "Measured", th: "วัดได้" },
   error: { en: "Error", th: "คลาดเคลื่อน" },
+  gistdaTitle: { en: "GISTDA satellite estimate for Bangkok", th: "ค่าประมาณจากดาวเทียมของ GISTDA กรุงเทพฯ" },
+  gistdaMean: { en: "24-hour average to", th: "ค่าเฉลี่ย 24 ชั่วโมง ถึง" },
+  gistdaHourly: { en: "latest hour", th: "ชั่วโมงล่าสุด" },
+  gistdaNote: {
+    en: "A reference from GISTDA's satellite and model estimate, not a station measurement and not used by our model.",
+    th: "ค่าอ้างอิงจากการประมาณด้วยดาวเทียมและแบบจำลองของ GISTDA ไม่ใช่ค่าจากสถานีตรวจวัด และไม่ได้ใช้ในโมเดลของเรา",
+  },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;

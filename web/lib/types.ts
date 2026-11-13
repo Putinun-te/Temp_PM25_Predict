@@ -41,6 +41,13 @@ export interface MonthlyForecast {
   rh_pct?: number | null;
 }
 
+export interface GistdaReference {
+  source: string;
+  observed_at: string;
+  pm25_hourly: number;
+  pm25_24h_mean: number;
+}
+
 export interface Forecast {
   schema_version: number;
   generated_at: string;
@@ -51,6 +58,7 @@ export interface Forecast {
   units: Record<string, string>;
   daily: DailyForecast[];
   monthly: MonthlyForecast[];
+  gistda?: GistdaReference;
 }
 
 export interface DailyRow {

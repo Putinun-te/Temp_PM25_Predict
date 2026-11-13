@@ -5,6 +5,7 @@ import { dataBase, dayBeforeForecasts, loadForecast, loadHistory, loadStations, 
 import type { Forecast, Point, StationsFile } from "@/lib/types";
 import { AqiLegend } from "./AqiBadge";
 import ForecastCards from "./ForecastCards";
+import GistdaReference from "./GistdaReference";
 import HistoryChart from "./HistoryChart";
 import { useLang } from "./LangProvider";
 import MonthlyTable from "./MonthlyTable";
@@ -58,6 +59,7 @@ export default function Dashboard() {
 
       <h2>{t("todayTomorrow")}</h2>
       {forecast && <ForecastCards days={forecast.daily} />}
+      {forecast?.gistda && <GistdaReference data={forecast.gistda} />}
       <AqiLegend />
 
       <h2>{t("measuredVsForecast")}</h2>

@@ -77,3 +77,4 @@ td.bad { color: var(--bad); font-weight: 600; }
 @media (max-width: 600px) {
   .map { height: 340px; }
 }
+.reference { margin-top: 12px; }
