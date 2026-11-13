@@ -31,7 +31,9 @@ log = logging.getLogger(__name__)
 API = "https://firms.modaps.eosdis.nasa.gov/api"
 HOTSPOTS_FILENAME = "firms_hotspots.csv"
 COVERAGE_FILENAME = "firms_coverage.json"
-SATELLITE = "VIIRS_SNPP"
+# VIIRS on NOAA-20: archive from 2018 and current near real time. Suomi-NPP near
+# real time data stopped on 2 November 2026, so it cannot feed a daily forecast.
+SATELLITE = "VIIRS_NOAA20"
 # west,south,east,north: central and eastern Thailand, western Cambodia and the
 # Myanmar border, the burning areas upwind of Bangkok in the dry season.
 AREA = "97.5,11.5,105.5,17.5"

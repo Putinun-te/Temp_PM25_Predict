@@ -40,10 +40,10 @@ def test_fetch_hotspots_sums_detections_per_utc_hour():
         calls.append(url)
         return TextResponse(text)
 
-    rows = fetch_hotspots(KEY, "VIIRS_SNPP_NRT", pd.Timestamp("2026-02-01"), 1, http_get, no_sleep)
+    rows = fetch_hotspots(KEY, "VIIRS_NOAA20_NRT", pd.Timestamp("2026-02-01"), 1, http_get, no_sleep)
 
     assert calls == [
-        f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{KEY}/VIIRS_SNPP_NRT/97.5,11.5,105.5,17.5/1/2026-02-01"
+        f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{KEY}/VIIRS_NOAA20_NRT/97.5,11.5,105.5,17.5/1/2026-02-01"
     ]
     assert list(rows["time"]) == [
         pd.Timestamp("2026-02-01 06:00", tz="UTC"),
@@ -58,11 +58,11 @@ def test_errors_never_contain_the_key():
         return TextResponse(f"Invalid MAP_KEY {KEY}.")
 
     with pytest.raises(FirmsError) as error:
-        fetch_hotspots(KEY, "VIIRS_SNPP_NRT", pd.Timestamp("2026-02-01"), 1, refused, no_sleep)
+        fetch_hotspots(KEY, "VIIRS_NOAA20_NRT", pd.Timestamp("2026-02-01"), 1, refused, no_sleep)
     assert KEY not in str(error.value)
 
     with pytest.raises(FirmsError) as error:
-        fetch_hotspots(KEY, "VIIRS_SNPP_NRT", pd.Timestamp("2026-02-01"), 1, lambda url, timeout: TextResponse("", 403), no_sleep)
+        fetch_hotspots(KEY, "VIIRS_NOAA20_NRT", pd.Timestamp("2026-02-01"), 1, lambda url, timeout: TextResponse("", 403), no_sleep)
     assert KEY not in str(error.value)
 
 
@@ -71,7 +71,7 @@ def test_backfill_switches_from_archive_to_near_real_time_and_resumes(tmp_path):
 
     def http_get(url, timeout):
         if "data_availability" in url:
-            return TextResponse("data_id,min_date,max_date\nVIIRS_SNPP_SP,2012-01-20,2026-01-07\n")
+            return TextResponse("data_id,min_date,max_date\nVIIRS_NOAA20_SP,2012-01-20,2026-01-07\n")
         parts = url.split("/")
         requested.append((parts[-4], parts[-1], int(parts[-2])))
         day = parts[-1]
@@ -82,9 +82,9 @@ def test_backfill_switches_from_archive_to_near_real_time_and_resumes(tmp_path):
     )
 
     assert requested == [
-        ("VIIRS_SNPP_SP", "2026-01-01", 5),
-        ("VIIRS_SNPP_SP", "2026-01-06", 2),
-        ("VIIRS_SNPP_NRT", "2026-01-08", 5),
+        ("VIIRS_NOAA20_SP", "2026-01-01", 5),
+        ("VIIRS_NOAA20_SP", "2026-01-06", 2),
+        ("VIIRS_NOAA20_NRT", "2026-01-08", 5),
     ]
     assert added == 3
     assert json.loads((tmp_path / COVERAGE_FILENAME).read_text()) == {"start": "2026-01-01", "through": "2026-01-11"}
@@ -92,7 +92,7 @@ def test_backfill_switches_from_archive_to_near_real_time_and_resumes(tmp_path):
     # The next day only the recent lookback is fetched again.
     requested.clear()
     backfill_firms(tmp_path, KEY, pd.Timestamp("2026-01-01"), pd.Timestamp("2026-01-13 03:00", tz="UTC"), http_get, no_sleep)
-    assert requested == [("VIIRS_SNPP_NRT", "2026-01-09", 5)]
+    assert requested == [("VIIRS_NOAA20_NRT", "2026-01-09", 5)]
     assert len(load_series(tmp_path / HOTSPOTS_FILENAME)) == 4
 
 
@@ -103,7 +103,7 @@ def test_daily_fires_uses_bangkok_days_and_zero_fills_only_covered_days(tmp_path
             "time": pd.to_datetime(["2026-02-01 06:00", "2026-02-01 18:00"], utc=True),
             "fire_count": [3, 2],
             "fire_frp": [10.0, 4.0],
-            "product": "VIIRS_SNPP_NRT",
+            "product": "VIIRS_NOAA20_NRT",
         }
     )
     daily = daily_fires(hotspots, {"start": "2026-01-31", "through": "2026-02-03"})
