@@ -15,6 +15,7 @@ from pm25.features import (
     UNITS,
     build_features,
     daily_baselines,
+    model_inputs,
     monthly_forecast,
     monthly_targets,
     with_weather_targets,
@@ -59,7 +60,7 @@ def _daily_row(
             continue
         method = entry["method"]
         if method in CANDIDATES:
-            value = joblib.load(model_path(models_dir, slot)).predict(features)[0]
+            value = joblib.load(model_path(models_dir, slot)).predict(model_inputs(features, entry))[0]
         else:
             value = daily_baselines(targets[target], horizon)[method].loc[origin]
         _with_range(row, target, value, entry["residual_q80"])

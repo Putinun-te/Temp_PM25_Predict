@@ -32,6 +32,7 @@ from pm25.features import (
     ALL_TARGETS,
     build_features,
     build_labels,
+    model_inputs,
     daily_baselines,
     monthly_targets,
     with_weather_targets,
@@ -144,7 +145,14 @@ def train_slot(
     if promote:
         models_dir.mkdir(parents=True, exist_ok=True)
         joblib.dump(final_model, model_path(models_dir, slot))
-        entry.update({"method": candidate, "train_end": train_end, "promoted_at": now})
+        entry.update(
+            {
+                "method": candidate,
+                "train_end": train_end,
+                "promoted_at": now,
+                "features": list(features.columns),
+            }
+        )
 
     entry["residual_q80"] = residual_q80(frame["actual"], frame[entry["method"]])
     report: dict[str, Any] = {
@@ -203,7 +211,7 @@ def _decide(
             kept["reason"] = f"kept: only {len(window)} days are unseen by the current model"
             return kept, False
         current_model = joblib.load(model_path(models_dir, slot))
-        predicted = current_model.predict(features.loc[window.index])
+        predicted = current_model.predict(model_inputs(features.loc[window.index], previous))
         previous_mae = float(np.abs(window["actual"].to_numpy() - predicted).mean())
 
     candidate_mae = float((window["actual"] - window[candidate]).abs().mean())

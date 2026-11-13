@@ -119,10 +119,14 @@ def run_checks(
 
 
 def build_silver(
-    openaq: pd.DataFrame, air_quality: pd.DataFrame, weather: pd.DataFrame, as_of: pd.Timestamp
+    openaq: pd.DataFrame,
+    air_quality: pd.DataFrame,
+    weather: pd.DataFrame,
+    as_of: pd.Timestamp,
+    fires: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
-    """Return the cleaned daily Bangkok table: targets plus daily weather features."""
-    exogenous = daily_exogenous(air_quality, weather, as_of)
+    """Return the cleaned daily Bangkok table: targets plus daily weather and fire features."""
+    exogenous = daily_exogenous(air_quality, weather, as_of, fires)
     targets = with_weather_targets(daily_targets(openaq, as_of), exogenous)
     extra = exogenous.drop(columns=list(targets.columns), errors="ignore").reindex(targets.index)
     return targets.join(extra)

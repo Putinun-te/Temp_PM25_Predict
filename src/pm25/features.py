@@ -36,7 +36,13 @@ EXOGENOUS_COLUMNS = (
     "wind_kmh",
     "wind_u",
     "wind_v",
+    # NASA FIRMS fire detections, missing when no FIRMS_MAP_KEY is configured.
+    "fire_count",
+    "fire_frp",
 )
+# Features added after the first models were saved. A model saved without a
+# feature list was trained without these, so they are left out when it predicts.
+LATER_FEATURE_PREFIXES = ("fire_",)
 
 
 def _local_date(times: pd.Series) -> pd.Series:
@@ -78,7 +84,10 @@ def _complete_days(frame: pd.DataFrame, as_of: pd.Timestamp) -> pd.DataFrame:
 
 
 def daily_exogenous(
-    air_quality: pd.DataFrame, weather: pd.DataFrame, as_of: pd.Timestamp
+    air_quality: pd.DataFrame,
+    weather: pd.DataFrame,
+    as_of: pd.Timestamp,
+    fires: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Return daily Open-Meteo features.
 
@@ -102,7 +111,10 @@ def daily_exogenous(
         wind_u=("wind_u", "mean"),
         wind_v=("wind_v", "mean"),
     )
-    return air_daily.join(wx_daily, how="outer").reindex(columns=list(EXOGENOUS_COLUMNS))
+    daily = air_daily.join(wx_daily, how="outer")
+    if fires is not None and not fires.empty:
+        daily = daily.join(fires[fires.index < as_of], how="left")
+    return daily.reindex(columns=list(EXOGENOUS_COLUMNS))
 
 
 def with_weather_targets(targets: pd.DataFrame, exogenous: pd.DataFrame) -> pd.DataFrame:
@@ -144,6 +156,14 @@ def build_features(
     columns["dow_sin"] = pd.Series(np.sin(2 * np.pi * target_dates.day_of_week / 7), index=index)
     columns["dow_cos"] = pd.Series(np.cos(2 * np.pi * target_dates.day_of_week / 7), index=index)
     return pd.DataFrame(columns, index=index)
+
+
+def model_inputs(features: pd.DataFrame, entry: dict) -> pd.DataFrame:
+    """Return the feature columns a saved model was trained on, in training order."""
+    names = entry.get("features")
+    if names is None:
+        names = [c for c in features.columns if not c.startswith(LATER_FEATURE_PREFIXES)]
+    return features.reindex(columns=names)
 
 
 def build_labels(targets: pd.DataFrame, horizon: int) -> pd.DataFrame:

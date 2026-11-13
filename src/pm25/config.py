@@ -49,6 +49,8 @@ class Config:
     firebase_db_url: str = field(default="", repr=False)
     firebase_service_account_json: str = field(default="", repr=False)
     tmd_api_token: str = field(default="", repr=False)
+    firms_map_key: str = field(default="", repr=False)
+    firms_start: pd.Timestamp = field(default_factory=lambda: _utc_date("2021-04-01"))
     azure_sql_server: str = ""
     azure_sql_database: str = "pm25"
 
@@ -71,6 +73,8 @@ class Config:
             firebase_db_url=env.get("FIREBASE_DB_URL", "").strip(),
             firebase_service_account_json=env.get("FIREBASE_SERVICE_ACCOUNT_JSON", "").strip(),
             tmd_api_token=env.get("TMD_API_TOKEN", "").strip(),
+            firms_map_key=env.get("FIRMS_MAP_KEY", "").strip(),
+            firms_start=_utc_date(env.get("FIRMS_START", "2021-04-01")),
             azure_sql_server=env.get("AZURE_SQL_SERVER", "").strip(),
             azure_sql_database=env.get("AZURE_SQL_DATABASE", "pm25").strip() or "pm25",
         )
