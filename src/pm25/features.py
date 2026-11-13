@@ -42,7 +42,12 @@ EXOGENOUS_COLUMNS = (
 )
 # Features added after the first models were saved. A model saved without a
 # feature list was trained without these, so they are left out when it predicts.
-LATER_FEATURE_PREFIXES = ("fire_",)
+LATER_FEATURE_PREFIXES = ("fire_", "nwp_")
+# Daily weather forecast for the target day (see pm25.nwp). In the exogenous frame
+# they appear per run age as nwp1_<name> and nwp2_<name>; in the features as nwp_<name>.
+NWP_FEATURES = ("temp_c", "rh_pct", "precip_mm", "wind_kmh", "wind_u", "wind_v", "pressure_hpa", "cloud_pct")
+NWP_HORIZONS = (1, 2)
+NWP_DAILY_COLUMNS = tuple(f"nwp{h}_{name}" for h in NWP_HORIZONS for name in NWP_FEATURES)
 
 
 def _local_date(times: pd.Series) -> pd.Series:
@@ -88,6 +93,7 @@ def daily_exogenous(
     weather: pd.DataFrame,
     as_of: pd.Timestamp,
     fires: pd.DataFrame | None = None,
+    nwp: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Return daily Open-Meteo features.
 
@@ -114,7 +120,11 @@ def daily_exogenous(
     daily = air_daily.join(wx_daily, how="outer")
     if fires is not None and not fires.empty:
         daily = daily.join(fires[fires.index < as_of], how="left")
-    return daily.reindex(columns=list(EXOGENOUS_COLUMNS))
+    if nwp is not None and not nwp.empty:
+        # Forecasts for today and tomorrow were issued in the past, so these rows may run
+        # past as_of. build_features only reads them for the target day of each origin.
+        daily = daily.join(nwp[nwp.index <= as_of + pd.Timedelta(days=1)], how="outer")
+    return daily.reindex(columns=[*EXOGENOUS_COLUMNS, *NWP_DAILY_COLUMNS])
 
 
 def with_weather_targets(targets: pd.DataFrame, exogenous: pd.DataFrame) -> pd.DataFrame:
@@ -132,8 +142,14 @@ def build_features(
     when data is missing. Missing inputs stay NaN.
     """
     index = targets.index
-    exogenous = exogenous.reindex(index)
+    target_days = index + pd.Timedelta(days=horizon)
     columns: dict[str, pd.Series] = {}
+    # The weather forecast for the target day, issued `horizon` days before it.
+    for name in NWP_FEATURES:
+        source = f"nwp{horizon}_{name}"
+        values = exogenous[source].reindex(target_days).to_numpy() if source in exogenous else np.nan
+        columns[f"nwp_{name}"] = pd.Series(values, index=index, dtype=float)
+    exogenous = exogenous.reindex(index)
 
     for name in TARGETS:
         series = targets[name]

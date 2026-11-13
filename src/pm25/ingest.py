@@ -14,7 +14,7 @@ import os
 import tempfile
 import time as time_module
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -93,6 +93,7 @@ class OpenMeteoSource:
     filename: str
     url: str
     variables: Mapping[str, str]
+    extra: Mapping[str, str] = field(default_factory=dict)  # Extra query parameters, such as a model
 
 
 AIR_QUALITY = OpenMeteoSource(
@@ -212,6 +213,7 @@ def fetch_open_meteo(
             "start_date": first.isoformat(),
             "end_date": last.isoformat(),
             "timezone": "GMT",
+            **source.extra,
         },
         sleep,
         pause=OPEN_METEO_SECONDS_BETWEEN_REQUESTS,

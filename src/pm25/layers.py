@@ -124,9 +124,10 @@ def build_silver(
     weather: pd.DataFrame,
     as_of: pd.Timestamp,
     fires: pd.DataFrame | None = None,
+    nwp: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Return the cleaned daily Bangkok table: targets plus daily weather and fire features."""
-    exogenous = daily_exogenous(air_quality, weather, as_of, fires)
+    exogenous = daily_exogenous(air_quality, weather, as_of, fires, nwp)
     targets = with_weather_targets(daily_targets(openaq, as_of), exogenous)
     extra = exogenous.drop(columns=list(targets.columns), errors="ignore").reindex(targets.index)
     return targets.join(extra)
