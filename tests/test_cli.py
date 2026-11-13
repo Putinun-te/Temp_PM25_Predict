@@ -7,7 +7,11 @@ from pm25.ingest import AIR_QUALITY, WEATHER
 
 @pytest.fixture
 def calls(monkeypatch, tmp_path):
-    recorded = {"open_meteo": [], "openaq": []}
+    recorded = {"open_meteo": [], "openaq": [], "nwp": []}
+
+    def nwp(data_dir, latitude, longitude, start, now):
+        recorded["nwp"].append({"start": start})
+        return 0
 
     def open_meteo(source, data_dir, latitude, longitude, start, end):
         recorded["open_meteo"].append({"source": source, "data_dir": data_dir, "start": start, "end": end})
@@ -19,6 +23,8 @@ def calls(monkeypatch, tmp_path):
 
     monkeypatch.setattr("pm25.__main__.backfill_open_meteo", open_meteo)
     monkeypatch.setattr("pm25.__main__.backfill_openaq", openaq)
+    monkeypatch.setattr("pm25.__main__.backfill_nwp", nwp)
+    monkeypatch.delenv("FIRMS_MAP_KEY", raising=False)
     monkeypatch.setenv("PM25_DATA_DIR", str(tmp_path))
     monkeypatch.setenv("PM25_MODELS_DIR", str(tmp_path / "models"))
     monkeypatch.setenv("PM25_ENV_FILE", str(tmp_path / "no.env"))
@@ -35,6 +41,7 @@ def test_backfill_covers_every_source_from_its_own_start(calls, tmp_path):
     assert calls["open_meteo"][0]["start"] == pd.Timestamp("2024-01-01", tz="UTC")
     assert calls["open_meteo"][1]["start"] == pd.Timestamp("2021-01-01", tz="UTC")
     assert calls["openaq"][0]["start"] == pd.Timestamp("2021-05-01", tz="UTC")
+    assert calls["nwp"][0]["start"] == pd.Timestamp("2021-01-01", tz="UTC")
 
 
 def test_backfill_ends_on_a_whole_hour(calls):

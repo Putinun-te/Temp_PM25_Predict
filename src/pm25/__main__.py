@@ -39,7 +39,9 @@ from pm25.ingest import (
 )
 from pm25.alerts import CHANNELS, decide
 from pm25.firms import FirmsError, backfill_firms, load_daily_fires
+from pm25.cams import archive_cams, fetch_cams_forecast
 from pm25.gistda import fetch_gistda_bangkok
+from pm25.nwp import NWP, backfill_nwp, daily_nwp
 from pm25.health import check_health, render
 from pm25.monitor import ACCURACY_FILENAME, SUMMARY_FILENAME, score_history, summarize
 from pm25.predict import FORECAST_FILENAME, build_forecast, write_forecast
@@ -76,8 +78,10 @@ def _load_inputs(
     if frames is None:
         return None
     openaq, air_quality, weather = frames
-    fires = load_daily_fires(layer(config.data_dir, BRONZE))
-    return daily_targets(openaq, as_of), daily_exogenous(air_quality, weather, as_of, fires)
+    bronze = layer(config.data_dir, BRONZE)
+    fires = load_daily_fires(bronze)
+    nwp = daily_nwp(load_series(bronze / NWP.filename), as_of)
+    return daily_targets(openaq, as_of), daily_exogenous(air_quality, weather, as_of, fires, nwp)
 
 
 def _load_bronze(config: Config) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] | None:
@@ -110,6 +114,15 @@ def _backfill(args: argparse.Namespace, config: Config) -> int:
                 source, layer(config.data_dir, BRONZE), config.latitude, config.longitude, start, end
             )
             log.info("%s: added %d rows", source.filename, added)
+        nwp_start = override if override is not None else config.weather_start
+        try:
+            added = backfill_nwp(
+                layer(config.data_dir, BRONZE), config.latitude, config.longitude, nwp_start, pd.Timestamp.now(tz="UTC")
+            )
+            log.info("%s: added %d rows", NWP.filename, added)
+        except requests.RequestException as error:
+            # The forecast features are optional, so an outage must not stop the run.
+            log.warning("Open-Meteo previous runs unavailable: %s", type(error).__name__)
 
     if args.source in ("all", "openaq"):
         start = override if override is not None else config.openaq_start
@@ -146,7 +159,13 @@ def _check(args: argparse.Namespace, config: Config) -> int:
     if frames is None:
         return 2
     now = pd.Timestamp.now(tz="UTC")
-    daily = build_silver(*frames, _as_of(), load_daily_fires(layer(config.data_dir, BRONZE)))
+    bronze = layer(config.data_dir, BRONZE)
+    daily = build_silver(
+        *frames,
+        _as_of(),
+        load_daily_fires(bronze),
+        daily_nwp(load_series(bronze / NWP.filename), _as_of()),
+    )
     checks = run_checks(*frames, daily, now)
     report = write_quality_report(layer(config.data_dir, SILVER) / QUALITY_FILENAME, checks, now)
     for check in checks:
@@ -197,6 +216,12 @@ def _predict(args: argparse.Namespace, config: Config) -> int:
         gistda = None
     if gistda:
         forecast["gistda"] = gistda
+    try:
+        cams = fetch_cams_forecast(config.latitude, config.longitude, as_of, _generated_at())
+        archive_cams(layer(config.data_dir, BRONZE), cams)
+    except (requests.RequestException, KeyError, ValueError) as error:
+        # The archive only collects data for later, so a failure is logged and skipped.
+        log.warning("CAMS forecast not archived: %s", type(error).__name__)
     log.info("Wrote %s", write_forecast(forecast, config.models_dir))
     return 0
 
