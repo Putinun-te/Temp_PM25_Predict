@@ -1,0 +1,966 @@
+{
+  "generated_at": "2026-11-14T07:41:40+07:00",
+  "as_of": "2026-11-14",
+  "data": {
+    "pm25": {
+      "first_day": "2021-04-30",
+      "last_day": "2026-11-13",
+      "valid_days": 1568
+    },
+    "pm10": {
+      "first_day": "2021-04-30",
+      "last_day": "2026-11-13",
+      "valid_days": 1559
+    },
+    "temp_c": {
+      "first_day": "2021-04-30",
+      "last_day": "2026-11-13",
+      "valid_days": 2024
+    },
+    "rh_pct": {
+      "first_day": "2021-04-30",
+      "last_day": "2026-11-13",
+      "valid_days": 2024
+    }
+  },
+  "daily": {
+    "pm25_h1": {
+      "published_method": "gradient_boosting",
+      "decision": "kept: only 3 days are unseen by the current model",
+      "best_candidate": "gradient_boosting",
+      "overall": {
+        "gradient_boosting": {
+          "mae": 3.086065726649265,
+          "rmse": 4.474485319190839,
+          "r2": 0.824065941225743,
+          "n": 1161
+        },
+        "random_forest": {
+          "mae": 3.1453528883061113,
+          "rmse": 4.535657598497365,
+          "r2": 0.8192225439909411,
+          "n": 1161
+        },
+        "persistence": {
+          "mae": 3.4471401352057054,
+          "rmse": 5.111182157666168,
+          "r2": 0.770434582505083,
+          "n": 1161
+        },
+        "seasonal7": {
+          "mae": 6.735856605673244,
+          "rmse": 9.944846464020483,
+          "r2": 0.1309196871461018,
+          "n": 1161
+        }
+      },
+      "skill_vs_persistence": 0.10474607773231526,
+      "latest_window": {
+        "gradient_boosting": {
+          "mae": 1.9887563060438416,
+          "rmse": 2.450241514664108,
+          "r2": 0.6543122851842618,
+          "n": 90
+        },
+        "random_forest": {
+          "mae": 2.256076705065491,
+          "rmse": 2.93749761245894,
+          "r2": 0.5031546809761474,
+          "n": 90
+        },
+        "persistence": {
+          "mae": 2.3821125049943697,
+          "rmse": 3.325440832150134,
+          "r2": 0.36325637133836297,
+          "n": 90
+        },
+        "seasonal7": {
+          "mae": 4.145090847727576,
+          "rmse": 5.1879458893885815,
+          "r2": -0.5497335436828814,
+          "n": 90
+        }
+      },
+      "by_season": {
+        "cool_haze_nov_feb": {
+          "n": 312,
+          "gradient_boosting": 4.769368662319492,
+          "random_forest": 4.930137659148181,
+          "persistence": 5.6427128059350595,
+          "seasonal7": 10.798462367297821
+        },
+        "hot_mar_may": {
+          "n": 310,
+          "gradient_boosting": 3.371273612432576,
+          "random_forest": 3.3777958244703394,
+          "persistence": 3.449262256524796,
+          "seasonal7": 8.075572089982597
+        },
+        "rainy_jun_oct": {
+          "n": 539,
+          "gradient_boosting": 1.9476520707644083,
+          "random_forest": 1.978543688466341,
+          "persistence": 2.1750129907224474,
+          "seasonal7": 3.6136955708629133
+        }
+      },
+      "cams_hindsight_not_a_forecast": {
+        "mae": 10.950387375071506,
+        "rmse": 19.66663174217146,
+        "r2": -2.315509335414145,
+        "n": 1092
+      }
+    },
+    "pm25_h2": {
+      "published_method": "random_forest",
+      "decision": "kept: only 3 days are unseen by the current model",
+      "best_candidate": "random_forest",
+      "overall": {
+        "gradient_boosting": {
+          "mae": 4.501718587329487,
+          "rmse": 6.350636783025222,
+          "r2": 0.646129633527079,
+          "n": 1146
+        },
+        "random_forest": {
+          "mae": 4.28714749382526,
+          "rmse": 6.031215968431032,
+          "r2": 0.6808319522837759,
+          "n": 1146
+        },
+        "persistence": {
+          "mae": 5.276895601288145,
+          "rmse": 7.7362810962569695,
+          "r2": 0.4748611732412561,
+          "n": 1146
+        },
+        "seasonal7": {
+          "mae": 6.759419316031083,
+          "rmse": 9.98388870940595,
+          "r2": 0.12540073231177684,
+          "n": 1146
+        }
+      },
+      "skill_vs_persistence": 0.1875625713006862,
+      "latest_window": {
+        "gradient_boosting": {
+          "mae": 2.6901681523879186,
+          "rmse": 3.3602951734466213,
+          "r2": 0.34983885102660184,
+          "n": 90
+        },
+        "random_forest": {
+          "mae": 2.9474998941666923,
+          "rmse": 3.7545716779728666,
+          "r2": 0.18831605172525068,
+          "n": 90
+        },
+        "persistence": {
+          "mae": 3.499223835692657,
+          "rmse": 4.601815960301535,
+          "r2": -0.21933952000924806,
+          "n": 90
+        },
+        "seasonal7": {
+          "mae": 4.145090847727576,
+          "rmse": 5.1879458893885815,
+          "r2": -0.5497335436828814,
+          "n": 90
+        }
+      },
+      "by_season": {
+        "cool_haze_nov_feb": {
+          "n": 308,
+          "gradient_boosting": 6.452282196946227,
+          "random_forest": 6.212780642336819,
+          "persistence": 8.402649836312566,
+          "seasonal7": 10.827221506757413
+        },
+        "hot_mar_may": {
+          "n": 306,
+          "gradient_boosting": 5.989290028168089,
+          "random_forest": 5.489300123494956,
+          "persistence": 5.7812905108880335,
+          "seasonal7": 8.154634444773679
+        },
+        "rainy_jun_oct": {
+          "n": 532,
+          "gradient_boosting": 2.516811721429922,
+          "random_forest": 2.4808435193506604,
+          "persistence": 3.177126528496628,
+          "seasonal7": 3.601864984942842
+        }
+      },
+      "cams_hindsight_not_a_forecast": {
+        "mae": 10.894529163569684,
+        "rmse": 19.74394463199776,
+        "r2": -2.3439780625485205,
+        "n": 1081
+      }
+    },
+    "pm10_h1": {
+      "published_method": "random_forest",
+      "decision": "kept: only 3 days are unseen by the current model",
+      "best_candidate": "gradient_boosting",
+      "overall": {
+        "gradient_boosting": {
+          "mae": 4.60940551948976,
+          "rmse": 6.3897109120212825,
+          "r2": 0.8265738998797908,
+          "n": 1153
+        },
+        "random_forest": {
+          "mae": 4.6673145221953005,
+          "rmse": 6.567634301805327,
+          "r2": 0.8167812300534061,
+          "n": 1153
+        },
+        "persistence": {
+          "mae": 4.893157699412525,
+          "rmse": 7.0578054322201424,
+          "r2": 0.788411820666915,
+          "n": 1153
+        },
+        "seasonal7": {
+          "mae": 9.491662508981547,
+          "rmse": 13.702792232275318,
+          "r2": 0.2024274768319152,
+          "n": 1153
+        }
+      },
+      "skill_vs_persistence": 0.05798958409961563,
+      "latest_window": {
+        "gradient_boosting": {
+          "mae": 3.2277143593700277,
+          "rmse": 4.146771535635976,
+          "r2": 0.4410783921617274,
+          "n": 87
+        },
+        "random_forest": {
+          "mae": 3.3775092434827214,
+          "rmse": 4.408416525994291,
+          "r2": 0.3683217467732395,
+          "n": 87
+        },
+        "persistence": {
+          "mae": 3.8793664049345415,
+          "rmse": 5.070485773043876,
+          "r2": 0.16433960637159417,
+          "n": 87
+        },
+        "seasonal7": {
+          "mae": 5.816176891048666,
+          "rmse": 7.2737166982002055,
+          "r2": -0.7196633907623446,
+          "n": 87
+        }
+      },
+      "by_season": {
+        "cool_haze_nov_feb": {
+          "n": 311,
+          "gradient_boosting": 6.985400035962963,
+          "random_forest": 7.261804952479929,
+          "persistence": 7.454354936803138,
+          "seasonal7": 14.79433103119567
+        },
+        "hot_mar_may": {
+          "n": 308,
+          "gradient_boosting": 4.462348665501495,
+          "random_forest": 4.419830868162858,
+          "persistence": 4.596134027560946,
+          "seasonal7": 10.628956414518576
+        },
+        "rainy_jun_oct": {
+          "n": 534,
+          "gradient_boosting": 3.3104527412223823,
+          "random_forest": 3.299034450329142,
+          "persistence": 3.572841126569464,
+          "seasonal7": 5.747436978430987
+        }
+      }
+    },
+    "pm10_h2": {
+      "published_method": "random_forest",
+      "decision": "kept: only 3 days are unseen by the current model",
+      "best_candidate": "gradient_boosting",
+      "overall": {
+        "gradient_boosting": {
+          "mae": 6.445645828830655,
+          "rmse": 8.885778813340004,
+          "r2": 0.663550929322867,
+          "n": 1139
+        },
+        "random_forest": {
+          "mae": 6.497792204520609,
+          "rmse": 8.834045329407255,
+          "r2": 0.6674571742440611,
+          "n": 1139
+        },
+        "persistence": {
+          "mae": 7.464168663479704,
+          "rmse": 10.613230425791864,
+          "r2": 0.5200195784389312,
+          "n": 1139
+        },
+        "seasonal7": {
+          "mae": 9.539851911296713,
+          "rmse": 13.738643258180657,
+          "r2": 0.1957037767480082,
+          "n": 1139
+        }
+      },
+      "skill_vs_persistence": 0.136454959764297,
+      "latest_window": {
+        "gradient_boosting": {
+          "mae": 4.189364148435242,
+          "rmse": 5.449007434507045,
+          "r2": 0.032943800694936076,
+          "n": 87
+        },
+        "random_forest": {
+          "mae": 4.5295118083946155,
+          "rmse": 5.6438675304031705,
+          "r2": -0.03745802832910594,
+          "n": 87
+        },
+        "persistence": {
+          "mae": 5.474594468733584,
+          "rmse": 6.86961367714913,
+          "r2": -0.5370271592150611,
+          "n": 87
+        },
+        "seasonal7": {
+          "mae": 5.831023634343685,
+          "rmse": 7.297703178905909,
+          "r2": -0.7345599033917645,
+          "n": 87
+        }
+      },
+      "by_season": {
+        "cool_haze_nov_feb": {
+          "n": 307,
+          "gradient_boosting": 9.37115072279282,
+          "random_forest": 9.366699386397114,
+          "persistence": 11.333380914633103,
+          "seasonal7": 14.904582375399
+        },
+        "hot_mar_may": {
+          "n": 305,
+          "gradient_boosting": 7.256818522423873,
+          "random_forest": 7.29795980235835,
+          "persistence": 7.622987384333748,
+          "seasonal7": 10.70735881259121
+        },
+        "rainy_jun_oct": {
+          "n": 527,
+          "gradient_boosting": 4.27195005275415,
+          "random_forest": 4.363436185210176,
+          "persistence": 5.118271375121871,
+          "seasonal7": 5.738975521592304
+        }
+      }
+    },
+    "temp_c_h1": {
+      "published_method": "random_forest",
+      "decision": "kept: only 1 days are unseen by the current model",
+      "best_candidate": "random_forest",
+      "overall": {
+        "gradient_boosting": {
+          "mae": 0.5092698752084125,
+          "rmse": 0.6693412843039238,
+          "r2": 0.8411767254128765,
+          "n": 1658
+        },
+        "random_forest": {
+          "mae": 0.5078086715001688,
+          "rmse": 0.668336600480006,
+          "r2": 0.8416531562654446,
+          "n": 1658
+        },
+        "persistence": {
+          "mae": 0.5912067752312022,
+          "rmse": 0.8080711091569196,
+          "r2": 0.7685175447217095,
+          "n": 1658
+        },
+        "seasonal7": {
+          "mae": 1.1734594893445915,
+          "rmse": 1.5551699496601954,
+          "r2": 0.14261746561904343,
+          "n": 1658
+        }
+      },
+      "skill_vs_persistence": 0.1410641880726401,
+      "latest_window": {
+        "gradient_boosting": {
+          "mae": 0.5675084631369842,
+          "rmse": 0.7196149370793764,
+          "r2": 0.6108636967965346,
+          "n": 90
+        },
+        "random_forest": {
+          "mae": 0.5861312997895871,
+          "rmse": 0.7421386969099345,
+          "r2": 0.5861227406249234,
+          "n": 90
+        },
+        "persistence": {
+          "mae": 0.767222222222223,
+          "rmse": 0.9825764114413639,
+          "r2": 0.27450557802567943,
+          "n": 90
+        },
+        "seasonal7": {
+          "mae": 1.3784259259259257,
+          "rmse": 1.7232125288985938,
+          "r2": -1.2314085717976706,
+          "n": 90
+        }
+      },
+      "by_season": {
+        "cool_haze_nov_feb": {
+          "n": 494,
+          "gradient_boosting": 0.5900951334382578,
+          "random_forest": 0.600288499886898,
+          "persistence": 0.6811993927125505,
+          "seasonal7": 1.492341430499325
+        },
+        "hot_mar_may": {
+          "n": 399,
+          "gradient_boosting": 0.5467704875221922,
+          "random_forest": 0.5299871144758445,
+          "persistence": 0.6084690893901418,
+          "seasonal7": 1.2973893065998316
+        },
+        "rainy_jun_oct": {
+          "n": 765,
+          "gradient_boosting": 0.4375176897460051,
+          "random_forest": 0.4365220911467848,
+          "persistence": 0.5240904139433551,
+          "seasonal7": 0.9029030501089325
+        }
+      }
+    },
+    "temp_c_h2": {
+      "published_method": "random_forest",
+      "decision": "kept: only 3 days are unseen by the current model",
+      "best_candidate": "random_forest",
+      "overall": {
+        "gradient_boosting": {
+          "mae": 0.6417250442319609,
+          "rmse": 0.8422181927988369,
+          "r2": 0.7486917268902971,
+          "n": 1657
+        },
+        "random_forest": {
+          "mae": 0.6401439881936288,
+          "rmse": 0.837083546818813,
+          "r2": 0.751746625441183,
+          "n": 1657
+        },
+        "persistence": {
+          "mae": 0.8630909273787969,
+          "rmse": 1.1565188786396452,
+          "r2": 0.5261258679698315,
+          "n": 1657
+        },
+        "seasonal7": {
+          "mae": 1.1732951116475554,
+          "rmse": 1.5552336135032059,
+          "r2": 0.14306315272891346,
+          "n": 1657
+        }
+      },
+      "skill_vs_persistence": 0.2583122265718363,
+      "latest_window": {
+        "gradient_boosting": {
+          "mae": 0.6410129490478121,
+          "rmse": 0.8827149551920399,
+          "r2": 0.41447913050759944,
+          "n": 90
+        },
+        "random_forest": {
+          "mae": 0.6987728622386994,
+          "rmse": 0.9186275186819065,
+          "r2": 0.3658670614624999,
+          "n": 90
+        },
+        "persistence": {
+          "mae": 1.0198148148148147,
+          "rmse": 1.2427082072118156,
+          "r2": -0.16048556573804307,
+          "n": 90
+        },
+        "seasonal7": {
+          "mae": 1.3784259259259257,
+          "rmse": 1.7232125288985938,
+          "r2": -1.2314085717976706,
+          "n": 90
+        }
+      },
+      "by_season": {
+        "cool_haze_nov_feb": {
+          "n": 494,
+          "gradient_boosting": 0.7769020298971604,
+          "random_forest": 0.776377718088962,
+          "persistence": 1.0334514170040485,
+          "seasonal7": 1.492341430499325
+        },
+        "hot_mar_may": {
+          "n": 398,
+          "gradient_boosting": 0.6936848841933668,
+          "random_forest": 0.6748426523289782,
+          "persistence": 0.9017273869346729,
+          "seasonal7": 1.2970163316582906
+        },
+        "rainy_jun_oct": {
+          "n": 765,
+          "gradient_boosting": 0.5274015838094144,
+          "random_forest": 0.5341184576130227,
+          "persistence": 0.7329793028322441,
+          "seasonal7": 0.9029030501089325
+        }
+      }
+    },
+    "rh_pct_h1": {
+      "published_method": "random_forest",
+      "decision": "kept: only 0 days are unseen by the current model",
+      "best_candidate": "random_forest",
+      "overall": {
+        "gradient_boosting": {
+          "mae": 2.965602448174161,
+          "rmse": 3.8245492342661707,
+          "r2": 0.8783167374956031,
+          "n": 1658
+        },
+        "random_forest": {
+          "mae": 2.9571743966459865,
+          "rmse": 3.8782212790140496,
+          "r2": 0.8748774741330483,
+          "n": 1658
+        },
+        "persistence": {
+          "mae": 3.4430790108564535,
+          "rmse": 4.642241356646897,
+          "r2": 0.8207225089496065,
+          "n": 1658
+        },
+        "seasonal7": {
+          "mae": 6.6173351427422595,
+          "rmse": 8.90493213637088,
+          "r2": 0.34032266749847606,
+          "n": 1658
+        }
+      },
+      "skill_vs_persistence": 0.14112502579184205,
+      "latest_window": {
+        "gradient_boosting": {
+          "mae": 3.5856104195690666,
+          "rmse": 4.595927054179109,
+          "r2": 0.6143430210053138,
+          "n": 90
+        },
+        "random_forest": {
+          "mae": 3.701944779269846,
+          "rmse": 4.796645522012347,
+          "r2": 0.5799217554701428,
+          "n": 90
+        },
+        "persistence": {
+          "mae": 4.613425925925925,
+          "rmse": 6.019930567972513,
+          "r2": 0.338335391566871,
+          "n": 90
+        },
+        "seasonal7": {
+          "mae": 7.2958333333333325,
+          "rmse": 8.907137301479493,
+          "r2": -0.4485424762157839,
+          "n": 90
+        }
+      },
+      "by_season": {
+        "cool_haze_nov_feb": {
+          "n": 494,
+          "gradient_boosting": 3.530495405575483,
+          "random_forest": 3.589014209010519,
+          "persistence": 3.9070512820512824,
+          "seasonal7": 9.027243589743591
+        },
+        "hot_mar_may": {
+          "n": 399,
+          "gradient_boosting": 3.060296660186613,
+          "random_forest": 3.056752965951644,
+          "persistence": 3.661445279866332,
+          "seasonal7": 6.817669172932331
+        },
+        "rainy_jun_oct": {
+          "n": 765,
+          "gradient_boosting": 2.551432367717663,
+          "random_forest": 2.4972257476773128,
+          "persistence": 3.0295751633986927,
+          "seasonal7": 4.956644880174292
+        }
+      }
+    },
+    "rh_pct_h2": {
+      "published_method": "random_forest",
+      "decision": "kept: only 3 days are unseen by the current model",
+      "best_candidate": "random_forest",
+      "overall": {
+        "gradient_boosting": {
+          "mae": 3.6983876422354305,
+          "rmse": 4.825645639206201,
+          "r2": 0.8063299575023715,
+          "n": 1657
+        },
+        "random_forest": {
+          "mae": 3.691929067637153,
+          "rmse": 4.815553986905561,
+          "r2": 0.8071391371434562,
+          "n": 1657
+        },
+        "persistence": {
+          "mae": 4.899265741299537,
+          "rmse": 6.528606539382956,
+          "r2": 0.6455193081101211,
+          "n": 1657
+        },
+        "seasonal7": {
+          "mae": 6.61868839267753,
+          "rmse": 8.906970373617792,
+          "r2": 0.34020106706858433,
+          "n": 1657
+        }
+      },
+      "skill_vs_persistence": 0.2464321670663524,
+      "latest_window": {
+        "gradient_boosting": {
+          "mae": 4.19073817573983,
+          "rmse": 5.389106969585283,
+          "r2": 0.4697403887732393,
+          "n": 90
+        },
+        "random_forest": {
+          "mae": 4.434453863608955,
+          "rmse": 5.577285930945801,
+          "r2": 0.4320622180486735,
+          "n": 90
+        },
+        "persistence": {
+          "mae": 5.927314814814814,
+          "rmse": 7.166425760378205,
+          "r2": 0.06230812411150577,
+          "n": 90
+        },
+        "seasonal7": {
+          "mae": 7.2958333333333325,
+          "rmse": 8.907137301479493,
+          "r2": -0.4485424762157839,
+          "n": 90
+        }
+      },
+      "by_season": {
+        "cool_haze_nov_feb": {
+          "n": 494,
+          "gradient_boosting": 4.542965300016924,
+          "random_forest": 4.588938544612843,
+          "persistence": 5.837297570850202,
+          "seasonal7": 9.027243589743591
+        },
+        "hot_mar_may": {
+          "n": 398,
+          "gradient_boosting": 3.847606981872465,
+          "random_forest": 3.843196893865055,
+          "persistence": 5.126360971524288,
+          "seasonal7": 6.823806532663316
+        },
+        "rainy_jun_oct": {
+          "n": 765,
+          "gradient_boosting": 3.075367171490859,
+          "random_forest": 3.0339849153957212,
+          "persistence": 4.175381263616558,
+          "seasonal7": 4.956644880174292
+        }
+      }
+    }
+  },
+  "monthly": {
+    "pm25_m2": {
+      "published_method": "climatology",
+      "decision": "does not beat baseline climatology",
+      "n": 27,
+      "climatology": {
+        "mae": 2.885807225953738,
+        "rmse": 4.068859681759682,
+        "r2": 0.7683990370353826,
+        "n": 27
+      },
+      "anomaly": {
+        "mae": 2.8907603228576693,
+        "rmse": 4.080167883714851,
+        "r2": 0.7671099142711597,
+        "n": 27
+      },
+      "last_year": {
+        "mae": 3.79975129294938,
+        "rmse": 4.711811221051035,
+        "r2": 0.6813304974759764,
+        "n": 21
+      }
+    },
+    "pm25_m3": {
+      "published_method": "climatology",
+      "decision": "does not beat baseline climatology",
+      "n": 26,
+      "climatology": {
+        "mae": 2.9858999358511413,
+        "rmse": 4.1459962254494656,
+        "r2": 0.7562958937449088,
+        "n": 26
+      },
+      "anomaly": {
+        "mae": 2.983320370638154,
+        "rmse": 4.145582056083925,
+        "r2": 0.7563445815526526,
+        "n": 26
+      },
+      "last_year": {
+        "mae": 3.8257054475553174,
+        "rmse": 4.7721152584327315,
+        "r2": 0.6617327752917754,
+        "n": 20
+      }
+    },
+    "pm25_m4": {
+      "published_method": "climatology",
+      "decision": "does not beat baseline climatology",
+      "n": 25,
+      "climatology": {
+        "mae": 2.78747203168659,
+        "rmse": 3.9180249604886126,
+        "r2": 0.7448028305434529,
+        "n": 25
+      },
+      "anomaly": {
+        "mae": 2.7873825570709694,
+        "rmse": 3.9179952443095023,
+        "r2": 0.7448067016040582,
+        "n": 25
+      },
+      "last_year": {
+        "mae": 3.7187855179375586,
+        "rmse": 4.708084173404989,
+        "r2": 0.5663037484797007,
+        "n": 19
+      }
+    },
+    "pm10_m2": {
+      "published_method": "climatology",
+      "decision": "does not beat baseline climatology",
+      "n": 27,
+      "climatology": {
+        "mae": 4.431599107697074,
+        "rmse": 6.030640518779816,
+        "r2": 0.7382325219706192,
+        "n": 27
+      },
+      "anomaly": {
+        "mae": 4.4243791196531435,
+        "rmse": 6.036659040143324,
+        "r2": 0.7377097783922382,
+        "n": 27
+      },
+      "last_year": {
+        "mae": 4.820989141382694,
+        "rmse": 6.109633190455842,
+        "r2": 0.7419673380280877,
+        "n": 21
+      }
+    },
+    "pm10_m3": {
+      "published_method": "climatology",
+      "decision": "does not beat baseline climatology",
+      "n": 26,
+      "climatology": {
+        "mae": 4.500936724277073,
+        "rmse": 6.123856805557684,
+        "r2": 0.715245561044918,
+        "n": 26
+      },
+      "anomaly": {
+        "mae": 4.496978030406549,
+        "rmse": 6.122242568608894,
+        "r2": 0.7153956627107105,
+        "n": 26
+      },
+      "last_year": {
+        "mae": 5.033819147571207,
+        "rmse": 6.259238920176761,
+        "r2": 0.706398708031651,
+        "n": 20
+      }
+    },
+    "pm10_m4": {
+      "published_method": "climatology",
+      "decision": "does not beat baseline climatology",
+      "n": 25,
+      "climatology": {
+        "mae": 4.392675798661621,
+        "rmse": 6.076494709447612,
+        "r2": 0.6486277721605445,
+        "n": 25
+      },
+      "anomaly": {
+        "mae": 4.391859247498192,
+        "rmse": 6.075977626460504,
+        "r2": 0.6486875700800341,
+        "n": 25
+      },
+      "last_year": {
+        "mae": 5.197723334425483,
+        "rmse": 6.406725171392929,
+        "r2": 0.563625558773091,
+        "n": 19
+      }
+    },
+    "temp_c_m2": {
+      "published_method": "anomaly",
+      "decision": "beats every baseline",
+      "n": 41,
+      "climatology": {
+        "mae": 0.8115610345268988,
+        "rmse": 0.9618758527346724,
+        "r2": 0.3503614093911527,
+        "n": 41
+      },
+      "anomaly": {
+        "mae": 0.7587042566630786,
+        "rmse": 0.8974283714874101,
+        "r2": 0.43449902027102894,
+        "n": 41
+      },
+      "last_year": {
+        "mae": 0.7684790406232767,
+        "rmse": 0.9793059443797733,
+        "r2": 0.3266039688033283,
+        "n": 41
+      }
+    },
+    "temp_c_m3": {
+      "published_method": "anomaly",
+      "decision": "beats every baseline",
+      "n": 40,
+      "climatology": {
+        "mae": 0.8204576992789605,
+        "rmse": 0.9711559345998284,
+        "r2": 0.3529944315658696,
+        "n": 40
+      },
+      "anomaly": {
+        "mae": 0.7940930099244394,
+        "rmse": 0.9438516914434555,
+        "r2": 0.388864378338705,
+        "n": 40
+      },
+      "last_year": {
+        "mae": 0.7876319888610809,
+        "rmse": 0.9914716317897636,
+        "r2": 0.3256417627547027,
+        "n": 40
+      }
+    },
+    "temp_c_m4": {
+      "published_method": "climatology",
+      "decision": "does not beat baseline climatology",
+      "n": 39,
+      "climatology": {
+        "mae": 0.8324104332279384,
+        "rmse": 0.9818901802972438,
+        "r2": 0.3551249448800372,
+        "n": 39
+      },
+      "anomaly": {
+        "mae": 0.8273528579128442,
+        "rmse": 0.9711048951663991,
+        "r2": 0.36921402126675673,
+        "n": 39
+      },
+      "last_year": {
+        "mae": 0.7973989519060437,
+        "rmse": 1.0019880028644517,
+        "r2": 0.32845551364968295,
+        "n": 39
+      }
+    },
+    "rh_pct_m2": {
+      "published_method": "anomaly",
+      "decision": "beats every baseline",
+      "n": 41,
+      "climatology": {
+        "mae": 3.7327144432393644,
+        "rmse": 5.196039405863642,
+        "r2": 0.6865972278918355,
+        "n": 41
+      },
+      "anomaly": {
+        "mae": 3.523410162014984,
+        "rmse": 4.964096514186994,
+        "r2": 0.7139523430059046,
+        "n": 41
+      },
+      "last_year": {
+        "mae": 4.622181023286078,
+        "rmse": 6.176374902543937,
+        "r2": 0.5571820055635144,
+        "n": 41
+      }
+    },
+    "rh_pct_m3": {
+      "published_method": "climatology",
+      "decision": "does not beat baseline climatology",
+      "n": 40,
+      "climatology": {
+        "mae": 3.706431609875905,
+        "rmse": 5.205921926086315,
+        "r2": 0.6909448596393999,
+        "n": 40
+      },
+      "anomaly": {
+        "mae": 3.7010379969371123,
+        "rmse": 5.203950449999179,
+        "r2": 0.6911788929030123,
+        "n": 40
+      },
+      "last_year": {
+        "mae": 4.686659159979342,
+        "rmse": 6.244753414676742,
+        "r2": 0.555295772107385,
+        "n": 40
+      }
+    },
+    "rh_pct_m4": {
+      "published_method": "climatology",
+      "decision": "does not beat baseline climatology",
+      "n": 39,
+      "climatology": {
+        "mae": 3.742897184653533,
+        "rmse": 5.2595383813940755,
+        "r2": 0.690333097658108,
+        "n": 39
+      },
+      "anomaly": {
+        "mae": 3.739739491442023,
+        "rmse": 5.253770959342912,
+        "r2": 0.6910118646413819,
+        "n": 39
+      },
+      "last_year": {
+        "mae": 4.757443362316832,
+        "rmse": 6.316782779117223,
+        "r2": 0.5533252348651776,
+        "n": 39
+      }
+    }
+  }
+}

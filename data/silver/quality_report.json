@@ -1,0 +1,66 @@
+{
+  "checked_at": "2026-11-14T07:41:38+07:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "OpenAQ has no duplicate rows",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 duplicates"
+    },
+    {
+      "name": "Open-Meteo air quality has no duplicate rows",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 duplicates"
+    },
+    {
+      "name": "Open-Meteo weather has no duplicate rows",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 duplicates"
+    },
+    {
+      "name": "Station PM within 0 to 1000",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 values outside"
+    },
+    {
+      "name": "Temperature within -10 to 50",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 values outside"
+    },
+    {
+      "name": "Humidity within 0 to 100",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 values outside"
+    },
+    {
+      "name": "OpenAQ is fresh",
+      "passed": true,
+      "severity": "error",
+      "detail": "newest row 3 hours old"
+    },
+    {
+      "name": "Open-Meteo weather is fresh",
+      "passed": true,
+      "severity": "error",
+      "detail": "newest row 1 hours old"
+    },
+    {
+      "name": "PM2.5 does not exceed PM10",
+      "passed": true,
+      "severity": "error",
+      "detail": "100.0% of 330 days in the last year"
+    },
+    {
+      "name": "Station panel reported most of the last week",
+      "passed": true,
+      "severity": "warning",
+      "detail": "7 of 7 days"
+    }
+  ]
+}

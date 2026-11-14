@@ -1,0 +1,252 @@
+{
+  "daily": {
+    "pm25_h1": {
+      "reason": "kept: only 3 days are unseen by the current model",
+      "method": "gradient_boosting",
+      "train_end": "2026-11-10",
+      "promoted_at": "2026-11-11T06:16:17+07:00",
+      "residual_q80": 4.71796215665476
+    },
+    "pm25_h2": {
+      "reason": "kept: only 3 days are unseen by the current model",
+      "method": "random_forest",
+      "train_end": "2026-11-10",
+      "promoted_at": "2026-11-11T04:12:21+07:00",
+      "residual_q80": 7.06762904610914
+    },
+    "pm10_h1": {
+      "reason": "kept: only 3 days are unseen by the current model",
+      "method": "random_forest",
+      "train_end": "2026-11-10",
+      "promoted_at": "2026-11-11T06:16:17+07:00",
+      "residual_q80": 7.340874044086826
+    },
+    "pm10_h2": {
+      "reason": "kept: only 3 days are unseen by the current model",
+      "method": "random_forest",
+      "train_end": "2026-11-10",
+      "promoted_at": "2026-11-11T04:12:21+07:00",
+      "residual_q80": 10.112377643743594
+    },
+    "temp_c_h1": {
+      "reason": "kept: only 1 days are unseen by the current model",
+      "method": "random_forest",
+      "train_end": "2026-11-12",
+      "promoted_at": "2026-11-13T15:05:34+07:00",
+      "features": [
+        "pm25_lag0",
+        "pm25_lag1",
+        "pm25_lag2",
+        "pm25_lag6",
+        "pm25_lag13",
+        "pm25_mean3",
+        "pm25_mean7",
+        "pm25_mean14",
+        "pm10_lag0",
+        "pm10_lag1",
+        "pm10_lag2",
+        "pm10_lag6",
+        "pm10_lag13",
+        "pm10_mean3",
+        "pm10_mean7",
+        "pm10_mean14",
+        "om_pm25_lag0",
+        "om_pm25_lag1",
+        "om_pm25_mean3",
+        "om_no2_lag0",
+        "om_no2_lag1",
+        "om_no2_mean3",
+        "om_o3_lag0",
+        "om_o3_lag1",
+        "om_o3_mean3",
+        "om_so2_lag0",
+        "om_so2_lag1",
+        "om_so2_mean3",
+        "om_co_lag0",
+        "om_co_lag1",
+        "om_co_mean3",
+        "temp_c_lag0",
+        "temp_c_lag1",
+        "temp_c_mean3",
+        "rh_pct_lag0",
+        "rh_pct_lag1",
+        "rh_pct_mean3",
+        "precip_mm_lag0",
+        "precip_mm_lag1",
+        "precip_mm_mean3",
+        "wind_kmh_lag0",
+        "wind_kmh_lag1",
+        "wind_kmh_mean3",
+        "wind_u_lag0",
+        "wind_u_lag1",
+        "wind_u_mean3",
+        "wind_v_lag0",
+        "wind_v_lag1",
+        "wind_v_mean3",
+        "fire_count_lag0",
+        "fire_count_lag1",
+        "fire_count_mean3",
+        "fire_frp_lag0",
+        "fire_frp_lag1",
+        "fire_frp_mean3",
+        "doy_sin",
+        "doy_cos",
+        "dow_sin",
+        "dow_cos"
+      ],
+      "residual_q80": 0.8013649877129044
+    },
+    "temp_c_h2": {
+      "reason": "kept: only 3 days are unseen by the current model",
+      "method": "random_forest",
+      "train_end": "2026-11-10",
+      "promoted_at": "2026-11-11T06:16:17+07:00",
+      "residual_q80": 1.025255247299012
+    },
+    "rh_pct_h1": {
+      "reason": "kept: only 0 days are unseen by the current model",
+      "method": "random_forest",
+      "train_end": "2026-11-13",
+      "promoted_at": "2026-11-14T00:16:33+07:00",
+      "features": [
+        "nwp_temp_c",
+        "nwp_rh_pct",
+        "nwp_precip_mm",
+        "nwp_wind_kmh",
+        "nwp_wind_u",
+        "nwp_wind_v",
+        "nwp_pressure_hpa",
+        "nwp_cloud_pct",
+        "pm25_lag0",
+        "pm25_lag1",
+        "pm25_lag2",
+        "pm25_lag6",
+        "pm25_lag13",
+        "pm25_mean3",
+        "pm25_mean7",
+        "pm25_mean14",
+        "pm10_lag0",
+        "pm10_lag1",
+        "pm10_lag2",
+        "pm10_lag6",
+        "pm10_lag13",
+        "pm10_mean3",
+        "pm10_mean7",
+        "pm10_mean14",
+        "om_pm25_lag0",
+        "om_pm25_lag1",
+        "om_pm25_mean3",
+        "om_no2_lag0",
+        "om_no2_lag1",
+        "om_no2_mean3",
+        "om_o3_lag0",
+        "om_o3_lag1",
+        "om_o3_mean3",
+        "om_so2_lag0",
+        "om_so2_lag1",
+        "om_so2_mean3",
+        "om_co_lag0",
+        "om_co_lag1",
+        "om_co_mean3",
+        "temp_c_lag0",
+        "temp_c_lag1",
+        "temp_c_mean3",
+        "rh_pct_lag0",
+        "rh_pct_lag1",
+        "rh_pct_mean3",
+        "precip_mm_lag0",
+        "precip_mm_lag1",
+        "precip_mm_mean3",
+        "wind_kmh_lag0",
+        "wind_kmh_lag1",
+        "wind_kmh_mean3",
+        "wind_u_lag0",
+        "wind_u_lag1",
+        "wind_u_mean3",
+        "wind_v_lag0",
+        "wind_v_lag1",
+        "wind_v_mean3",
+        "fire_count_lag0",
+        "fire_count_lag1",
+        "fire_count_mean3",
+        "fire_frp_lag0",
+        "fire_frp_lag1",
+        "fire_frp_mean3",
+        "doy_sin",
+        "doy_cos",
+        "dow_sin",
+        "dow_cos"
+      ],
+      "residual_q80": 4.766648264389929
+    },
+    "rh_pct_h2": {
+      "reason": "kept: only 3 days are unseen by the current model",
+      "method": "random_forest",
+      "train_end": "2026-11-10",
+      "promoted_at": "2026-11-11T06:16:17+07:00",
+      "residual_q80": 5.935126362372208
+    }
+  },
+  "monthly": {
+    "pm25_m2": {
+      "method": "climatology",
+      "reason": "does not beat baseline climatology",
+      "residual_q80": 4.982952821940232
+    },
+    "pm25_m3": {
+      "method": "climatology",
+      "reason": "does not beat baseline climatology",
+      "residual_q80": 5.44318751487495
+    },
+    "pm25_m4": {
+      "method": "climatology",
+      "reason": "does not beat baseline climatology",
+      "residual_q80": 3.6022487431360797
+    },
+    "pm10_m2": {
+      "method": "climatology",
+      "reason": "does not beat baseline climatology",
+      "residual_q80": 7.435048386099257
+    },
+    "pm10_m3": {
+      "method": "climatology",
+      "reason": "does not beat baseline climatology",
+      "residual_q80": 7.491945516458223
+    },
+    "pm10_m4": {
+      "method": "climatology",
+      "reason": "does not beat baseline climatology",
+      "residual_q80": 7.769810089783925
+    },
+    "temp_c_m2": {
+      "method": "anomaly",
+      "reason": "beats every baseline",
+      "residual_q80": 1.1394443395542737
+    },
+    "temp_c_m3": {
+      "method": "anomaly",
+      "reason": "beats every baseline",
+      "residual_q80": 1.2071165805467239
+    },
+    "temp_c_m4": {
+      "method": "climatology",
+      "reason": "does not beat baseline climatology",
+      "residual_q80": 1.228824596774193
+    },
+    "rh_pct_m2": {
+      "method": "anomaly",
+      "reason": "beats every baseline",
+      "residual_q80": 4.78314742859537
+    },
+    "rh_pct_m3": {
+      "method": "climatology",
+      "reason": "does not beat baseline climatology",
+      "residual_q80": 5.667002688172034
+    },
+    "rh_pct_m4": {
+      "method": "climatology",
+      "reason": "does not beat baseline climatology",
+      "residual_q80": 5.700604838709673
+    }
+  }
+}
