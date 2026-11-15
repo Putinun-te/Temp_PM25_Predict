@@ -36,7 +36,9 @@ def fetch_cams_forecast(
     response = get_with_retry(
         http_get,
         CAMS_URL,
-        {"latitude": latitude, "longitude": longitude, "hourly": "pm2_5", "forecast_days": 3, "timezone": "GMT"},
+        # The forecast starts at 00:00 UTC, which is 07:00 in Bangkok, so the
+        # previous day is included to cover all of today in Bangkok.
+        {"latitude": latitude, "longitude": longitude, "hourly": "pm2_5", "past_days": 1, "forecast_days": 3, "timezone": "GMT"},
         sleep,
         pause=0.2,
     )

@@ -21,7 +21,7 @@ def test_returns_the_bangkok_estimate_in_local_time(fake_response):
     assert calls == [GISTDA_URL]
     assert result == {
         "source": "GISTDA satellite estimate",
-        "observed_at": "2026-11-13T22:00+07:00",
+        "observed_at": "2026-11-13T15:00+07:00",
         "pm25_hourly": 23.0,
         "pm25_24h_mean": 28.0,
     }

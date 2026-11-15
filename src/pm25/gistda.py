@@ -33,7 +33,9 @@ def fetch_gistda_bangkok(
     row = next((r for r in rows if r.get("pv_idn") == BANGKOK_PROVINCE_ID), None)
     if row is None or row.get("pm25Avg24hr") is None:
         return None
-    observed = pd.Timestamp(row["dt"]).tz_convert(TIMEZONE)
+    # GISTDA writes Bangkok local time with a "Z" suffix (19:00 local reads "19:00Z"),
+    # so the suffix is dropped and the time is read as local.
+    observed = pd.Timestamp(str(row["dt"]).rstrip("Z")).tz_localize(None).tz_localize(TIMEZONE)
     return {
         "source": "GISTDA satellite estimate",
         "observed_at": observed.isoformat(timespec="minutes"),

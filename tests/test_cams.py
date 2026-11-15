@@ -13,7 +13,7 @@ def test_daily_means_for_today_and_tomorrow_are_archived(tmp_path, fake_response
     as_of = pd.Timestamp("2026-11-13")
 
     def http_get(url, params, timeout):
-        assert params["forecast_days"] == 3 and params["hourly"] == "pm2_5"
+        assert params["forecast_days"] == 3 and params["past_days"] == 1 and params["hourly"] == "pm2_5"
         return fake_response(payload("2026-11-13", 2))
 
     rows = fetch_cams_forecast(13.7, 100.5, as_of, "2026-11-13T07:20:00+07:00", http_get, lambda _: None)
