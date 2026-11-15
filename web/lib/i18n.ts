@@ -76,6 +76,18 @@ const STRINGS = {
   gistdaTitle: { en: "GISTDA satellite estimate for Bangkok", th: "ค่าประมาณจากดาวเทียมของ GISTDA กรุงเทพฯ" },
   gistdaMean: { en: "24-hour average to", th: "ค่าเฉลี่ย 24 ชั่วโมง ถึง" },
   gistdaHourly: { en: "latest hour", th: "ชั่วโมงล่าสุด" },
+  yesterdayTitle: { en: "Latest measured day: forecast against measured", th: "วันล่าสุดที่วัดได้: ค่าที่ทายไว้เทียบกับค่าจริง" },
+  measuredOn: { en: "Measured", th: "วัดได้จริง" },
+  issuedSameDay: { en: "Forecast that morning", th: "ทายไว้เช้าวันนั้น" },
+  issuedDayBefore: { en: "Forecast the day before", th: "ทายไว้ล่วงหน้า 1 วัน" },
+  tooHigh: { en: "too high by", th: "สูงไป" },
+  tooLow: { en: "too low by", th: "ต่ำไป" },
+  exact: { en: "exact", th: "ตรงพอดี" },
+  notIssued: { en: "not issued", th: "ไม่ได้ออกพยากรณ์" },
+  yesterdayNote: {
+    en: "Station data arrives a day late, so the newest measured day is usually yesterday. The percentage is the error as a share of the measured value.",
+    th: "ข้อมูลสถานีมาช้าหนึ่งวัน วันล่าสุดที่วัดได้จึงมักเป็นเมื่อวาน เปอร์เซ็นต์คือค่าคลาดเคลื่อนเทียบกับค่าที่วัดได้จริง",
+  },
   gistdaNote: {
     en: "A reference from GISTDA's satellite and model estimate, not a station measurement and not used by our model.",
     th: "ค่าอ้างอิงจากการประมาณด้วยดาวเทียมและแบบจำลองของ GISTDA ไม่ใช่ค่าจากสถานีตรวจวัด และไม่ได้ใช้ในโมเดลของเรา",

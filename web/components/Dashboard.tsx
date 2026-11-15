@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { dataBase, dayBeforeForecasts, loadForecast, loadHistory, loadStations, measuredSeries } from "@/lib/data";
+import { type DayCheck, latestDayChecks } from "@/lib/accuracy";
+import { dataBase, dayBeforeForecasts, loadAccuracy, loadForecast, loadHistory, loadStations, measuredSeries } from "@/lib/data";
 import type { Forecast, Point, StationsFile } from "@/lib/types";
 import { AqiLegend } from "./AqiBadge";
 import ForecastCards from "./ForecastCards";
@@ -10,6 +11,7 @@ import HistoryChart from "./HistoryChart";
 import { useLang } from "./LangProvider";
 import MonthlyTable from "./MonthlyTable";
 import StationMap from "./StationMap";
+import YesterdayCards from "./YesterdayCards";
 
 interface Series {
   measured: Point[];
@@ -21,6 +23,7 @@ export default function Dashboard() {
   const [forecast, setForecast] = useState<Forecast | null>(null);
   const [series, setSeries] = useState<Series | null>(null);
   const [stations, setStations] = useState<StationsFile | null>(null);
+  const [checks, setChecks] = useState<DayCheck[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -36,6 +39,7 @@ export default function Dashboard() {
       })
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)));
     loadStations(base).then(setStations);
+    loadAccuracy(base).then(({ scored }) => setChecks(latestDayChecks(scored)));
   }, []);
 
   return (
@@ -61,6 +65,14 @@ export default function Dashboard() {
       {forecast && <ForecastCards days={forecast.daily} />}
       {forecast?.gistda && <GistdaReference data={forecast.gistda} />}
       <AqiLegend />
+
+      {checks.length > 0 && (
+        <>
+          <h2>{t("yesterdayTitle")}</h2>
+          <YesterdayCards checks={checks} />
+          <p className="note">{t("yesterdayNote")}</p>
+        </>
+      )}
 
       <h2>{t("measuredVsForecast")}</h2>
       <div className="chart">

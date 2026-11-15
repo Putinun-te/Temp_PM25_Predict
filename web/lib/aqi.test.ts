@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bandFor } from "./aqi";
-import { accuracyTable, recentScored } from "./accuracy";
+import { accuracyTable, latestDayChecks, recentScored } from "./accuracy";
 import { pickLang, translate } from "./i18n";
 import type { AccuracySummary, ScoredForecast } from "./types";
 
@@ -62,5 +62,31 @@ describe("accuracy helpers", () => {
       as_of: "", period, label: "tomorrow", target: "pm25", source: "forecast", forecast: 1, actual: 1, abs_error: 0,
     }));
     expect(recentScored(scored, "pm25", "tomorrow", 2).map((r) => r.period)).toEqual(["2026-11-12", "2026-11-11"]);
+  });
+});
+
+describe("latestDayChecks", () => {
+  const row = (period: string, label: string, target: string, forecast: number, actual: number, source = "forecast"): ScoredForecast => ({
+    as_of: "", period, label, target, source, forecast, actual, abs_error: Math.abs(forecast - actual),
+  });
+
+  it("compares both forecasts for the newest measured day", () => {
+    const checks = latestDayChecks([
+      row("2026-11-13", "today", "pm25", 99, 10),
+      row("2026-11-14", "today", "pm25", 20, 25),
+      row("2026-11-14", "tomorrow", "pm25", 30, 25),
+      row("2026-11-14", "today", "temp_c", 28, 29, "tmd"),
+      row("2026-11-14", "today", "rh_pct", 70, 70),
+    ]);
+    expect(checks.map((c) => c.target)).toEqual(["pm25", "rh_pct"]);
+    const pm25 = checks[0]!;
+    expect(pm25.date).toBe("2026-11-14");
+    expect(pm25.sameDay).toEqual({ forecast: 20, diff: -5, percent: 20 });
+    expect(pm25.dayBefore).toEqual({ forecast: 30, diff: 5, percent: 20 });
+    expect(checks[1]!.dayBefore).toBeNull();
+  });
+
+  it("returns nothing before any forecast is scored", () => {
+    expect(latestDayChecks([])).toEqual([]);
   });
 });

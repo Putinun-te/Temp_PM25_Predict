@@ -22,3 +22,46 @@ export function recentScored(rows: ScoredForecast[], target: string, label: stri
     .sort((a, b) => b.period.localeCompare(a.period))
     .slice(0, count);
 }
+
+export interface Check {
+  forecast: number;
+  /** forecast minus measured: positive means the forecast was too high. */
+  diff: number;
+  /** Absolute error as a share of the measured value, in percent. Null when measured is 0. */
+  percent: number | null;
+}
+
+export interface DayCheck {
+  target: string;
+  date: string;
+  actual: number;
+  sameDay: Check | null; // Issued on the morning of the day itself
+  dayBefore: Check | null; // Issued one day earlier
+}
+
+function check(row: ScoredForecast | undefined, actual: number): Check | null {
+  if (!row || row.forecast === null) return null;
+  const diff = row.forecast - actual;
+  return { forecast: row.forecast, diff, percent: actual === 0 ? null : (Math.abs(diff) / actual) * 100 };
+}
+
+/** Our forecasts for the newest measured day, next to what was measured. */
+export function latestDayChecks(rows: ScoredForecast[]): DayCheck[] {
+  const ours = rows.filter((row) => row.source === "forecast" && row.actual !== null);
+  const date = ours.reduce((max, row) => (row.period > max ? row.period : max), "");
+  const day = ours.filter((row) => row.period === date);
+  return TARGET_ORDER.flatMap((target) => {
+    const mine = day.filter((row) => row.target === target);
+    const actual = mine[0]?.actual;
+    if (actual === null || actual === undefined) return [];
+    return [
+      {
+        target,
+        date,
+        actual,
+        sameDay: check(mine.find((row) => row.label === "today"), actual),
+        dayBefore: check(mine.find((row) => row.label === "tomorrow"), actual),
+      },
+    ];
+  });
+}
