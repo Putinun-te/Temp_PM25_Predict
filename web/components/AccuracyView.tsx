@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { accuracyTable, recentScored } from "@/lib/accuracy";
+import { accuracyTable, matchPercent, recentScored } from "@/lib/accuracy";
 import { dataBase, loadAccuracy } from "@/lib/data";
 import { fmt } from "@/lib/format";
 import type { AccuracySummary, ScoredForecast } from "@/lib/types";
@@ -15,7 +15,7 @@ const TARGET_NAMES: Record<string, { en: string; th: string }> = {
 };
 
 function percent(value: number | null): string {
-  return value === null ? "n/a" : `${Math.round(value * 100)}%`;
+  return value === null || Number.isNaN(value) ? "n/a" : `${Math.round(value * 100)}%`;
 }
 
 export default function AccuracyView() {
@@ -74,6 +74,7 @@ export default function AccuracyView() {
                   <th>{t("horizon")}</th>
                   <th>{t("source")}</th>
                   <th>{t("scored")}</th>
+                  <th>{t("matchAverage")}</th>
                   <th>{t("mae")}</th>
                   <th>{t("persistenceMae")}</th>
                   <th>{t("skill")}</th>
@@ -89,6 +90,7 @@ export default function AccuracyView() {
                       <td>{row.label === "today" ? t("today") : t("tomorrow")}</td>
                       <td>{row.source === "tmd" ? t("tmd") : t("ourForecast")}</td>
                       <td>{row.n}</td>
+                      <td>{percent((matchPercent(row.mape_pct) ?? Number.NaN) / 100)}</td>
                       <td>{fmt(row.mae, 2)}</td>
                       <td>{fmt(row.persistence_mae, 2)}</td>
                       <td className={skill === null ? "" : skill > 0 ? "good" : "bad"}>{percent(skill)}</td>
@@ -113,6 +115,7 @@ export default function AccuracyView() {
                   <th>{t("forecast")}</th>
                   <th>{t("actual")}</th>
                   <th>{t("error")}</th>
+                  <th>{t("match")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -122,6 +125,11 @@ export default function AccuracyView() {
                     <td>{fmt(row.forecast)}</td>
                     <td>{fmt(row.actual)}</td>
                     <td>{fmt(row.abs_error)}</td>
+                    <td>
+                      {row.actual && row.abs_error !== null
+                        ? `${fmt(matchPercent((row.abs_error / row.actual) * 100), 0)}%`
+                        : "n/a"}
+                    </td>
                   </tr>
                 ))}
               </tbody>

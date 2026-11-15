@@ -102,6 +102,7 @@ export interface AccuracyRow {
   window_days: number;
   n: number;
   mae: number | null;
+  mape_pct?: number | null;
   persistence_mae: number | null;
   skill_vs_persistence: number | null;
   coverage: number | null;

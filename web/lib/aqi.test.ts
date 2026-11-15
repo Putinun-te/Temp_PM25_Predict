@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bandFor } from "./aqi";
-import { accuracyTable, latestDayChecks, recentScored } from "./accuracy";
+import { accuracyTable, latestDayChecks, matchPercent, recentScored } from "./accuracy";
 import { pickLang, translate } from "./i18n";
 import type { AccuracySummary, ScoredForecast } from "./types";
 
@@ -88,5 +88,13 @@ describe("latestDayChecks", () => {
 
   it("returns nothing before any forecast is scored", () => {
     expect(latestDayChecks([])).toEqual([]);
+  });
+});
+
+describe("matchPercent", () => {
+  it("is 100 minus the error percent, floored at 0", () => {
+    expect(matchPercent(22)).toBe(78);
+    expect(matchPercent(140)).toBe(0);
+    expect(matchPercent(null)).toBeNull();
   });
 });

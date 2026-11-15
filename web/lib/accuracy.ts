@@ -23,6 +23,12 @@ export function recentScored(rows: ScoredForecast[], target: string, label: stri
     .slice(0, count);
 }
 
+/** Share of the measured value the forecast got right: 100 minus the error percent, never below 0. */
+export function matchPercent(errorPercent: number | null | undefined): number | null {
+  if (errorPercent === null || errorPercent === undefined || Number.isNaN(errorPercent)) return null;
+  return Math.max(0, 100 - errorPercent);
+}
+
 export interface Check {
   forecast: number;
   /** forecast minus measured: positive means the forecast was too high. */

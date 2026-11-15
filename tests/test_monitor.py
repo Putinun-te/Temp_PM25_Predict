@@ -89,6 +89,7 @@ def test_summary_flags_a_model_worse_than_persistence():
     week = next(r for r in summary["rows"] if r["window_days"] == 7)
     assert week["n"] == 7
     assert week["mae"] == 10.0
+    assert week["mape_pct"] == 100.0
     assert week["skill_vs_persistence"] == -9.0
     assert week["coverage"] == 0.0
     assert len(summary["alerts"]) == 1

@@ -121,6 +121,8 @@ def summarize(scored: pd.DataFrame, generated_at: str) -> dict[str, Any]:
                 "window_days": window,
                 "n": int(len(recent)),
                 "mae": _round(mae),
+                # Mean absolute error as a share of the measured value; 100 minus this is the "match".
+                "mape_pct": _round((recent["abs_error"] / recent["actual"].where(recent["actual"] > 0)).mean() * 100),
                 "persistence_mae": _round(persistence_mae),
                 "skill_vs_persistence": _round(skill),
                 "coverage": _round(recent["in_range"].astype(float).mean()),

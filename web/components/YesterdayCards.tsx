@@ -1,20 +1,19 @@
 "use client";
 
-import type { Check, DayCheck } from "@/lib/accuracy";
+import { type Check, type DayCheck, matchPercent } from "@/lib/accuracy";
 import { bandFor } from "@/lib/aqi";
 import { fmt } from "@/lib/format";
 import { AqiBadge } from "./AqiBadge";
 import { useLang } from "./LangProvider";
 
-const META: Record<string, { name?: string; key?: "temperature" | "humidity"; unit: string; digits: number; percent: boolean }> = {
-  pm25: { name: "PM2.5", unit: "µg/m³", digits: 1, percent: true },
-  pm10: { name: "PM10", unit: "µg/m³", digits: 1, percent: true },
-  // A percentage of degrees Celsius or of relative humidity misleads, so these show the difference only.
-  temp_c: { key: "temperature", unit: "°C", digits: 1, percent: false },
-  rh_pct: { key: "humidity", unit: "%", digits: 0, percent: false },
+const META: Record<string, { name?: string; key?: "temperature" | "humidity"; unit: string; digits: number }> = {
+  pm25: { name: "PM2.5", unit: "µg/m³", digits: 1 },
+  pm10: { name: "PM10", unit: "µg/m³", digits: 1 },
+  temp_c: { key: "temperature", unit: "°C", digits: 1 },
+  rh_pct: { key: "humidity", unit: "%", digits: 0 },
 };
 
-function Line({ label, check, digits, unit, percent }: { label: string; check: Check | null; digits: number; unit: string; percent: boolean }) {
+function Line({ label, check, digits, unit }: { label: string; check: Check | null; digits: number; unit: string }) {
   const { t } = useLang();
   if (!check) {
     return (
@@ -24,16 +23,21 @@ function Line({ label, check, digits, unit, percent }: { label: string; check: C
     );
   }
   const size = Math.abs(check.diff);
-  const rounded = Number(size.toFixed(digits));
-  const verdict =
-    rounded === 0
-      ? t("exact")
-      : `${check.diff > 0 ? t("tooHigh") : t("tooLow")} ${fmt(size, digits)} ${unit}${
-          percent && check.percent !== null ? ` (${fmt(check.percent, 0)}%)` : ""
-        }`;
+  const exact = Number(size.toFixed(digits)) === 0;
+  const match = matchPercent(check.percent);
   return (
     <div className="range">
-      {label}: <strong className="check-value">{fmt(check.forecast, digits)}</strong> · {verdict}
+      {label}: <strong className="check-value">{fmt(check.forecast, digits)}</strong>
+      {match !== null && (
+        <>
+          {" · "}
+          <strong className="check-value">
+            {t("match")} {fmt(match, 0)}%
+          </strong>
+        </>
+      )}
+      {" · "}
+      {exact ? t("exact") : `${check.diff > 0 ? t("tooHigh") : t("tooLow")} ${fmt(size, digits)} ${unit}`}
     </div>
   );
 }
@@ -56,8 +60,8 @@ export default function YesterdayCards({ checks }: { checks: DayCheck[] }) {
               {fmt(item.actual, meta.digits)}
               <span className="unit"> {meta.unit}</span>
             </div>
-            <Line label={t("issuedSameDay")} check={item.sameDay} digits={meta.digits} unit={meta.unit} percent={meta.percent} />
-            <Line label={t("issuedDayBefore")} check={item.dayBefore} digits={meta.digits} unit={meta.unit} percent={meta.percent} />
+            <Line label={t("issuedSameDay")} check={item.sameDay} digits={meta.digits} unit={meta.unit} />
+            <Line label={t("issuedDayBefore")} check={item.dayBefore} digits={meta.digits} unit={meta.unit} />
             {pollutant && <AqiBadge pollutant={pollutant} value={item.actual} />}
           </div>
         );

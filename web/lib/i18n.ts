@@ -85,9 +85,11 @@ const STRINGS = {
   exact: { en: "exact", th: "ตรงพอดี" },
   notIssued: { en: "not issued", th: "ไม่ได้ออกพยากรณ์" },
   yesterdayNote: {
-    en: "Station data arrives a day late, so the newest measured day is usually yesterday. The percentage is the error as a share of the measured value.",
-    th: "ข้อมูลสถานีมาช้าหนึ่งวัน วันล่าสุดที่วัดได้จึงมักเป็นเมื่อวาน เปอร์เซ็นต์คือค่าคลาดเคลื่อนเทียบกับค่าที่วัดได้จริง",
+    en: "Station data arrives a day late, so the newest measured day is usually yesterday. Today's forecast can only be checked tomorrow, once the day is complete. Match is 100% minus the error as a share of the measured value.",
+    th: "ข้อมูลสถานีมาช้าหนึ่งวัน วันล่าสุดที่วัดได้จึงมักเป็นเมื่อวาน ค่าที่ทายของวันนี้จะเทียบได้พรุ่งนี้เมื่อครบทั้งวัน เปอร์เซ็นต์ที่ตรงคือ 100% ลบค่าคลาดเคลื่อนเทียบกับค่าที่วัดได้จริง",
   },
+  match: { en: "match", th: "ตรง" },
+  matchAverage: { en: "Average match", th: "ตรงเฉลี่ย" },
   gistdaNote: {
     en: "A reference from GISTDA's satellite and model estimate, not a station measurement and not used by our model.",
     th: "ค่าอ้างอิงจากการประมาณด้วยดาวเทียมและแบบจำลองของ GISTDA ไม่ใช่ค่าจากสถานีตรวจวัด และไม่ได้ใช้ในโมเดลของเรา",
