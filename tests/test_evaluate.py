@@ -139,3 +139,22 @@ def test_monthly_walk_forward_ignores_the_future():
 def test_monthly_walk_forward_requires_enough_history():
     index = pd.date_range("2021-01-01", periods=20, freq="MS")
     assert monthly_walk_forward(pd.Series(10.0, index=index), 2).empty
+
+
+def test_seasonal_ranges_follow_the_target_month_and_fall_back():
+    from pm25.evaluate import range_for, seasonal_q80
+
+    index = pd.date_range("2025-01-01", "2025-12-31", freq="D")
+    actual = pd.Series(10.0, index=index)
+    # Errors of 8 in the haze months and 1 otherwise.
+    haze = (index + pd.Timedelta(days=1)).month.isin([11, 12, 1, 2])
+    predicted = actual - np.where(haze, 8.0, 1.0)
+
+    by_season = seasonal_q80(actual, predicted, horizon=1)
+    assert by_season["cool_haze_nov_feb"] == 8.0
+    assert by_season["rainy_jun_oct"] == 1.0
+
+    entry = {"residual_q80": 3.0, "residual_q80_by_season": {"cool_haze_nov_feb": 8.0}}
+    assert range_for(entry, pd.Timestamp("2026-01-15")) == 8.0
+    assert range_for(entry, pd.Timestamp("2026-07-15")) == 3.0  # Season missing
+    assert range_for({"residual_q80": 3.0}, pd.Timestamp("2026-01-15")) == 3.0  # Older registry entry

@@ -43,6 +43,37 @@ def residual_q80(actual: pd.Series, predicted: pd.Series) -> float:
     return float(np.quantile((actual - predicted).abs(), 0.8))
 
 
+MIN_SEASON_ROWS = 60
+
+
+def season_of(month: int) -> str:
+    return next(name for name, months in SEASONS.items() if month in months)
+
+
+def seasonal_q80(actual: pd.Series, predicted: pd.Series, horizon: int) -> dict[str, float]:
+    """Return the 80 % error size per season of the target date.
+
+    Errors are several times larger in the haze season than in the rainy season,
+    so one range for the whole year is too narrow in winter and too wide in
+    summer. A season with too few rows is left out and falls back to the
+    all-year value.
+    """
+    error = (actual - predicted).abs().dropna()
+    months = (error.index + pd.Timedelta(days=horizon)).month
+    result: dict[str, float] = {}
+    for season, season_months in SEASONS.items():
+        subset = error[months.isin(season_months)]
+        if len(subset) >= MIN_SEASON_ROWS:
+            result[season] = float(np.quantile(subset, 0.8))
+    return result
+
+
+def range_for(entry: Mapping[str, object], target_date: pd.Timestamp) -> float | None:
+    """Return the range half-width for a forecast of `target_date`."""
+    by_season = entry.get("residual_q80_by_season") or {}
+    return by_season.get(season_of(target_date.month), entry.get("residual_q80"))  # type: ignore[union-attr, return-value]
+
+
 def walk_forward_predict(
     features: pd.DataFrame,
     labels: pd.Series,

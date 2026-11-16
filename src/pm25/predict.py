@@ -20,6 +20,7 @@ from pm25.features import (
     monthly_targets,
     with_weather_targets,
 )
+from pm25.evaluate import range_for
 from pm25.train import CANDIDATES, model_path
 
 FORECAST_FILENAME = "forecast.json"
@@ -63,7 +64,7 @@ def _daily_row(
             value = joblib.load(model_path(models_dir, slot)).predict(model_inputs(features, entry))[0]
         else:
             value = daily_baselines(targets[target], horizon)[method].loc[origin]
-        _with_range(row, target, value, entry["residual_q80"])
+        _with_range(row, target, value, range_for(entry, target_date))
         row[f"{target}_method"] = method
     # The TMD forecast is a separate reference, kept under its own names.
     for name, value in tmd.get(date_key, {}).items():
