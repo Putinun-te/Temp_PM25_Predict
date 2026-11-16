@@ -5,7 +5,7 @@ import "leaflet/dist/leaflet.css";
 import { bandFor } from "@/lib/aqi";
 import { latestStationValue } from "@/lib/data";
 import { fmt } from "@/lib/format";
-import type { StationsFile } from "@/lib/types";
+import type { StationForecast, StationsFile } from "@/lib/types";
 import { useLang } from "./LangProvider";
 
 const NO_DATA = "#9a9890";
@@ -14,7 +14,15 @@ function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
-export default function StationMap({ data }: { data: StationsFile }) {
+export type MapMode = "measured" | "today" | "tomorrow";
+
+interface Props {
+  data: StationsFile;
+  forecasts?: StationForecast[];
+  mode?: MapMode;
+}
+
+export default function StationMap({ data, forecasts = [], mode = "measured" }: Props) {
   const element = useRef<HTMLDivElement>(null);
   const { lang, t } = useLang();
 
@@ -33,17 +41,27 @@ export default function StationMap({ data }: { data: StationsFile }) {
       const date = data.dates.at(-1) ?? "";
       const points: [number, number][] = [];
       for (const station of data.stations) {
-        const pm25 = latestStationValue(station.pm25);
+        const measured = latestStationValue(station.pm25);
         const pm10 = latestStationValue(station.pm10);
+        const forecast = forecasts.find((item) => item.location_id === station.location_id);
+        // The disc shows the selected value; the popup always lists all three.
+        const pm25 = mode === "measured" ? measured : (forecast?.[mode]?.pm25 ?? null);
         const band = bandFor("pm25", pm25);
         const position: [number, number] = [station.latitude, station.longitude];
         points.push(position);
         const label = band ? (lang === "th" ? band.th : band.en) : t("noData");
         const lines = [
           `<strong>${escapeHtml(station.name)}</strong>`,
-          `${escapeHtml(station.locality)} · ${date}`,
-          `PM2.5 ${pm25 === null ? t("noData") : `${fmt(pm25)} µg/m³`} (${label})`,
+          escapeHtml(station.locality),
+          `${t("mapMeasured")} ${date}: PM2.5 ${measured === null ? t("noData") : `${fmt(measured)} µg/m³`}`,
         ];
+        for (const key of ["today", "tomorrow"] as const) {
+          const value = forecast?.[key];
+          if (value && value.pm25 !== null) {
+            lines.push(`${t(key === "today" ? "mapToday" : "mapTomorrow")}: ${fmt(value.pm25)} (${fmt(value.low)}–${fmt(value.high)})`);
+          }
+        }
+        lines.push(label);
         if (station.pm10) lines.push(`PM10 ${pm10 === null ? t("noData") : `${fmt(pm10)} µg/m³`}`);
         // A coloured disc with the value inside, readable without opening the popup.
         const icon = L.divIcon({
@@ -61,7 +79,7 @@ export default function StationMap({ data }: { data: StationsFile }) {
       removed = true;
       cleanup();
     };
-  }, [data, lang, t]);
+  }, [data, forecasts, mode, lang, t]);
 
   return <div ref={element} className="map" role="region" aria-label={t("stationsMap")} />;
 }

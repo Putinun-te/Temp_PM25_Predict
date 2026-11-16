@@ -57,7 +57,8 @@ Base URL: https://func-pm25-api-d0b8.azurewebsites.net/api
 | Endpoint | Returns |
 |---|---|
 | `/help` | The list of endpoints |
-| `/forecast` | Today, tomorrow and the next three months |
+| `/forecast` | Today, tomorrow, the next three months, and each station |
+| `/hourly` | Hourly PM2.5 from 04:00 today to 23:00 tomorrow |
 | `/measured?target=pm25&from=2026-11-01&to=2026-11-12` | Measured Bangkok daily values; `target` is `pm25`, `pm10`, `temp_c` or `rh_pct` |
 | `/forecasts?target=pm25&label=tomorrow&from=…&to=…` | Every published daily forecast in the range |
 | `/accuracy` | Live accuracy over 7, 30 and 90 days |
@@ -287,6 +288,41 @@ Monthly errors over 25 to 27 out-of-sample months for air quality and about 40 m
 
 For context, the Open-Meteo CAMS value for the same day, which is hindsight rather than a forecast, has a PM2.5 MAE of 11.0 against the station panel. The model reads high for Bangkok.
 
+### Feature experiments
+
+Each addition was tested on the same walk-forward folds, with and without it. MAE of the best candidate, measured on 2026-11-13 to 2026-11-16:
+
+| Addition | PM2.5 today | PM2.5 tomorrow | PM10 today | PM10 tomorrow | Decision |
+|---|---|---|---|---|---|
+| Target-day weather forecast (JMA previous runs) | 3.19 → 3.08 | 4.55 → 4.28 | 4.80 → 4.63 | 6.75 → 6.40 | Kept. Temperature tomorrow 0.83 → 0.64 °C, humidity tomorrow 4.78 → 3.69 % |
+| Fire count and radiative power in the region (NASA FIRMS) | no clear change | no clear change | no clear change | no clear change | Kept as inputs; the gate decides |
+| Fire power weighted by wind direction (fires upwind of Bangkok, eight compass sectors) | 3.08 → 3.11 | 4.28 → 4.31 | 4.63 → 4.64 | 6.41 → 6.48 | Rejected: slightly worse in every slot, and no better in the haze season (PM2.5 tomorrow 6.29 → 6.30). Not in the code |
+
+The fire rows are a caution against assuming a plausible feature helps. A daily mean wind and eight sectors may be too coarse; trajectories would be the next thing to try.
+
+### Forecast ranges
+
+The range is the forecast plus or minus the error that 80 % of past walk-forward forecasts stayed within. One value for the whole year was too narrow in the haze season and too wide in the rainy season, so the value now depends on the season of the target date. Coverage measured out of sample, each year's ranges taken from earlier years only (target 80 %):
+
+| Slot | Haze season, one range | Haze season, seasonal | Rainy season, one range | Rainy season, seasonal |
+|---|---|---|---|---|
+| PM2.5 today | 70 % | 86 % | 94 % | 79 % |
+| PM2.5 tomorrow | 63 % | 77 % | 94 % | 82 % |
+| PM10 today | 63 % | 87 % | 89 % | 84 % |
+| PM10 tomorrow | 62 % | 80 % | 93 % | 82 % |
+
+### Hourly forecast
+
+`gold/hourly_forecast.json` holds PM2.5 for each hour from 04:00 today to 23:00 tomorrow, Bangkok time. It is made once a day in the same run, so it adds no scheduled jobs. Station hours reach OpenAQ two to three hours late and the run starts between 07:17 and 08:00, so the model only uses hours up to 03:00. One gradient boosting model covers all 44 lead times, with the hour of day, the lead and the weather forecast for each target hour as features.
+
+Walk-forward over 53,633 hours: MAE 3.66 µg/m³ against 4.91 for the same hour yesterday and 4.80 for yesterday's mean. Hours of today 2.79 against 3.95; hours of tomorrow 4.40 against 5.52. It is published only while it beats both baselines by 1 %.
+
+### Station forecasts
+
+`station_forecasts` in the forecast document gives PM2.5 today and tomorrow for each of the 10 stations. One pooled model per horizon covers all stations, trained in the same GitHub Actions run: a row is a station on an origin day, with that station's recent values, its usual offset from the city, and all city features. Two models instead of twenty keeps training to seconds and lets stations with gaps borrow from the others.
+
+Walk-forward over about 11,900 station-days: MAE today 3.20 against 3.65 for the station's own persistence and 4.59 for giving every station the city forecast; tomorrow 4.59 against 5.46 and 5.45. The model beat persistence at every station.
+
 ### Limitations
 
 - The better of two candidate models is picked on the same walk-forward results that are reported, so the reported model error is slightly optimistic.
@@ -295,7 +331,8 @@ For context, the Open-Meteo CAMS value for the same day, which is hindsight rath
 - PM10 rests on three stations and represents the city less well than PM2.5.
 - Recent Open-Meteo weather is preliminary and may be revised. Training uses revised history, so live inputs are slightly noisier than training inputs.
 - The station panel is fixed. If stations stop reporting for long, the city value is missing rather than estimated.
-- Burning-season smoke from outside Bangkok is not modelled directly. Fire activity data could be added later.
+- Burning-season smoke from outside Bangkok is only represented by regional fire totals. Weighting fires by wind direction did not help.
+- The hourly and station forecasts are not yet scored on the live accuracy page; only their walk-forward results are known.
 
 ## Data sources and attribution
 

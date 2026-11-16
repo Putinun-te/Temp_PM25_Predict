@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { type DayCheck, latestDayChecks } from "@/lib/accuracy";
-import { dataBase, dayBeforeForecasts, loadAccuracy, loadForecast, loadHistory, loadStations, measuredSeries } from "@/lib/data";
-import type { Forecast, Point, StationsFile } from "@/lib/types";
+import { dataBase, dayBeforeForecasts, loadAccuracy, loadForecast, loadHistory, loadHourly, loadStations, measuredSeries } from "@/lib/data";
+import type { Forecast, HourlyForecast, Point, StationsFile } from "@/lib/types";
 import { AqiLegend } from "./AqiBadge";
 import ForecastCards from "./ForecastCards";
 import GistdaReference from "./GistdaReference";
 import HistoryChart from "./HistoryChart";
 import { useLang } from "./LangProvider";
 import MonthlyTable from "./MonthlyTable";
-import StationMap from "./StationMap";
+import HourlyChart from "./HourlyChart";
+import StationMap, { type MapMode } from "./StationMap";
 import YesterdayCards from "./YesterdayCards";
 
 interface Series {
@@ -24,6 +25,8 @@ export default function Dashboard() {
   const [series, setSeries] = useState<Series | null>(null);
   const [stations, setStations] = useState<StationsFile | null>(null);
   const [checks, setChecks] = useState<DayCheck[]>([]);
+  const [hourly, setHourly] = useState<HourlyForecast | null>(null);
+  const [mapMode, setMapMode] = useState<MapMode>("measured");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,6 +42,7 @@ export default function Dashboard() {
       })
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)));
     loadStations(base).then(setStations);
+    loadHourly(base).then(setHourly);
     loadAccuracy(base).then(({ scored }) => setChecks(latestDayChecks(scored)));
   }, []);
 
@@ -66,6 +70,19 @@ export default function Dashboard() {
       {forecast?.gistda && <GistdaReference data={forecast.gistda} />}
       <AqiLegend />
 
+      {hourly && hourly.as_of === forecast?.as_of && (
+        <>
+          <h2>{t("hourlyTitle")}</h2>
+          <div className="chart">
+            <HourlyChart
+              data={hourly}
+              labels={{ measured: t("measured"), forecast: t("hourlyForecast"), range: t("hourlyRange") }}
+            />
+          </div>
+          <p className="note">{t("hourlyNote")}</p>
+        </>
+      )}
+
       {checks.length > 0 && (
         <>
           <h2>{t("yesterdayTitle")}</h2>
@@ -88,8 +105,17 @@ export default function Dashboard() {
 
       {stations && (
         <>
-          <h2>{t("stationsMap")}</h2>
-          <StationMap data={stations} />
+          <h2>{t("stationsTitle")}</h2>
+          {forecast?.station_forecasts && (
+            <div className="lang" role="group" aria-label={t("stationsTitle")}>
+              {(["measured", "today", "tomorrow"] as const).map((mode) => (
+                <button key={mode} type="button" aria-pressed={mapMode === mode} className={mapMode === mode ? "active" : ""} onClick={() => setMapMode(mode)}>
+                  {t(mode === "measured" ? "mapMeasured" : mode === "today" ? "mapToday" : "mapTomorrow")}
+                </button>
+              ))}
+            </div>
+          )}
+          <StationMap data={stations} forecasts={forecast?.station_forecasts} mode={mapMode} />
           <p className="note">{t("mapNote")}</p>
         </>
       )}

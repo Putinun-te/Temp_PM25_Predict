@@ -40,9 +40,10 @@ function params(request: HttpRequest): URLSearchParams {
 }
 
 const ENDPOINTS = {
-  "/api/forecast": "Latest forecast: today, tomorrow and the next three months",
+  "/api/forecast": "Latest forecast: today, tomorrow, the next three months, and each station (station_forecasts)",
   "/api/measured?target=pm25&from=YYYY-MM-DD&to=YYYY-MM-DD": "Measured Bangkok daily values (pm25, pm10, temp_c, rh_pct)",
   "/api/forecasts?target=pm25&label=tomorrow&from=YYYY-MM-DD&to=YYYY-MM-DD": "Every published daily forecast in the range",
+  "/api/hourly": "Hourly PM2.5 forecast from 04:00 today to 23:00 tomorrow, Bangkok time",
   "/api/accuracy": "Live accuracy of published forecasts over 7, 30 and 90 days",
   "/api/stations": "Daily values per reference station for the last 14 days",
 };
@@ -89,6 +90,12 @@ app.http("forecasts", {
     const range = dateRange(query, newest);
     return { target, label, ...range, forecasts: forecasts(rows, target, label, range) };
   }),
+});
+
+app.http("hourly", {
+  methods: ["GET"],
+  authLevel: "anonymous",
+  handler: handler(async () => JSON.parse(await fetchText("data/gold/hourly_forecast.json"))),
 });
 
 app.http("accuracy", {

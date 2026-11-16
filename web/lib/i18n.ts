@@ -90,6 +90,17 @@ const STRINGS = {
   },
   match: { en: "match", th: "ตรง" },
   matchAverage: { en: "Average match", th: "ตรงเฉลี่ย" },
+  hourlyTitle: { en: "Hourly PM2.5, today and tomorrow", th: "PM2.5 รายชั่วโมง วันนี้และพรุ่งนี้" },
+  hourlyNote: {
+    en: "Made once each morning from station hours up to 03:00. The shaded band is where 80% of past forecasts landed. Hourly values swing more than the daily average.",
+    th: "พยากรณ์วันละครั้งตอนเช้า จากข้อมูลสถานีถึง 03:00 แถบสีคือช่วงที่ 80% ของการพยากรณ์ที่ผ่านมาอยู่ในนั้น ค่ารายชั่วโมงแกว่งมากกว่าค่าเฉลี่ยรายวัน",
+  },
+  hourlyForecast: { en: "Hourly forecast", th: "พยากรณ์รายชั่วโมง" },
+  hourlyRange: { en: "Likely range", th: "ช่วงที่น่าจะเป็น" },
+  mapMeasured: { en: "Measured", th: "วัดได้ล่าสุด" },
+  mapToday: { en: "Forecast today", th: "พยากรณ์วันนี้" },
+  mapTomorrow: { en: "Forecast tomorrow", th: "พยากรณ์พรุ่งนี้" },
+  stationsTitle: { en: "Stations", th: "รายสถานี" },
   gistdaNote: {
     en: "A reference from GISTDA's satellite and model estimate, not a station measurement and not used by our model.",
     th: "ค่าอ้างอิงจากการประมาณด้วยดาวเทียมและแบบจำลองของ GISTDA ไม่ใช่ค่าจากสถานีตรวจวัด และไม่ได้ใช้ในโมเดลของเรา",

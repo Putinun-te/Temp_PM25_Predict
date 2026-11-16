@@ -98,3 +98,10 @@ describe("matchPercent", () => {
     expect(matchPercent(null)).toBeNull();
   });
 });
+
+describe("hourLabel", () => {
+  it("shortens a local timestamp for the chart axis", async () => {
+    const { hourLabel } = await import("./data");
+    expect(hourLabel("2026-11-16T04:00")).toBe("16 04:00");
+  });
+});

@@ -1,3 +1,4 @@
+import type { HourlyForecast } from "./types";
 import type { AccuracySummary, DailyRow, Forecast, HistoryRow, Point, ScoredForecast, StationsFile } from "./types";
 
 export const DEFAULT_DATA_BASE =
@@ -120,4 +121,13 @@ export async function loadAccuracy(
     fetchOptional(base, "data/gold/live_accuracy.csv", (text) => toScoredRows(parseCsv(text))),
   ]);
   return { summary, scored: scored ?? [] };
+}
+
+export function loadHourly(base: string): Promise<HourlyForecast | null> {
+  return fetchOptional(base, "data/gold/hourly_forecast.json", (text) => JSON.parse(text) as HourlyForecast);
+}
+
+/** "2026-11-16T04:00" becomes "16 04:00": short enough for a chart axis. */
+export function hourLabel(time: string): string {
+  return `${time.slice(8, 10)} ${time.slice(11, 16)}`;
 }

@@ -59,6 +59,37 @@ export interface Forecast {
   daily: DailyForecast[];
   monthly: MonthlyForecast[];
   gistda?: GistdaReference;
+  station_forecasts?: StationForecast[];
+}
+
+export interface StationValue {
+  pm25: number | null;
+  low: number | null;
+  high: number | null;
+  method: string;
+}
+
+export interface StationForecast {
+  location_id: number;
+  today?: StationValue;
+  tomorrow?: StationValue;
+}
+
+export interface HourlyPoint {
+  time: string; // Bangkok local time, YYYY-MM-DDTHH:MM
+  day: "today" | "tomorrow";
+  pm25: number | null;
+  low: number | null;
+  high: number | null;
+}
+
+export interface HourlyForecast {
+  generated_at: string;
+  as_of: string;
+  method: string;
+  inputs_through: string;
+  measured: { time: string; pm25: number }[];
+  hours: HourlyPoint[];
 }
 
 export interface DailyRow {
