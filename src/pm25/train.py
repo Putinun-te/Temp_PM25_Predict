@@ -25,9 +25,11 @@ from pm25.evaluate import (
     promotion_gate,
     residual_q80,
     season_errors,
+    seasonal_q80,
     skill,
     walk_forward_predict,
 )
+from pm25.transform import DropEmptyColumns  # noqa: F401  (saved models refer to pm25.train.DropEmptyColumns)
 from pm25.features import (
     ALL_TARGETS,
     build_features,
@@ -45,21 +47,6 @@ MIN_UNSEEN_DAYS = 14
 REGISTRY_FILENAME = "registry.json"
 METRICS_FILENAME = "metrics.json"
 PLOT_FILENAME = "walk_forward.png"
-
-
-class DropEmptyColumns(BaseEstimator, TransformerMixin):
-    """Remove columns with no values in the training data.
-
-    Open-Meteo history starts later than the station history, so early
-    walk-forward folds have feature columns that are entirely missing.
-    """
-
-    def fit(self, features: Any, labels: Any = None) -> "DropEmptyColumns":
-        self.keep_ = ~np.isnan(np.asarray(features, dtype=float)).all(axis=0)
-        return self
-
-    def transform(self, features: Any) -> np.ndarray:
-        return np.asarray(features, dtype=float)[:, self.keep_]
 
 
 def _gradient_boosting() -> Any:
@@ -155,6 +142,7 @@ def train_slot(
         )
 
     entry["residual_q80"] = residual_q80(frame["actual"], frame[entry["method"]])
+    entry["residual_q80_by_season"] = seasonal_q80(frame["actual"], frame[entry["method"]], horizon)
     report: dict[str, Any] = {
         "published_method": entry["method"],
         "decision": entry["reason"],
@@ -292,8 +280,13 @@ def run_training(
     models_dir: Path,
     now: str,
     as_of: pd.Timestamp,
+    published_out: dict[str, pd.Series] | None = None,
 ) -> dict[str, Any]:
-    """Evaluate every slot, update the registry and write metrics.json and a plot."""
+    """Evaluate every slot, update the registry and write metrics.json and a plot.
+
+    `published_out`, when given, receives each slot's out-of-sample predictions
+    from the method that is published, for models that build on the city forecast.
+    """
     models_dir.mkdir(parents=True, exist_ok=True)
     registry = load_registry(models_dir)
     targets = with_weather_targets(targets, exogenous)
@@ -334,6 +327,8 @@ def run_training(
                 reference,
             )
             registry["daily"][slot] = entry
+            if published_out is not None:
+                published_out[slot] = frame[entry["method"]]
             report["daily"][slot] = slot_report
             if slot == "pm25_h2":
                 # Plot the best model against persistence even when persistence is published.

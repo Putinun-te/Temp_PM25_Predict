@@ -42,6 +42,7 @@ from pm25.firms import FirmsError, backfill_firms, load_daily_fires
 from pm25.cams import archive_cams, fetch_cams_forecast
 from pm25.gistda import fetch_gistda_bangkok
 from pm25.nwp import NWP, backfill_nwp, daily_nwp
+from pm25.hourly import HOURLY_FILENAME, forecast_hourly, hourly_city, train_hourly
 from pm25.health import check_health, render
 from pm25.monitor import ACCURACY_FILENAME, SUMMARY_FILENAME, score_history, summarize
 from pm25.predict import FORECAST_FILENAME, build_forecast, write_forecast
@@ -57,7 +58,15 @@ from pm25.report import (
     write_pdf,
 )
 from pm25.stations import STATIONS_FILENAME, station_days
-from pm25.train import METRICS_FILENAME, PLOT_FILENAME, load_registry, run_training
+from pm25.station_model import HORIZONS as STATION_HORIZONS
+from pm25.station_model import forecast_stations, station_daily, train_stations
+from pm25.train import (
+    METRICS_FILENAME,
+    PLOT_FILENAME,
+    REGISTRY_FILENAME,
+    load_registry,
+    run_training,
+)
 
 log = logging.getLogger("pm25")
 
@@ -183,10 +192,55 @@ def _train(args: argparse.Namespace, config: Config) -> int:
     inputs = _load_inputs(config, as_of)
     if inputs is None:
         return 2
-    report = run_training(*inputs, config.models_dir, _generated_at(), as_of)
+    published: dict[str, pd.Series] = {}
+    report = run_training(*inputs, config.models_dir, _generated_at(), as_of, published)
     for slot, entry in {**report["daily"], **report["monthly"]}.items():
         log.info("%s: %s", slot, entry["published_method"])
+    _train_extras(config, inputs, published, as_of)
     return 0
+
+
+def _train_extras(
+    config: Config,
+    inputs: tuple[pd.DataFrame, pd.DataFrame],
+    published: dict[str, pd.Series],
+    as_of: pd.Timestamp,
+) -> None:
+    """Train the hourly and per-station models and add them to the registry and metrics.
+
+    They build on the city forecast and are extras: an error here is logged and
+    leaves the previous hourly and station entries in place, so the daily
+    forecast is still published.
+    """
+    targets, exogenous = inputs
+    bronze = layer(config.data_dir, BRONZE)
+    openaq = load_series(bronze / OPENAQ_FILENAME)
+    registry = load_registry(config.models_dir)
+    metrics_path = config.models_dir / METRICS_FILENAME
+    report = json.loads(metrics_path.read_text(encoding="utf-8"))
+    try:
+        entry, hourly_report = train_hourly(
+            hourly_city(openaq), load_series(bronze / NWP.filename), as_of, config.models_dir, _generated_at()
+        )
+        registry["hourly"], report["hourly"] = entry, hourly_report
+        log.info("hourly: %s", entry["method"])
+    except Exception:
+        log.exception("Hourly training failed, keeping the previous hourly method")
+    try:
+        stations = station_daily(openaq, as_of)
+        registry.setdefault("stations", {})
+        report["stations"] = {}
+        for horizon in STATION_HORIZONS:
+            slot = f"pm25_h{horizon}"
+            entry, station_report = train_stations(
+                stations, targets, exogenous, horizon, published[slot], config.models_dir, _generated_at()
+            )
+            registry["stations"][slot], report["stations"][slot] = entry, station_report
+            log.info("stations %s: %s", slot, entry["method"])
+    except Exception:
+        log.exception("Station training failed, keeping the previous station methods")
+    (config.models_dir / REGISTRY_FILENAME).write_text(json.dumps(registry, indent=2) + "\n", encoding="utf-8")
+    metrics_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
 
 def _predict(args: argparse.Namespace, config: Config) -> int:
@@ -216,6 +270,29 @@ def _predict(args: argparse.Namespace, config: Config) -> int:
         gistda = None
     if gistda:
         forecast["gistda"] = gistda
+    bronze = layer(config.data_dir, BRONZE)
+    openaq = load_series(bronze / OPENAQ_FILENAME)
+    if registry.get("stations"):
+        try:
+            city_values = {day["horizon_days"]: day.get("pm25") for day in forecast["daily"]}
+            forecast["station_forecasts"] = forecast_stations(
+                station_daily(openaq, as_of), *inputs, registry["stations"], config.models_dir, as_of, city_values
+            )
+        except Exception:
+            log.exception("Station forecast failed, publishing without it")
+    if registry.get("hourly"):
+        try:
+            hourly = forecast_hourly(
+                hourly_city(openaq),
+                load_series(bronze / NWP.filename),
+                registry["hourly"],
+                config.models_dir,
+                as_of,
+                _generated_at(),
+            )
+            (config.models_dir / HOURLY_FILENAME).write_text(json.dumps(hourly, indent=1) + "\n", encoding="utf-8")
+        except Exception:
+            log.exception("Hourly forecast failed, publishing without it")
     try:
         cams = fetch_cams_forecast(config.latitude, config.longitude, as_of, _generated_at())
         archive_cams(layer(config.data_dir, BRONZE), cams)
@@ -249,6 +326,12 @@ def _report(args: argparse.Namespace, config: Config) -> int:
     gold = layer(config.data_dir, GOLD)
     append_history(gold / HISTORY_FILENAME, table)
     (gold / FORECAST_FILENAME).write_text(json.dumps(forecast, indent=2) + "\n", encoding="utf-8")
+    hourly_path = config.models_dir / HOURLY_FILENAME
+    if hourly_path.exists() and json.loads(hourly_path.read_text(encoding="utf-8"))["as_of"] == forecast["as_of"]:
+        # Only today's hourly forecast is published; a stale one would mislead.
+        (gold / HOURLY_FILENAME).write_text(hourly_path.read_text(encoding="utf-8"), encoding="utf-8")
+    else:
+        (gold / HOURLY_FILENAME).unlink(missing_ok=True)
     openaq = load_series(layer(config.data_dir, BRONZE) / OPENAQ_FILENAME)
     if not openaq.empty:
         stations = station_days(openaq, pd.Timestamp(forecast["as_of"]), forecast["generated_at"])

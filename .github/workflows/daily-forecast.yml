@@ -18,7 +18,7 @@ concurrency:
 jobs:
   forecast:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120 # A first load of a new data source can take most of an hour
     env:
       PM25_DATA_DIR: state/data
       PM25_MODELS_DIR: state/models
