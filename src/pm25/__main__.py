@@ -41,7 +41,7 @@ from pm25.alerts import CHANNELS, decide
 from pm25.firms import FirmsError, backfill_firms, load_daily_fires
 from pm25.cams import archive_cams, fetch_cams_forecast
 from pm25.gistda import fetch_gistda_bangkok
-from pm25.nwp import NWP, backfill_nwp, daily_nwp
+from pm25.nwp import backfill_nwp, daily_nwp, load_nwp
 from pm25.hourly import (
     AFTERNOON_KEY,
     AFTERNOON_KNOWN_HOUR,
@@ -115,7 +115,7 @@ def _load_inputs(
     openaq, air_quality, weather = frames
     bronze = layer(config.data_dir, BRONZE)
     fires = load_daily_fires(bronze)
-    nwp = daily_nwp(load_series(bronze / NWP.filename), as_of)
+    nwp = daily_nwp(load_nwp(bronze), as_of)
     return daily_targets(openaq, as_of), daily_exogenous(air_quality, weather, as_of, fires, nwp)
 
 
@@ -154,7 +154,7 @@ def _backfill(args: argparse.Namespace, config: Config) -> int:
             added = backfill_nwp(
                 layer(config.data_dir, BRONZE), config.latitude, config.longitude, nwp_start, pd.Timestamp.now(tz="UTC")
             )
-            log.info("%s: added %d rows", NWP.filename, added)
+            log.info("Open-Meteo previous runs: added %d rows", added)
         except requests.RequestException as error:
             # The forecast features are optional, so an outage must not stop the run.
             log.warning("Open-Meteo previous runs unavailable: %s", type(error).__name__)
@@ -199,7 +199,7 @@ def _check(args: argparse.Namespace, config: Config) -> int:
         *frames,
         _as_of(),
         load_daily_fires(bronze),
-        daily_nwp(load_series(bronze / NWP.filename), _as_of()),
+        daily_nwp(load_nwp(bronze), _as_of()),
     )
     checks = run_checks(*frames, daily, now)
     report = write_quality_report(layer(config.data_dir, SILVER) / QUALITY_FILENAME, checks, now)
@@ -245,7 +245,7 @@ def _train_extras(
     metrics_path = config.models_dir / METRICS_FILENAME
     report = json.loads(metrics_path.read_text(encoding="utf-8"))
     city = hourly_city(openaq)
-    nwp_hourly = load_series(bronze / NWP.filename)
+    nwp_hourly = load_nwp(bronze)
     for key, extra in (("hourly", {}), (AFTERNOON_KEY, {"known_hour": AFTERNOON_KNOWN_HOUR})):
         try:
             entry, hourly_report = train_hourly(city, nwp_hourly, as_of, config.models_dir, _generated_at(), **extra)
@@ -321,7 +321,7 @@ def _predict(args: argparse.Namespace, config: Config) -> int:
         try:
             hourly = forecast_hourly(
                 hourly_city(openaq),
-                load_series(bronze / NWP.filename),
+                load_nwp(bronze),
                 registry["hourly"],
                 config.models_dir,
                 as_of,
@@ -442,7 +442,7 @@ def _hourly_update(args: argparse.Namespace, config: Config) -> int:
         return 0
     hourly = forecast_hourly(
         city,
-        load_series(bronze / NWP.filename),
+        load_nwp(bronze),
         entry,
         config.models_dir,
         as_of,

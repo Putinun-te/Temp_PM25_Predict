@@ -1,7 +1,7 @@
 import type { AccuracyRow, AccuracySummary, ScoredForecast } from "./types";
 
 const TARGET_ORDER = ["pm25", "pm10", "temp_c", "rh_pct"];
-const LABEL_ORDER = ["today", "tomorrow"];
+const LABEL_ORDER = ["today", "tomorrow", "day2", "day3", "day4", "day5", "day6"];
 
 /** Rows for one window, PM first, our forecast before TMD, and only rows with scores. */
 export function accuracyTable(summary: AccuracySummary, windowDays: number): AccuracyRow[] {

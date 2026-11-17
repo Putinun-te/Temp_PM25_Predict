@@ -40,7 +40,7 @@ from pm25.features import (
     with_weather_targets,
 )
 
-DAILY_HORIZONS = (1, 2)
+DAILY_HORIZONS = tuple(range(1, 8))  # Today and the six days after it
 MONTHLY_HORIZONS = (2, 3, 4)  # From the last complete month to one, two and three months ahead
 LATEST_WINDOW_DAYS = 90
 MIN_UNSEEN_DAYS = 14

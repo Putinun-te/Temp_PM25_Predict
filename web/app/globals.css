@@ -78,6 +78,10 @@ th { color: var(--muted); font-weight: 500; }
 .hour-cell small { font-weight: 400; font-size: 9px; opacity: 0.8; }
 @media (max-width: 640px) { .hour-cells { grid-template-columns: repeat(12, minmax(0, 1fr)); } .hour-cell:first-child { grid-column-start: var(--start-narrow); } .hour-row { align-items: flex-start; } }
 .table-wrap { overflow-x: auto; }
+table.week td { vertical-align: top; }
+table.week .method { font-size: 11px; color: var(--muted); }
+table.week .range { white-space: nowrap; }
+@media (max-width: 640px) { table.week td:not(:first-child) .method { display: none; } table.week .range { display: block; } }
 td.good { color: var(--good); font-weight: 600; }
 td.bad { color: var(--bad); font-weight: 600; }
 .alert { border: 1px solid var(--bad); color: var(--bad); border-radius: 12px; padding: 8px 16px; margin: 12px 0; font-size: 14px; }

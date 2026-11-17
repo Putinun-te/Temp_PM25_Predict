@@ -57,10 +57,10 @@ Base URL: https://func-pm25-api-d0b8.azurewebsites.net/api
 | Endpoint | Returns |
 |---|---|
 | `/help` | The list of endpoints |
-| `/forecast` | Today, tomorrow, the next three months, and each station |
+| `/forecast` | The next seven days, the next three months, and each station |
 | `/hourly` | Hourly PM2.5 to 23:00 tomorrow: from 04:00 after the morning run, from 10:00 after the afternoon update |
 | `/measured?target=pm25&from=2026-11-01&to=2026-11-12` | Measured Bangkok daily values; `target` is `pm25`, `pm10`, `temp_c` or `rh_pct` |
-| `/forecasts?target=pm25&label=tomorrow&from=…&to=…` | Every published daily forecast in the range |
+| `/forecasts?target=pm25&label=tomorrow&from=…&to=…` | Every published daily forecast in the range; labels `today`, `tomorrow`, `day2` to `day6` |
 | `/accuracy` | Live accuracy over 7, 30 and 90 days |
 | `/stations` | Daily values per reference station for the last 14 days |
 
@@ -88,7 +88,7 @@ The database accepts Microsoft Entra sign-in only. CI opens the SQL firewall for
 | Open-Meteo Air Quality | Feature | PM2.5, NO2, O3, SO2 and CO from the CAMS global model | No key |
 | Open-Meteo Historical Weather | Feature, and the target for temperature and humidity | Temperature, humidity, precipitation and wind from 2021 | No key |
 | TMD Weather Forecast API | Reference shown next to our forecast | Hourly temperature and humidity forecast, 3 km model | Free token |
-| Open-Meteo Previous Runs (JMA model) | Feature | The weather forecast for the target day as it was issued one or two days before: temperature, humidity, rain, wind, pressure and cloud, from 2021 | No key |
+| Open-Meteo Previous Runs (JMA model) | Feature | The weather forecast for the target day as it was issued one to seven days before: temperature, humidity, rain, wind, pressure and cloud, from 2021 | No key |
 | Open-Meteo Air Quality forecast (CAMS) | Archived for later | Each morning's CAMS PM2.5 forecast for today and tomorrow, saved to `bronze/cams_forecast_archive.csv` | No key |
 | GISTDA PM2.5 (pm25.gistda.or.th) | Reference shown next to our forecast | Bangkok hourly and 24-hour average PM2.5 estimated from satellite data and a model | No key; the website's own endpoint, no published API contract, so an outage only drops the reference |
 | NASA FIRMS (VIIRS NOAA-20) | Feature, optional | Daily fire detection count and total fire radiative power in a box over central Thailand, western Cambodia and the Myanmar border (97.5–105.5 E, 11.5–17.5 N) | Free MAP_KEY |
@@ -312,6 +312,21 @@ The range is the forecast plus or minus the error that 80 % of past walk-forward
 | PM2.5 tomorrow | 63 % | 77 % | 94 % | 82 % |
 | PM10 today | 63 % | 87 % | 89 % | 84 % |
 | PM10 tomorrow | 62 % | 80 % | 93 % | 82 % |
+
+### Seven-day forecast
+
+The daily forecast covers today and the six days after it. Each day and value is its own slot with its own promotion gate, so a day shows a model only if the model beat the simple rules for that day. Beyond tomorrow a third rule joins persistence and the same weekday last week: the mean of the last seven days, which there beats yesterday's value. The weather forecast for each target day is the run issued as many days before it as the horizon, stored as run ages 3 to 7 in `bronze/openmeteo_nwp_long.csv`.
+
+Walk-forward MAE of the model against the best simple rule:
+
+| | In 2 days | In 4 days | In 6 days |
+|---|---|---|---|
+| PM2.5 µg/m³ | 4.47 vs 5.68 | 4.86 vs 5.78 | 5.04 vs 5.83 |
+| PM10 µg/m³ | 6.84 vs 8.10 | 7.32 vs 8.36 | 7.61 vs 8.59 (rule published, see below) |
+| Temperature °C | 0.71 vs 0.95 | 0.81 vs 1.00 | 0.83 vs 1.03 |
+| Humidity % | 4.00 vs 5.42 | 4.53 vs 5.80 | 4.90 vs 6.18 |
+
+Without the weather forecasts for the target day, PM2.5 in 6 days would be 5.85, no better than the weekly mean. PM10 in 6 days publishes the weekly mean for now: the model is better over all folds but not over the latest 90 days, which the gate also requires. Training all 28 daily slots takes about 25 minutes.
 
 ### Hourly forecast
 

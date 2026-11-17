@@ -13,6 +13,10 @@ Lead times line up with the live forecast. Bangkok day D covers 17:00 UTC on
 D-1 to 17:00 UTC on D. For today (horizon 1) `previous_day1` and for tomorrow
 (horizon 2) `previous_day2` both come from runs started before 17:00 UTC on
 the day before the forecast is made, which the daily run at 00:17 UTC already has.
+The same holds for the days after tomorrow: horizon h uses `previous_day{h}`.
+
+Run ages 3 to 7 live in a second file, so adding them did not mean refetching
+the first one: its stored hours would not have been searched again for new columns.
 """
 
 from __future__ import annotations
@@ -27,7 +31,7 @@ import pandas as pd
 import requests
 
 from pm25.features import MIN_HOURS_PER_DAY, NWP_DAILY_COLUMNS, NWP_FEATURES, NWP_HORIZONS, TIMEZONE
-from pm25.ingest import HOUR, TIME, OpenMeteoSource, backfill_open_meteo, fetch_open_meteo, upsert
+from pm25.ingest import HOUR, TIME, OpenMeteoSource, backfill_open_meteo, fetch_open_meteo, load_series, upsert
 
 NWP_VARIABLES = {
     "temperature_2m": "temp_c",
@@ -38,18 +42,23 @@ NWP_VARIABLES = {
     "pressure_msl": "pressure_hpa",
     "cloud_cover": "cloud_pct",
 }
-NWP = OpenMeteoSource(
-    filename="openmeteo_nwp.csv",
-    url="https://previous-runs-api.open-meteo.com/v1/forecast",
-    variables={
-        f"{api}_previous_day{day}": f"nwp{day}_{name}"
-        for day in NWP_HORIZONS
-        for api, name in NWP_VARIABLES.items()
-    },
-    extra={"models": "jma_seamless"},
-)
+
+
+def _source(filename: str, days: tuple[int, ...]) -> OpenMeteoSource:
+    return OpenMeteoSource(
+        filename=filename,
+        url="https://previous-runs-api.open-meteo.com/v1/forecast",
+        variables={
+            f"{api}_previous_day{day}": f"nwp{day}_{name}" for day in days for api, name in NWP_VARIABLES.items()
+        },
+        extra={"models": "jma_seamless"},
+    )
+
+
+NWP = _source("openmeteo_nwp.csv", (1, 2))
+NWP_LONG = _source("openmeteo_nwp_long.csv", tuple(day for day in NWP_HORIZONS if day > 2))
 REFRESH_DAYS = 4  # Recent hours are fetched again, because they were stored before every run existed
-AHEAD = pd.Timedelta(days=2)  # Far enough to cover tomorrow in Bangkok
+AHEAD = pd.Timedelta(days=NWP_HORIZONS[-1])  # Far enough to cover the last forecast day in Bangkok
 
 
 def backfill_nwp(
@@ -67,11 +76,25 @@ def backfill_nwp(
     were issued in the past, which is exactly what the feature needs.
     """
     end = now.floor("h") + AHEAD
-    added = backfill_open_meteo(NWP, data_dir, latitude, longitude, start, end, http_get, sleep)
     first = (now - pd.Timedelta(days=REFRESH_DAYS)).date()
-    frame = fetch_open_meteo(NWP, latitude, longitude, first, end.date(), http_get, sleep)
-    added += upsert(data_dir / NWP.filename, frame[frame[TIME] <= end])
+    added = 0
+    for source in (NWP, NWP_LONG):
+        added += backfill_open_meteo(source, data_dir, latitude, longitude, start, end, http_get, sleep)
+        frame = fetch_open_meteo(source, latitude, longitude, first, end.date(), http_get, sleep)
+        added += upsert(data_dir / source.filename, frame[frame[TIME] <= end])
     return added
+
+
+def load_nwp(data_dir: Path) -> pd.DataFrame:
+    """Return all stored run ages side by side, one row per hour."""
+    frames = [load_series(data_dir / source.filename) for source in (NWP, NWP_LONG)]
+    frames = [frame for frame in frames if not frame.empty]
+    if not frames:
+        return load_series(data_dir / NWP.filename)  # An empty frame with the expected shape
+    merged = frames[0]
+    for frame in frames[1:]:
+        merged = merged.merge(frame, on=TIME, how="outer")
+    return merged.sort_values(TIME).reset_index(drop=True)
 
 
 def daily_nwp(hourly: pd.DataFrame, as_of: pd.Timestamp) -> pd.DataFrame:
@@ -84,10 +107,12 @@ def daily_nwp(hourly: pd.DataFrame, as_of: pd.Timestamp) -> pd.DataFrame:
     if hourly.empty:
         return pd.DataFrame(columns=columns, index=pd.DatetimeIndex([], name="date"))
     frame = hourly.assign(date=hourly[TIME].dt.tz_convert(TIMEZONE).dt.tz_localize(None).dt.normalize())
-    frame = frame[frame["date"] <= as_of + pd.Timedelta(days=1)]
+    frame = frame[frame["date"] <= as_of + pd.Timedelta(days=NWP_HORIZONS[-1] - 1)]
     daily: dict[str, pd.Series] = {}
     for day in NWP_HORIZONS:
         p = f"nwp{day}_"
+        if f"{p}temp_c" not in frame:
+            continue  # Run ages that were never fetched stay missing
         part = frame.dropna(subset=[f"{p}temp_c", f"{p}wind_kmh"])
         radians = np.deg2rad(part[f"{p}wind_deg"])
         part = part.assign(

@@ -128,3 +128,11 @@ def test_climatology_is_the_mean_of_the_same_calendar_month():
     history = pd.Series(np.arange(30, dtype=float), index=index)
     result = monthly_forecast(history, pd.Timestamp("2024-08-01"), 2)
     assert result["climatology"] == pytest.approx((7.0 + 19.0) / 2)
+
+
+def test_weekly_mean_baseline_only_beyond_tomorrow():
+    series = pd.Series(range(20), index=pd.date_range("2026-01-01", periods=20), dtype=float)
+    assert set(daily_baselines(series, 2)) == {"persistence", "seasonal7"}
+    week = daily_baselines(series, 5)
+    assert week["mean7"].iloc[10] == series.iloc[4:11].mean()
+    assert week["seasonal7"].iloc[10] == series.iloc[8]

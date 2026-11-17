@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from pm25.features import NWP_FEATURES, build_features, daily_exogenous
-from pm25.nwp import NWP, backfill_nwp, daily_nwp
+from pm25.nwp import NWP, NWP_LONG, backfill_nwp, daily_nwp, load_nwp
 
 
 def hourly_nwp(first_local_day, days, day1_temp=30.0, day2_temp=28.0):
@@ -26,9 +26,11 @@ def test_source_asks_jma_for_both_run_ages():
     assert NWP.variables["wind_speed_10m_previous_day2"] == "nwp2_wind_kmh"
 
 
-def test_daily_nwp_aggregates_bangkok_days_and_stops_after_tomorrow():
-    daily = daily_nwp(hourly_nwp("2026-11-10", 5), pd.Timestamp("2026-11-12"))
-    assert list(daily.index.strftime("%Y-%m-%d")) == ["2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13"]
+def test_daily_nwp_aggregates_bangkok_days_and_stops_after_the_seventh_day():
+    daily = daily_nwp(hourly_nwp("2026-11-10", 12), pd.Timestamp("2026-11-12"))
+    dates = list(daily.index.strftime("%Y-%m-%d"))
+    assert dates[0] == "2026-11-10" and dates[-1] == "2026-11-18"  # Today plus six days
+    assert daily["nwp7_temp_c"].isna().all()  # Run ages that were not fetched stay missing
     row = daily.loc["2026-11-13"]
     assert row["nwp1_temp_c"] == 30.0 and row["nwp2_temp_c"] == 28.0
     assert row["nwp1_precip_mm"] == pytest.approx(12.0)  # Summed over 24 hours
@@ -70,13 +72,17 @@ def test_backfill_keeps_future_hours_and_refreshes_recent_days(tmp_path, fake_re
         requests_made.append((params["start_date"], params["end_date"], params["models"]))
         times = pd.date_range(params["start_date"], pd.Timestamp(params["end_date"]) + pd.Timedelta(hours=23), freq="h")
         hourly = {"time": [t.strftime("%Y-%m-%dT%H:%M") for t in times]}
-        for api in NWP.variables:
+        for api in params["hourly"].split(","):
             hourly[api] = [1.0] * len(times)
         return fake_response({"hourly": hourly})
 
     now = pd.Timestamp("2026-11-13 00:17", tz="UTC")
     backfill_nwp(tmp_path, 13.7, 100.5, pd.Timestamp("2026-11-01", tz="UTC"), now, http_get, lambda _: None)
 
-    stored = pd.read_csv(tmp_path / NWP.filename, parse_dates=["time"])
-    assert stored["time"].max() == pd.Timestamp("2026-11-15 00:00", tz="UTC")  # Two days ahead of now
-    assert requests_made[-1] == ("2026-11-09", "2026-11-15", "jma_seamless")
+    for source in (NWP, NWP_LONG):
+        stored = pd.read_csv(tmp_path / source.filename, parse_dates=["time"])
+        assert stored["time"].max() == pd.Timestamp("2026-11-20 00:00", tz="UTC")  # Seven days ahead of now
+    assert requests_made[-1] == ("2026-11-09", "2026-11-20", "jma_seamless")
+    merged = load_nwp(tmp_path)
+    assert {"nwp1_temp_c", "nwp7_temp_c"} <= set(merged.columns)
+    assert merged["time"].is_unique

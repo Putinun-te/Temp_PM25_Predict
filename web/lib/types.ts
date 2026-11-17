@@ -5,7 +5,7 @@ export type Method = string;
 
 export interface DailyForecast {
   date: string;
-  label: "today" | "tomorrow";
+  label: string; // "today", "tomorrow", then "day2" to "day6": days after today
   horizon_days: number;
   pm25: number | null;
   pm25_low: number | null;

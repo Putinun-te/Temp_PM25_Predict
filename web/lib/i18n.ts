@@ -17,6 +17,13 @@ const STRINGS = {
   todayTomorrow: { en: "Today and tomorrow", th: "วันนี้และพรุ่งนี้" },
   today: { en: "Today", th: "วันนี้" },
   tomorrow: { en: "Tomorrow", th: "พรุ่งนี้" },
+  inDays: { en: "In {n} days", th: "อีก {n} วัน" },
+  weekTitle: { en: "Next 7 days", th: "7 วันข้างหน้า" },
+  weekNote: {
+    en: "Daily means with the range that held 80% of past errors. Ranges widen with each day ahead. A day shows a model only where it beat simple rules in testing; otherwise it shows the best simple rule, named under the value.",
+    th: "ค่าเฉลี่ยรายวันพร้อมช่วงที่ครอบคลุม 80% ของค่าคลาดเคลื่อนในอดีต ยิ่งไกลช่วงยิ่งกว้าง วันไหนโมเดลชนะวิธีพื้นฐานในการทดสอบจึงใช้โมเดล ไม่งั้นใช้วิธีพื้นฐานที่ดีที่สุด ชื่อวิธีอยู่ใต้ตัวเลข",
+  },
+  day: { en: "Day", th: "วัน" },
   temperature: { en: "Temperature", th: "อุณหภูมิ" },
   humidity: { en: "Humidity", th: "ความชื้น" },
   likely: { en: "Likely", th: "น่าจะอยู่ระหว่าง" },

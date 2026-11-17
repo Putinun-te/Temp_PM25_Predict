@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { accuracyTable, matchPercent, recentScored } from "@/lib/accuracy";
 import { dataBase, loadAccuracy } from "@/lib/data";
-import { fmt } from "@/lib/format";
+import { dayLabel, fmt } from "@/lib/format";
 import type { AccuracySummary, ScoredForecast } from "@/lib/types";
 import { useLang } from "./LangProvider";
 
@@ -100,7 +100,7 @@ export default function AccuracyView() {
                   return (
                     <tr key={`${row.target}-${row.label}-${row.source}`}>
                       <td>{TARGET_NAMES[row.target]?.[lang] ?? row.target}</td>
-                      <td>{row.label === "today" ? t("today") : t("tomorrow")}</td>
+                      <td>{dayLabel(row.label, t)}</td>
                       <td>{row.source === "tmd" ? t("tmd") : t("ourForecast")}</td>
                       <td>{row.n}</td>
                       <td>{percent((matchPercent(row.mape_pct) ?? Number.NaN) / 100)}</td>
@@ -142,7 +142,7 @@ export default function AccuracyView() {
                   return (
                     <tr key={`${row.kind}-${row.label}`}>
                       <td>{t(EXTRA_KINDS[row.kind])}</td>
-                      <td>{row.label === "today" ? t("today") : t("tomorrow")}</td>
+                      <td>{dayLabel(row.label, t)}</td>
                       <td>{row.n}</td>
                       <td>{percent((matchPercent(row.mape_pct) ?? Number.NaN) / 100)}</td>
                       <td>{fmt(row.mae, 2)}</td>

@@ -44,12 +44,18 @@ def forecast(targets=None, exogenous=None, tmp_path="unused"):
     )
 
 
-def test_daily_forecast_labels_today_and_tomorrow():
+def test_daily_forecast_labels_seven_days_from_today():
     result = forecast()
     assert [(row["date"], row["label"]) for row in result["daily"]] == [
         ("2024-11-11", "today"),
         ("2024-11-12", "tomorrow"),
+        ("2024-11-13", "day2"),
+        ("2024-11-14", "day3"),
+        ("2024-11-15", "day4"),
+        ("2024-11-16", "day5"),
+        ("2024-11-17", "day6"),
     ]
+    assert [row["horizon_days"] for row in result["daily"]] == list(range(1, 8))
 
 
 def test_monthly_forecast_covers_the_next_three_calendar_months():

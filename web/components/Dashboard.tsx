@@ -11,6 +11,7 @@ import GistdaReference from "./GistdaReference";
 import HistoryChart from "./HistoryChart";
 import { useLang } from "./LangProvider";
 import MonthlyTable from "./MonthlyTable";
+import WeekTable from "./WeekTable";
 import PastDays from "./PastDays";
 import HourlyChart from "./HourlyChart";
 import HourlyLevels from "./HourlyLevels";
@@ -73,9 +74,17 @@ export default function Dashboard() {
       )}
 
       <h2>{t("todayTomorrow")}</h2>
-      {forecast && <ForecastCards days={forecast.daily} />}
+      {forecast && <ForecastCards days={forecast.daily.filter((day) => day.horizon_days <= 2)} />}
       {forecast?.gistda && <GistdaReference data={forecast.gistda} />}
       <AqiLegend />
+
+      {forecast && forecast.daily.length > 2 && (
+        <>
+          <h2>{t("weekTitle")}</h2>
+          <WeekTable days={forecast.daily} />
+          <p className="note">{t("weekNote")}</p>
+        </>
+      )}
 
       {hourly && hourly.as_of === forecast?.as_of && (
         <>

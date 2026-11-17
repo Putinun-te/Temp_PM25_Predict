@@ -25,7 +25,8 @@ from pm25.train import CANDIDATES, model_path
 
 FORECAST_FILENAME = "forecast.json"
 SCHEMA_VERSION = 2
-DAILY_LABELS = {1: "today", 2: "tomorrow"}
+# Horizon 1 is today. After tomorrow a day is labelled by how many days it lies after today.
+DAILY_LABELS = {1: "today", 2: "tomorrow", **{horizon: f"day{horizon - 1}" for horizon in range(3, 8)}}
 MONTHS_AHEAD = (1, 2, 3)
 
 

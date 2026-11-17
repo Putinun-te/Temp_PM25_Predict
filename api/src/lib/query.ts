@@ -1,7 +1,7 @@
 // Pure request handling: parameter checks and filtering. No network, so it is unit tested.
 
 export const TARGETS = ["pm25", "pm10", "temp_c", "rh_pct"] as const;
-export const LABELS = ["today", "tomorrow"] as const;
+export const LABELS = ["today", "tomorrow", "day2", "day3", "day4", "day5", "day6"] as const;
 export const MAX_DAYS = 400;
 
 export type Target = (typeof TARGETS)[number];

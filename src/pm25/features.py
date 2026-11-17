@@ -46,7 +46,7 @@ LATER_FEATURE_PREFIXES = ("fire_", "nwp_")
 # Daily weather forecast for the target day (see pm25.nwp). In the exogenous frame
 # they appear per run age as nwp1_<name> and nwp2_<name>; in the features as nwp_<name>.
 NWP_FEATURES = ("temp_c", "rh_pct", "precip_mm", "wind_kmh", "wind_u", "wind_v", "pressure_hpa", "cloud_pct")
-NWP_HORIZONS = (1, 2)
+NWP_HORIZONS = tuple(range(1, 8))  # Today and the six days after it
 NWP_DAILY_COLUMNS = tuple(f"nwp{h}_{name}" for h in NWP_HORIZONS for name in NWP_FEATURES)
 
 
@@ -121,9 +121,9 @@ def daily_exogenous(
     if fires is not None and not fires.empty:
         daily = daily.join(fires[fires.index < as_of], how="left")
     if nwp is not None and not nwp.empty:
-        # Forecasts for today and tomorrow were issued in the past, so these rows may run
+        # Forecasts for the coming days were issued in the past, so these rows may run
         # past as_of. build_features only reads them for the target day of each origin.
-        daily = daily.join(nwp[nwp.index <= as_of + pd.Timedelta(days=1)], how="outer")
+        daily = daily.join(nwp[nwp.index <= as_of + pd.Timedelta(days=NWP_HORIZONS[-1] - 1)], how="outer")
     return daily.reindex(columns=[*EXOGENOUS_COLUMNS, *NWP_DAILY_COLUMNS])
 
 
@@ -188,8 +188,16 @@ def build_labels(targets: pd.DataFrame, horizon: int) -> pd.DataFrame:
 
 
 def daily_baselines(series: pd.Series, horizon: int) -> dict[str, pd.Series]:
-    """Return naive forecasts for each origin: last value, and same weekday one week earlier."""
-    return {"persistence": series, "seasonal7": series.shift(7 - horizon)}
+    """Return naive forecasts for each origin.
+
+    The last value, the same weekday one week earlier, and, beyond tomorrow,
+    the mean of the last seven days, which there beats the last value. A model
+    for those days must beat it too.
+    """
+    baselines = {"persistence": series, "seasonal7": series.shift(7 - horizon)}
+    if horizon >= 3:
+        baselines["mean7"] = series.rolling(7, min_periods=4).mean()
+    return baselines
 
 
 def monthly_targets(targets: pd.DataFrame) -> pd.DataFrame:

@@ -38,16 +38,18 @@ CSV_COLUMNS = [
     "method",
 ]
 HISTORY_KEYS = ["as_of", "kind", "period", "target"]
+_TARGET_NAMES = {"pm25": "PM2.5", "pm10": "PM10", "temp_c": "Temperature", "rh_pct": "Humidity"}
+_DAY_NAMES = {1: "today", 2: "tomorrow", **{h: f"in {h - 1} days" for h in range(3, 8)}}
 SLOT_NAMES = {
-    "pm25_h1": "PM2.5 today",
-    "pm25_h2": "PM2.5 tomorrow",
-    "pm10_h1": "PM10 today",
-    "pm10_h2": "PM10 tomorrow",
-    "temp_c_h1": "Temperature today",
-    "temp_c_h2": "Temperature tomorrow",
-    "rh_pct_h1": "Humidity today",
-    "rh_pct_h2": "Humidity tomorrow",
+    f"{target}_h{horizon}": f"{name} {day}"
+    for target, name in _TARGET_NAMES.items()
+    for horizon, day in _DAY_NAMES.items()
 }
+
+
+def _day(label: str) -> str:
+    """'today' reads as 'Today', 'day3' as 'In 3 days'."""
+    return f"In {label[3:]} days" if label.startswith("day") else label.capitalize()
 
 
 def _number(value: float | None) -> str:
@@ -87,7 +89,7 @@ def build_report(forecast: dict[str, Any], metrics: dict[str, Any]) -> str:
     ]
     for row in forecast["daily"]:
         lines.append(
-            f"| {row['label'].capitalize()} | {row['date']} "
+            f"| {_day(row['label'])} | {row['date']} "
             f"| {_number(row['pm25'])} | {_range(row, 'pm25')} | {_method(row['pm25_method'])} "
             f"| {_number(row['pm10'])} | {_range(row, 'pm10')} | {_method(row['pm10_method'])} |"
         )
@@ -112,7 +114,7 @@ def build_report(forecast: dict[str, Any], metrics: dict[str, Any]) -> str:
                     f"to {_number(row.get('tmd_temp_c_max'))})"
                 )
             lines.append(
-                f"| {row['label'].capitalize()} | {row['date']} "
+                f"| {_day(row['label'])} | {row['date']} "
                 f"| {_number(row.get('temp_c'))} | {_range(row, 'temp_c')} "
                 f"| {_method(row.get('temp_c_method'))} "
                 f"| {_number(row.get('rh_pct'))} | {_range(row, 'rh_pct')} "
@@ -279,8 +281,9 @@ def write_pdf(
         colLoc="left",
     )
     grid.auto_set_font_size(False)
-    grid.set_fontsize(7)
-    grid.scale(1, 1.05)
+    # A week of daily rows plus the months does not fit at the usual size.
+    grid.set_fontsize(7 if len(body) <= 30 else 5.5)
+    grid.scale(1, 1.05 if len(body) <= 30 else 0.78)
 
     if plot is not None and plot.exists():
         image_axis = figure.add_axes([0.05, 0.08, 0.9, 0.3])
