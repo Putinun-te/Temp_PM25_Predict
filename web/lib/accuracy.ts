@@ -51,6 +51,23 @@ function check(row: ScoredForecast | undefined, actual: number): Check | null {
   return { forecast: row.forecast, diff, percent: actual === 0 ? null : (Math.abs(diff) / actual) * 100 };
 }
 
+/** Our forecasts for one target on its newest measured days, newest first. */
+export function recentDayChecks(rows: ScoredForecast[], target: string, days: number): DayCheck[] {
+  const mine = rows.filter((row) => row.source === "forecast" && row.target === target && row.actual !== null);
+  const dates = [...new Set(mine.map((row) => row.period))].sort().reverse().slice(0, days);
+  return dates.map((date) => {
+    const day = mine.filter((row) => row.period === date);
+    const actual = day.find((row) => row.actual !== null)?.actual ?? 0;
+    return {
+      target,
+      date,
+      actual,
+      sameDay: check(day.find((row) => row.label === "today"), actual),
+      dayBefore: check(day.find((row) => row.label === "tomorrow"), actual),
+    };
+  });
+}
+
 /** Our forecasts for the newest measured day, next to what was measured. */
 export function latestDayChecks(rows: ScoredForecast[]): DayCheck[] {
   const ours = rows.filter((row) => row.source === "forecast" && row.actual !== null);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bandFor } from "./aqi";
-import { accuracyTable, latestDayChecks, matchPercent, recentScored } from "./accuracy";
+import { accuracyTable, latestDayChecks, matchPercent, recentDayChecks, recentScored } from "./accuracy";
 import { pickLang, translate } from "./i18n";
 import type { AccuracySummary, ScoredForecast } from "./types";
 
@@ -103,5 +103,27 @@ describe("hourLabel", () => {
   it("shortens a local timestamp for the chart axis", async () => {
     const { hourLabel } = await import("./data");
     expect(hourLabel("2026-11-16T04:00")).toBe("16 04:00");
+  });
+});
+
+describe("recentDayChecks", () => {
+  const row = (period: string, label: string, forecast: number, actual: number, target = "pm25"): ScoredForecast => ({
+    as_of: "", period, label, target, source: "forecast", forecast, actual, abs_error: Math.abs(forecast - actual),
+  });
+
+  it("lists the newest measured days of one target with both forecasts", () => {
+    const scored = [
+      row("2026-11-14", "today", 22, 20),
+      row("2026-11-15", "today", 27, 30),
+      row("2026-11-15", "tomorrow", 33, 30),
+      row("2026-11-16", "tomorrow", 10, 20),
+      row("2026-11-16", "today", 99, 50, "pm10"),
+    ];
+    const days = recentDayChecks(scored, "pm25", 2);
+    expect(days.map((day) => day.date)).toEqual(["2026-11-16", "2026-11-15"]);
+    expect(days[0]?.sameDay).toBeNull();
+    expect(days[0]?.dayBefore?.percent).toBe(50);
+    expect(days[1]?.sameDay?.diff).toBe(-3);
+    expect(days[1]?.dayBefore?.diff).toBe(3);
   });
 });

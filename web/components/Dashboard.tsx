@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { type DayCheck, latestDayChecks } from "@/lib/accuracy";
+import type { ScoredForecast } from "@/lib/types";
 import { dataBase, dayBeforeForecasts, loadAccuracy, loadForecast, loadHistory, loadHourly, loadStations, measuredSeries } from "@/lib/data";
 import type { Forecast, HourlyForecast, Point, StationsFile } from "@/lib/types";
 import { AqiLegend } from "./AqiBadge";
@@ -10,6 +11,7 @@ import GistdaReference from "./GistdaReference";
 import HistoryChart from "./HistoryChart";
 import { useLang } from "./LangProvider";
 import MonthlyTable from "./MonthlyTable";
+import PastDays from "./PastDays";
 import HourlyChart from "./HourlyChart";
 import HourlyLevels from "./HourlyLevels";
 import StationMap, { type MapMode } from "./StationMap";
@@ -26,6 +28,7 @@ export default function Dashboard() {
   const [series, setSeries] = useState<Series | null>(null);
   const [stations, setStations] = useState<StationsFile | null>(null);
   const [checks, setChecks] = useState<DayCheck[]>([]);
+  const [scored, setScored] = useState<ScoredForecast[]>([]);
   const [hourly, setHourly] = useState<HourlyForecast | null>(null);
   const [mapMode, setMapMode] = useState<MapMode>("measured");
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +47,10 @@ export default function Dashboard() {
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)));
     loadStations(base).then(setStations);
     loadHourly(base).then(setHourly);
-    loadAccuracy(base).then(({ scored }) => setChecks(latestDayChecks(scored)));
+    loadAccuracy(base).then(({ scored }) => {
+      setChecks(latestDayChecks(scored));
+      setScored(scored);
+    });
   }, []);
 
   return (
@@ -92,6 +98,9 @@ export default function Dashboard() {
           <h2>{t("yesterdayTitle")}</h2>
           <YesterdayCards checks={checks} />
           <p className="note">{t("yesterdayNote")}</p>
+          <h2>{t("pastDaysTitle")}</h2>
+          <PastDays scored={scored} />
+          <p className="note">{t("pastDaysNote")}</p>
         </>
       )}
 

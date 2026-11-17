@@ -91,6 +91,11 @@ const STRINGS = {
   measuredOn: { en: "Measured", th: "วัดได้จริง" },
   issuedSameDay: { en: "Forecast that morning", th: "ทายไว้เช้าวันนั้น" },
   issuedDayBefore: { en: "Forecast the day before", th: "ทายไว้ล่วงหน้า 1 วัน" },
+  pastDaysTitle: { en: "Last 7 measured days: forecast against measured", th: "ย้อนหลัง 7 วัน: ค่าที่ทายไว้เทียบกับค่าจริง" },
+  pastDaysNote: {
+    en: "Each row is one measured day with the two forecasts made for it. Days appear as their measurements arrive; the record starts on 11 November 2026.",
+    th: "แต่ละแถวคือวันที่วัดค่าได้แล้ว พร้อมค่าที่ทายไว้สองครั้งสำหรับวันนั้น วันใหม่จะขึ้นเมื่อค่าวัดมาถึง บันทึกเริ่มวันที่ 11 พ.ย. 2026",
+  },
   tooHigh: { en: "too high by", th: "สูงไป" },
   tooLow: { en: "too low by", th: "ต่ำไป" },
   exact: { en: "exact", th: "ตรงพอดี" },
