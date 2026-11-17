@@ -54,3 +54,31 @@ def test_training_promotes_a_model_that_beats_the_baselines_and_forecasts(tmp_pa
     assert document["hours"][-1]["time"] == "2026-03-07T23:00" and document["hours"][-1]["day"] == "tomorrow"
     assert all(hour["low"] <= hour["pm25"] <= hour["high"] for hour in document["hours"])
     assert len(document["measured"]) == 28
+
+
+def test_afternoon_run_sees_hours_up_to_nine_and_forecasts_from_ten(tmp_path):
+    from pm25.hourly import AFTERNOON_KNOWN_HOUR, has_recent_hours, leads_for, model_filename
+
+    city = city_series()
+    day = pd.DatetimeIndex([pd.Timestamp("2025-02-01")])
+    features, labels, baselines = build_hourly(city, pd.DataFrame(), day, AFTERNOON_KNOWN_HOUR)
+    changed = city.copy()
+    changed[changed.index > pd.Timestamp("2025-02-01 09:00")] = 999.0
+    features_changed, _, _ = build_hourly(changed, pd.DataFrame(), day, AFTERNOON_KNOWN_HOUR)
+
+    leads = leads_for(AFTERNOON_KNOWN_HOUR)
+    assert len(features) == len(leads) == 38
+    pd.testing.assert_frame_equal(features, features_changed)
+    assert features["obs_+9"].iloc[0] == city[pd.Timestamp("2025-02-01 09:00")]
+    # 08:00 tomorrow uses 08:00 today, which the morning run could not know.
+    assert baselines["same_hour"].iloc[leads.index(32)] == city[pd.Timestamp("2025-02-01 08:00")]
+
+    as_of = pd.Timestamp("2026-03-06")
+    entry, _ = train_hourly(city, pd.DataFrame(), as_of, tmp_path, "now", AFTERNOON_KNOWN_HOUR)
+    assert (tmp_path / model_filename(AFTERNOON_KNOWN_HOUR)).name == "pm25_hourly_h09.joblib"
+    document = forecast_hourly(city, pd.DataFrame(), entry, tmp_path, as_of, "now", AFTERNOON_KNOWN_HOUR)
+    assert document["inputs_through"] == "2026-03-06T09:00"
+    assert document["hours"][0]["time"] == "2026-03-06T10:00"
+
+    assert not has_recent_hours(city[city.index < as_of + pd.Timedelta(hours=7)], as_of, AFTERNOON_KNOWN_HOUR)
+    assert has_recent_hours(city[city.index < as_of + pd.Timedelta(hours=8)], as_of, AFTERNOON_KNOWN_HOUR)

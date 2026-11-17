@@ -63,6 +63,12 @@ export default function StationMap({ data, forecasts = [], mode = "measured" }: 
         }
         lines.push(label);
         if (station.pm10) lines.push(`PM10 ${pm10 === null ? t("noData") : `${fmt(pm10)} µg/m³`}`);
+        for (const key of ["today", "tomorrow"] as const) {
+          const value = forecast?.[key]?.pm10;
+          if (value && value.pm10 !== null) {
+            lines.push(`PM10 ${t(key === "today" ? "mapToday" : "mapTomorrow")}: ${fmt(value.pm10)} (${fmt(value.low)}–${fmt(value.high)})`);
+          }
+        }
         // A coloured disc with the value inside, readable without opening the popup.
         const icon = L.divIcon({
           className: "station-marker",

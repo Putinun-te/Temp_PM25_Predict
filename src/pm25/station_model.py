@@ -1,4 +1,4 @@
-"""PM2.5 forecast for each reference station, today and tomorrow.
+"""PM2.5 and PM10 forecast for each reference station, today and tomorrow.
 
 One pooled model per horizon covers all stations: a row is a station on an
 origin day. It sees that station's own recent values, how it differs from the
@@ -7,6 +7,9 @@ city median, and every feature of the city model. Pooling keeps training cheap
 
 The model is published only if it beats both a station's own persistence and
 simply using the city forecast for every station.
+
+PM10 uses the same code with its own models. Only three stations of the panel
+report PM10, so its pooled model has far fewer rows.
 """
 
 from __future__ import annotations
@@ -31,10 +34,11 @@ BASELINES = ("persistence", "city_forecast")
 HORIZONS = (1, 2)
 LABELS = {1: "today", 2: "tomorrow"}
 STATION_LAGS = (0, 1, 2, 6)
+STATION_TARGETS = ("pm25", "pm10")
 
 
-def model_filename(horizon: int) -> str:
-    return f"station_pm25_h{horizon}.joblib"
+def model_filename(horizon: int, target: str = "pm25") -> str:
+    return f"station_{target}_h{horizon}.joblib"
 
 
 def make_model() -> Any:
@@ -45,11 +49,14 @@ def make_model() -> Any:
 
 
 def station_daily(
-    openaq: pd.DataFrame, as_of: pd.Timestamp, sensors: Sequence[OpenAQSensor] = OPENAQ_PANEL
+    openaq: pd.DataFrame,
+    as_of: pd.Timestamp,
+    sensors: Sequence[OpenAQSensor] = OPENAQ_PANEL,
+    target: str = "pm25",
 ) -> pd.DataFrame:
-    """Return daily PM2.5 per station (columns are location ids), complete days before `as_of`."""
-    locations = {s.sensor_id: s.location_id for s in sensors if s.parameter == "pm25"}
-    frame = openaq[(openaq[PARAMETER] == "pm25") & openaq[SENSOR].isin(list(locations))]
+    """Return the daily mean per station (columns are location ids), complete days before `as_of`."""
+    locations = {s.sensor_id: s.location_id for s in sensors if s.parameter == target}
+    frame = openaq[(openaq[PARAMETER] == target) & openaq[SENSOR].isin(list(locations))]
     frame = frame.assign(date=frame[TIME].dt.tz_convert(TIMEZONE).dt.tz_localize(None).dt.normalize())
     frame = frame[frame["date"] < as_of]
     daily = frame.groupby([SENSOR, "date"])[VALUE].agg(["mean", "count"])
@@ -60,7 +67,7 @@ def station_daily(
 
 
 def build_station_rows(
-    stations: pd.DataFrame, targets: pd.DataFrame, exogenous: pd.DataFrame, horizon: int
+    stations: pd.DataFrame, targets: pd.DataFrame, exogenous: pd.DataFrame, horizon: int, target: str = "pm25"
 ) -> tuple[pd.DataFrame, pd.Series, pd.Series, pd.Series]:
     """Return features, labels, the station id and persistence, one row per station and origin day."""
     city = build_features(targets[["pm25", "pm10"]], exogenous, horizon)
@@ -75,7 +82,7 @@ def build_station_rows(
         part["station_mean3"] = series.rolling(3, min_periods=2).mean()
         part["station_mean7"] = series.rolling(7, min_periods=4).mean()
         # How this station usually sits against the city, which is fairly stable.
-        part["station_minus_city"] = series - targets["pm25"].reindex(city.index)
+        part["station_minus_city"] = series - targets[target].reindex(city.index)
         part["station_minus_city_mean14"] = part["station_minus_city"].rolling(14, min_periods=5).mean()
         part["station_code"] = order[location]
         features.append(part)
@@ -93,13 +100,14 @@ def train_stations(
     city_forecast: pd.Series,
     models_dir: Path,
     now: str,
+    target: str = "pm25",
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Evaluate the pooled station model walk-forward against both baselines.
 
     `city_forecast` is the city model's own out-of-sample prediction per origin
     day, so the comparison shows whether per-station modelling adds anything.
     """
-    features, labels, ids, persistence = build_station_rows(stations, targets, exogenous, horizon)
+    features, labels, ids, persistence = build_station_rows(stations, targets, exogenous, horizon, target)
     predicted = walk_forward_predict(features, labels, make_model, horizon)
     frame = pd.DataFrame(
         {
@@ -111,7 +119,7 @@ def train_stations(
         }
     ).dropna()
     if frame.empty:
-        raise ValueError(f"stations h{horizon}: no rows to evaluate")
+        raise ValueError(f"stations {target} h{horizon}: no rows to evaluate")
     overall = {name: metrics(frame["actual"], frame[name]) for name in (MODEL, *BASELINES)}
     promote, reason = promotion_gate(overall[MODEL]["mae"], {name: overall[name]["mae"] for name in BASELINES})
     method = MODEL if promote else min(BASELINES, key=lambda name: overall[name]["mae"])
@@ -124,7 +132,7 @@ def train_stations(
     if promote:
         known = labels.notna().to_numpy()
         models_dir.mkdir(parents=True, exist_ok=True)
-        joblib.dump(make_model().fit(features[known], labels[known]), models_dir / model_filename(horizon))
+        joblib.dump(make_model().fit(features[known], labels[known]), models_dir / model_filename(horizon, target))
         entry.update({"features": list(features.columns), "promoted_at": now})
     by_station = {
         str(location): {name: float((rows["actual"] - rows[name]).abs().mean()) for name in (MODEL, *BASELINES)}
@@ -147,8 +155,9 @@ def forecast_stations(
     models_dir: Path,
     as_of: pd.Timestamp,
     city_values: dict[int, float | None],
+    target: str = "pm25",
 ) -> list[dict[str, Any]]:
-    """Return today's and tomorrow's forecast per station.
+    """Return today's and tomorrow's forecast per station; the value sits under the target's name.
 
     `city_values` is the published city forecast per horizon, used when the
     city-forecast baseline is the published method.
@@ -156,13 +165,13 @@ def forecast_stations(
     origin = as_of - pd.Timedelta(days=1)
     result = {int(location): {"location_id": int(location)} for location in stations.columns}
     for horizon in HORIZONS:
-        entry = registry.get(f"pm25_h{horizon}")
+        entry = registry.get(f"{target}_h{horizon}")
         if entry is None:
             continue
-        features, _, ids, persistence = build_station_rows(stations, targets, exogenous, horizon)
+        features, _, ids, persistence = build_station_rows(stations, targets, exogenous, horizon, target)
         at_origin = features.index == origin
         if entry["method"] == MODEL:
-            model = joblib.load(models_dir / model_filename(horizon))
+            model = joblib.load(models_dir / model_filename(horizon, target))
             values = model.predict(features[at_origin].reindex(columns=entry["features"]))
         elif entry["method"] == "persistence":
             values = persistence[at_origin].to_numpy()
@@ -173,9 +182,20 @@ def forecast_stations(
             missing = pd.isna(value)
             value = None if missing else max(float(value), 0.0)
             result[int(location)][LABELS[horizon]] = {
-                "pm25": None if missing else round(value, 1),
+                target: None if missing else round(value, 1),
                 "low": None if missing or q80 is None else round(max(value - q80, 0.0), 1),
                 "high": None if missing or q80 is None else round(value + q80, 1),
                 "method": entry["method"],
             }
     return list(result.values())
+
+
+def merge_pm10(stations: list[dict[str, Any]], pm10: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Add each station's PM10 forecast under `pm10` of its today and tomorrow entries."""
+    by_location = {item["location_id"]: item for item in pm10}
+    for station in stations:
+        extra = by_location.get(station["location_id"], {})
+        for label in LABELS.values():
+            if label in extra:
+                station.setdefault(label, {})["pm10"] = extra[label]
+    return stations

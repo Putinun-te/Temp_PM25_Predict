@@ -5,6 +5,10 @@ scheduled jobs. Station hours reach OpenAQ two to three hours late and the run
 starts between 07:17 and 08:00 in Bangkok, so features only use hours up to
 03:00 of the forecast day. Targets run from 04:00 today to 23:00 tomorrow.
 
+A second, lighter run after midday repeats the forecast with the morning's
+measurements (hours up to 09:00) and its own model, because the newest hours
+are the strongest signal for the rest of the day.
+
 One model covers every lead time; the hour of day and the lead are features.
 Weather for each target hour comes from the same previous-run forecasts as the
 daily model (see pm25.nwp), so training never sees hindsight.
@@ -28,10 +32,23 @@ from pm25.ingest import PARAMETER, TIME, VALUE
 
 HOURLY_FILENAME = "hourly_forecast.json"
 MODEL_FILENAME = "pm25_hourly.joblib"
-LAST_KNOWN_HOUR = 3  # 03:00 on the forecast day
-FIRST_LEAD = LAST_KNOWN_HOUR + 1
-LEADS = tuple(range(FIRST_LEAD, 48))  # Hours after midnight of the forecast day
-KNOWN_OFFSETS = tuple(range(-24, FIRST_LEAD))  # Yesterday 00:00 to today 03:00
+LAST_KNOWN_HOUR = 3  # 03:00 on the forecast day, for the morning run
+AFTERNOON_KNOWN_HOUR = 9  # The run after midday sees hours up to 09:00
+AFTERNOON_KEY = "hourly_afternoon"  # Registry and metrics key of the afternoon model
+# The afternoon update is skipped unless at least one of the newest hours has arrived.
+AFTERNOON_REQUIRED_HOURS = 3
+
+
+def leads_for(known_hour: int) -> tuple[int, ...]:
+    """Hours after midnight of the forecast day that are forecast, given the last known hour."""
+    return tuple(range(known_hour + 1, 48))
+
+
+def model_filename(known_hour: int) -> str:
+    return MODEL_FILENAME if known_hour == LAST_KNOWN_HOUR else f"pm25_hourly_h{known_hour:02d}.joblib"
+
+
+LEADS = leads_for(LAST_KNOWN_HOUR)
 NWP_HOURLY = ("temp_c", "rh_pct", "precip_mm", "wind_kmh", "wind_u", "wind_v", "pressure_hpa", "cloud_pct")
 BASELINES = ("same_hour", "yesterday_mean")
 MODEL = "gradient_boosting"
@@ -67,30 +84,33 @@ def _local_nwp(nwp_hourly: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_hourly(
-    city: pd.Series, nwp_hourly: pd.DataFrame, days: pd.DatetimeIndex
+    city: pd.Series, nwp_hourly: pd.DataFrame, days: pd.DatetimeIndex, known_hour: int = LAST_KNOWN_HOUR
 ) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
     """Return features, labels and baselines with one row per forecast day and lead.
 
-    The index is the forecast day. Every feature comes from hours up to 03:00
-    of that day, or from weather forecasts issued before it.
+    The index is the forecast day. Every feature comes from hours up to
+    `known_hour` of that day, or from weather forecasts issued before it.
     """
     nwp = _local_nwp(nwp_hourly)
     known = pd.DataFrame(
-        {f"obs_{offset:+d}": city.reindex(days + pd.Timedelta(hours=offset)).to_numpy() for offset in KNOWN_OFFSETS},
+        {
+            f"obs_{offset:+d}": city.reindex(days + pd.Timedelta(hours=offset)).to_numpy()
+            for offset in range(-24, known_hour + 1)  # Yesterday 00:00 to the last known hour
+        },
         index=days,
     )
     yesterday = known[[f"obs_{o:+d}" for o in range(-24, 0)]]
     shared = known.copy()
     shared["yesterday_mean"] = yesterday.mean(axis=1).where(yesterday.notna().sum(axis=1) >= 18)
     shared["yesterday_max"] = yesterday.max(axis=1)
-    shared["last6_mean"] = known[[f"obs_{o:+d}" for o in range(-2, FIRST_LEAD)]].mean(axis=1)
+    shared["last6_mean"] = known[[f"obs_{o:+d}" for o in range(known_hour - 5, known_hour + 1)]].mean(axis=1)
     shared["trend"] = shared["last6_mean"] - shared["yesterday_mean"]
     day_of_year = days.day_of_year
     shared["doy_sin"] = np.sin(2 * np.pi * day_of_year / 365.25)
     shared["doy_cos"] = np.cos(2 * np.pi * day_of_year / 365.25)
 
     features, labels, baselines = [], [], []
-    for lead in LEADS:
+    for lead in leads_for(known_hour):
         target = days + pd.Timedelta(hours=lead)
         hour = lead % 24
         part = shared.copy()
@@ -99,8 +119,8 @@ def build_hourly(
         part["hour_cos"] = np.cos(2 * np.pi * hour / 24)
         part["dow_sin"] = np.sin(2 * np.pi * target.day_of_week / 7)
         part["dow_cos"] = np.cos(2 * np.pi * target.day_of_week / 7)
-        # The newest known value at the same hour of day: today for 00:00 to 03:00, else yesterday.
-        same_hour = known[f"obs_{hour if hour <= LAST_KNOWN_HOUR else hour - 24:+d}"]
+        # The newest known value at the same hour of day: today up to the last known hour, else yesterday.
+        same_hour = known[f"obs_{hour if hour <= known_hour else hour - 24:+d}"]
         part["same_hour"] = same_hour
         run_age = 1 if lead < 24 else 2
         for name in NWP_HOURLY:
@@ -113,12 +133,17 @@ def build_hourly(
 
 
 def train_hourly(
-    city: pd.Series, nwp_hourly: pd.DataFrame, as_of: pd.Timestamp, models_dir: Path, now: str
+    city: pd.Series,
+    nwp_hourly: pd.DataFrame,
+    as_of: pd.Timestamp,
+    models_dir: Path,
+    now: str,
+    known_hour: int = LAST_KNOWN_HOUR,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Evaluate the hourly model walk-forward and return its registry entry and report."""
     first = city.index.min().normalize() + pd.Timedelta(days=1)
     days = pd.date_range(first, as_of - pd.Timedelta(days=1), freq="D")
-    features, labels, baselines = build_hourly(city, nwp_hourly, days)
+    features, labels, baselines = build_hourly(city, nwp_hourly, days, known_hour)
     predicted = walk_forward_predict(features, labels, make_model, horizon=2)
     frame = pd.DataFrame({"actual": labels, MODEL: predicted, **{name: baselines[name] for name in BASELINES}})
     frame["lead"] = features["lead"].to_numpy()
@@ -145,7 +170,7 @@ def train_hourly(
         known = labels.notna().to_numpy()
         model = make_model().fit(features[known], labels[known])
         models_dir.mkdir(parents=True, exist_ok=True)
-        joblib.dump(model, models_dir / MODEL_FILENAME)
+        joblib.dump(model, models_dir / model_filename(known_hour))
         entry.update({"features": list(features.columns), "promoted_at": now})
     report = {
         "published_method": method,
@@ -164,16 +189,18 @@ def forecast_hourly(
     models_dir: Path,
     as_of: pd.Timestamp,
     generated_at: str,
+    known_hour: int = LAST_KNOWN_HOUR,
 ) -> dict[str, Any]:
     """Return the hourly forecast document for `as_of` and the following day."""
     days = pd.DatetimeIndex([as_of])
-    features, _, baselines = build_hourly(city, nwp_hourly, days)
+    features, _, baselines = build_hourly(city, nwp_hourly, days, known_hour)
     if entry["method"] == MODEL:
-        values = joblib.load(models_dir / MODEL_FILENAME).predict(features.reindex(columns=entry["features"]))
+        model = joblib.load(models_dir / model_filename(known_hour))
+        values = model.predict(features.reindex(columns=entry["features"]))
     else:
         values = baselines[entry["method"]].to_numpy()
     hours = []
-    for lead, value in zip(LEADS, values):
+    for lead, value in zip(leads_for(known_hour), values):
         part = "today" if lead < 24 else "tomorrow"
         q80 = entry["residual_q80"][part]
         missing = pd.isna(value)
@@ -187,7 +214,7 @@ def forecast_hourly(
                 "high": None if missing else round(value + q80, 1),
             }
         )
-    known_until = as_of + pd.Timedelta(hours=LAST_KNOWN_HOUR)
+    known_until = as_of + pd.Timedelta(hours=known_hour)
     recent = city[(city.index > known_until - pd.Timedelta(hours=MEASURED_HOURS_SHOWN)) & (city.index <= known_until)]
     return {
         "generated_at": generated_at,
@@ -199,3 +226,9 @@ def forecast_hourly(
         "measured": [{"time": t.strftime("%Y-%m-%dT%H:%M"), "pm25": round(float(v), 1)} for t, v in recent.items()],
         "hours": hours,
     }
+
+
+def has_recent_hours(city: pd.Series, as_of: pd.Timestamp, known_hour: int) -> bool:
+    """True when at least one of the newest hours before `known_hour` has been measured."""
+    newest = pd.date_range(end=as_of + pd.Timedelta(hours=known_hour), periods=AFTERNOON_REQUIRED_HOURS, freq="h")
+    return bool(city.reindex(newest).notna().any())

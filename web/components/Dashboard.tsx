@@ -11,6 +11,7 @@ import HistoryChart from "./HistoryChart";
 import { useLang } from "./LangProvider";
 import MonthlyTable from "./MonthlyTable";
 import HourlyChart from "./HourlyChart";
+import HourlyLevels from "./HourlyLevels";
 import StationMap, { type MapMode } from "./StationMap";
 import YesterdayCards from "./YesterdayCards";
 
@@ -79,7 +80,10 @@ export default function Dashboard() {
               labels={{ measured: t("measured"), forecast: t("hourlyForecast"), range: t("hourlyRange") }}
             />
           </div>
-          <p className="note">{t("hourlyNote")}</p>
+          <HourlyLevels hours={hourly.hours} />
+          <p className="note">
+            {t("hourlyInputs")} {hourly.inputs_through.replace("T", " ")}. {t("hourlyNote")} {t("hourlyLevelsNote")}
+          </p>
         </>
       )}
 

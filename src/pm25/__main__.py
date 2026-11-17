@@ -42,7 +42,15 @@ from pm25.firms import FirmsError, backfill_firms, load_daily_fires
 from pm25.cams import archive_cams, fetch_cams_forecast
 from pm25.gistda import fetch_gistda_bangkok
 from pm25.nwp import NWP, backfill_nwp, daily_nwp
-from pm25.hourly import HOURLY_FILENAME, forecast_hourly, hourly_city, train_hourly
+from pm25.hourly import (
+    AFTERNOON_KEY,
+    AFTERNOON_KNOWN_HOUR,
+    HOURLY_FILENAME,
+    forecast_hourly,
+    has_recent_hours,
+    hourly_city,
+    train_hourly,
+)
 from pm25.health import check_health, render
 from pm25.monitor import (
     ACCURACY_FILENAME,
@@ -55,6 +63,7 @@ from pm25.monitor import (
     SUMMARY_FILENAME,
     append_rows,
     hourly_rows,
+    read_history,
     score_history,
     score_hourly,
     score_stations,
@@ -76,7 +85,7 @@ from pm25.report import (
 )
 from pm25.stations import STATIONS_FILENAME, station_days
 from pm25.station_model import HORIZONS as STATION_HORIZONS
-from pm25.station_model import forecast_stations, station_daily, train_stations
+from pm25.station_model import STATION_TARGETS, forecast_stations, merge_pm10, station_daily, train_stations
 from pm25.train import (
     METRICS_FILENAME,
     PLOT_FILENAME,
@@ -235,27 +244,29 @@ def _train_extras(
     registry = load_registry(config.models_dir)
     metrics_path = config.models_dir / METRICS_FILENAME
     report = json.loads(metrics_path.read_text(encoding="utf-8"))
-    try:
-        entry, hourly_report = train_hourly(
-            hourly_city(openaq), load_series(bronze / NWP.filename), as_of, config.models_dir, _generated_at()
-        )
-        registry["hourly"], report["hourly"] = entry, hourly_report
-        log.info("hourly: %s", entry["method"])
-    except Exception:
-        log.exception("Hourly training failed, keeping the previous hourly method")
-    try:
-        stations = station_daily(openaq, as_of)
-        registry.setdefault("stations", {})
-        report["stations"] = {}
-        for horizon in STATION_HORIZONS:
-            slot = f"pm25_h{horizon}"
-            entry, station_report = train_stations(
-                stations, targets, exogenous, horizon, published[slot], config.models_dir, _generated_at()
-            )
-            registry["stations"][slot], report["stations"][slot] = entry, station_report
-            log.info("stations %s: %s", slot, entry["method"])
-    except Exception:
-        log.exception("Station training failed, keeping the previous station methods")
+    city = hourly_city(openaq)
+    nwp_hourly = load_series(bronze / NWP.filename)
+    for key, extra in (("hourly", {}), (AFTERNOON_KEY, {"known_hour": AFTERNOON_KNOWN_HOUR})):
+        try:
+            entry, hourly_report = train_hourly(city, nwp_hourly, as_of, config.models_dir, _generated_at(), **extra)
+            registry[key], report[key] = entry, hourly_report
+            log.info("%s: %s", key, entry["method"])
+        except Exception:
+            log.exception("Training %s failed, keeping its previous method", key)
+    registry.setdefault("stations", {})
+    report.setdefault("stations", {})
+    for target in STATION_TARGETS:
+        try:
+            stations = station_daily(openaq, as_of, target=target)
+            for horizon in STATION_HORIZONS:
+                slot = f"{target}_h{horizon}"
+                entry, station_report = train_stations(
+                    stations, targets, exogenous, horizon, published[slot], config.models_dir, _generated_at(), target
+                )
+                registry["stations"][slot], report["stations"][slot] = entry, station_report
+                log.info("stations %s: %s", slot, entry["method"])
+        except Exception:
+            log.exception("Station training for %s failed, keeping the previous station methods", target)
     (config.models_dir / REGISTRY_FILENAME).write_text(json.dumps(registry, indent=2) + "\n", encoding="utf-8")
     metrics_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
@@ -291,10 +302,19 @@ def _predict(args: argparse.Namespace, config: Config) -> int:
     openaq = load_series(bronze / OPENAQ_FILENAME)
     if registry.get("stations"):
         try:
-            city_values = {day["horizon_days"]: day.get("pm25") for day in forecast["daily"]}
-            forecast["station_forecasts"] = forecast_stations(
-                station_daily(openaq, as_of), *inputs, registry["stations"], config.models_dir, as_of, city_values
-            )
+            per_target = {}
+            for target in STATION_TARGETS:
+                city_values = {day["horizon_days"]: day.get(target) for day in forecast["daily"]}
+                per_target[target] = forecast_stations(
+                    station_daily(openaq, as_of, target=target),
+                    *inputs,
+                    registry["stations"],
+                    config.models_dir,
+                    as_of,
+                    city_values,
+                    target,
+                )
+            forecast["station_forecasts"] = merge_pm10(per_target["pm25"], per_target["pm10"])
         except Exception:
             log.exception("Station forecast failed, publishing without it")
     if registry.get("hourly"):
@@ -373,31 +393,68 @@ def _monitor(args: argparse.Namespace, config: Config) -> int:
     scored.to_csv(gold / ACCURACY_FILENAME, index=False)
     summary = summarize(scored, _generated_at())
     openaq = load_series(layer(config.data_dir, BRONZE) / OPENAQ_FILENAME)
-    extras = (
-        ("hourly", HOURLY_HISTORY_FILENAME, HOURLY_ACCURACY_FILENAME, lambda h: score_hourly(h, hourly_city(openaq))),
-        (
-            "stations",
-            STATION_HISTORY_FILENAME,
-            STATION_ACCURACY_FILENAME,
-            lambda h: score_stations(h, station_daily(openaq, _as_of())),
-        ),
-    )
-    for name, history_name, accuracy_name, score in extras:
-        if openaq.empty or not (gold / history_name).exists():
-            continue
-        try:
-            extra = score(pd.read_csv(gold / history_name))
-        except Exception:
-            # These scores are additions; a failure must not hide the main accuracy file.
-            log.exception("Scoring the %s forecasts failed", name)
-            continue
-        extra.to_csv(gold / accuracy_name, index=False)
-        summary[name] = summarize_extra(extra)
-        log.info("Scored %d %s forecasts", len(extra), name)
+    try:
+        # These scores are additions; a failure must not hide the main accuracy file.
+        summary.update(_score_extras(gold, openaq))
+    except Exception:
+        log.exception("Scoring the hourly and station forecasts failed")
     (gold / SUMMARY_FILENAME).write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     log.info("Scored %d published forecasts, latest date %s", len(scored), summary["latest_scored"])
     for alert in summary["alerts"]:
         log.warning("%s", alert)
+    return 0
+
+
+def _score_extras(gold: Path, openaq: pd.DataFrame) -> dict[str, list[dict]]:
+    """Score the hourly and station forecasts; return their sections of the summary."""
+    sections: dict[str, list[dict]] = {}
+    if openaq.empty:
+        return sections
+    if (gold / HOURLY_HISTORY_FILENAME).exists():
+        scored = score_hourly(read_history(gold / HOURLY_HISTORY_FILENAME, HOURLY_KEYS), hourly_city(openaq))
+        scored.to_csv(gold / HOURLY_ACCURACY_FILENAME, index=False)
+        afternoon = scored["known_hour"] == str(AFTERNOON_KNOWN_HOUR)
+        sections["hourly"] = summarize_extra(scored[~afternoon])
+        sections[AFTERNOON_KEY] = summarize_extra(scored[afternoon])
+    if (gold / STATION_HISTORY_FILENAME).exists():
+        history = read_history(gold / STATION_HISTORY_FILENAME, STATION_KEYS)
+        parts = [
+            score_stations(history[history["target"] == target], station_daily(openaq, _as_of(), target=target))
+            for target in STATION_TARGETS
+        ]
+        pd.concat(parts, ignore_index=True).to_csv(gold / STATION_ACCURACY_FILENAME, index=False)
+        sections["stations"] = summarize_extra(parts[0])
+        sections["stations_pm10"] = summarize_extra(parts[1])
+    return sections
+
+
+def _hourly_update(args: argparse.Namespace, config: Config) -> int:
+    """Repeat the hourly forecast after midday with the morning's measurements."""
+    as_of = _as_of()
+    entry = load_registry(config.models_dir).get(AFTERNOON_KEY)
+    if entry is None:
+        log.info("No afternoon hourly model yet, keeping the morning forecast")
+        return 0
+    bronze = layer(config.data_dir, BRONZE)
+    city = hourly_city(load_series(bronze / OPENAQ_FILENAME))
+    if not has_recent_hours(city, as_of, AFTERNOON_KNOWN_HOUR):
+        log.warning("This morning's station hours have not arrived, keeping the morning forecast")
+        return 0
+    hourly = forecast_hourly(
+        city,
+        load_series(bronze / NWP.filename),
+        entry,
+        config.models_dir,
+        as_of,
+        _generated_at(),
+        AFTERNOON_KNOWN_HOUR,
+    )
+    text = json.dumps(hourly, indent=1) + "\n"
+    gold = layer(config.data_dir, GOLD)
+    (config.models_dir / HOURLY_FILENAME).write_text(text, encoding="utf-8")
+    (gold / HOURLY_FILENAME).write_text(text, encoding="utf-8")
+    append_rows(gold / HOURLY_HISTORY_FILENAME, hourly_rows(hourly), HOURLY_KEYS)
+    log.info("Updated the hourly forecast with measurements through %s", hourly["inputs_through"])
     return 0
 
 
@@ -529,6 +586,9 @@ def main(argv: list[str] | None = None) -> int:
     commands.add_parser("report", help="write the daily report").set_defaults(handler=_report)
     commands.add_parser("monitor", help="score published forecasts against measurements").set_defaults(
         handler=_monitor
+    )
+    commands.add_parser("hourly-update", help="repeat the hourly forecast with this morning's data").set_defaults(
+        handler=_hourly_update
     )
     health = commands.add_parser("health", help="check that today's outputs are fresh")
     health.add_argument("--output", help="also write the result as Markdown to this file")

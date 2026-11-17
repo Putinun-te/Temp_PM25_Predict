@@ -14,6 +14,13 @@ const TARGET_NAMES: Record<string, { en: string; th: string }> = {
   rh_pct: { en: "Humidity", th: "ความชื้น" },
 };
 
+const EXTRA_KINDS = {
+  hourly: "kindHourly",
+  hourly_afternoon: "kindHourlyAfternoon",
+  stations: "kindStations",
+  stations_pm10: "kindStationsPm10",
+} as const;
+
 function percent(value: number | null): string {
   return value === null || Number.isNaN(value) ? "n/a" : `${Math.round(value * 100)}%`;
 }
@@ -34,7 +41,7 @@ export default function AccuracyView() {
   }, []);
 
   const rows = summary ? accuracyTable(summary, windowDays) : [];
-  const extras = (["hourly", "stations"] as const).flatMap((kind) =>
+  const extras = (["hourly", "hourly_afternoon", "stations", "stations_pm10"] as const).flatMap((kind) =>
     (summary?.[kind] ?? [])
       .filter((row) => row.window_days === windowDays && row.n > 0)
       .sort((a, b) => a.label.localeCompare(b.label))
@@ -134,7 +141,7 @@ export default function AccuracyView() {
                     row.paired_mae !== null && row.persistence_mae ? 1 - row.paired_mae / row.persistence_mae : null;
                   return (
                     <tr key={`${row.kind}-${row.label}`}>
-                      <td>{t(row.kind === "hourly" ? "kindHourly" : "kindStations")}</td>
+                      <td>{t(EXTRA_KINDS[row.kind])}</td>
                       <td>{row.label === "today" ? t("today") : t("tomorrow")}</td>
                       <td>{row.n}</td>
                       <td>{percent((matchPercent(row.mape_pct) ?? Number.NaN) / 100)}</td>

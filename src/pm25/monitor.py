@@ -22,9 +22,9 @@ HOURLY_HISTORY_FILENAME = "hourly_forecast_history.csv"
 STATION_HISTORY_FILENAME = "station_forecast_history.csv"
 HOURLY_ACCURACY_FILENAME = "live_accuracy_hourly.csv"
 STATION_ACCURACY_FILENAME = "live_accuracy_stations.csv"
-HOURLY_KEYS = ["as_of", "time"]
-STATION_KEYS = ["as_of", "period", "location_id"]
-# The hourly model sees measurements up to this hour of the forecast day (see pm25.hourly).
+HOURLY_KEYS = ["as_of", "time", "known_hour"]
+STATION_KEYS = ["as_of", "period", "location_id", "target"]
+# The morning hourly run sees measurements up to this hour of the forecast day (see pm25.hourly).
 LAST_KNOWN_HOUR = 3
 WINDOWS = (7, 30, 90)
 # TMD forecasts are scored against the same measured series as our own temperature
@@ -152,12 +152,15 @@ def summarize(scored: pd.DataFrame, generated_at: str) -> dict[str, Any]:
 
 def hourly_rows(hourly: dict[str, Any]) -> pd.DataFrame:
     """Flatten one published hourly forecast document into history rows."""
+    known_hour = pd.Timestamp(hourly["inputs_through"]).hour
     rows = [
-        {"as_of": hourly["as_of"], "time": hour["time"], "label": hour["day"], "forecast": hour["pm25"],
-         "low": hour["low"], "high": hour["high"], "method": hourly["method"]}
+        {"as_of": hourly["as_of"], "time": hour["time"], "known_hour": known_hour, "label": hour["day"],
+         "forecast": hour["pm25"], "low": hour["low"], "high": hour["high"], "method": hourly["method"]}
         for hour in hourly.get("hours", [])
     ]
-    return pd.DataFrame(rows, columns=["as_of", "time", "label", "forecast", "low", "high", "method"])
+    return pd.DataFrame(
+        rows, columns=["as_of", "time", "known_hour", "label", "forecast", "low", "high", "method"]
+    )
 
 
 def station_rows(forecast: dict[str, Any]) -> pd.DataFrame:
@@ -166,16 +169,32 @@ def station_rows(forecast: dict[str, Any]) -> pd.DataFrame:
     rows = []
     for station in forecast.get("station_forecasts", []):
         for offset, label in enumerate(("today", "tomorrow")):
-            value = station.get(label)
-            if value:
-                rows.append(
-                    {"as_of": forecast["as_of"], "period": (as_of + pd.Timedelta(days=offset)).date().isoformat(),
-                     "label": label, "location_id": station["location_id"], "forecast": value["pm25"],
-                     "low": value["low"], "high": value["high"], "method": value["method"]}
-                )
+            day = station.get(label) or {}
+            # PM2.5 sits directly in the day's entry, PM10 in its own entry below it.
+            for target, value in (("pm25", day), ("pm10", day.get("pm10") or {})):
+                if target in value:
+                    rows.append(
+                        {"as_of": forecast["as_of"], "period": (as_of + pd.Timedelta(days=offset)).date().isoformat(),
+                         "label": label, "location_id": station["location_id"], "target": target,
+                         "forecast": value[target], "low": value["low"], "high": value["high"],
+                         "method": value["method"]}
+                    )
     return pd.DataFrame(
-        rows, columns=["as_of", "period", "label", "location_id", "forecast", "low", "high", "method"]
+        rows, columns=["as_of", "period", "label", "location_id", "target", "forecast", "low", "high", "method"]
     )
+
+
+# Files written before these columns existed hold only the morning run and only PM2.5.
+HISTORY_DEFAULTS = {"known_hour": str(LAST_KNOWN_HOUR), "target": "pm25"}
+
+
+def read_history(path: Path, keys: list[str]) -> pd.DataFrame:
+    """Read a history file with its key columns as text, filling columns added later."""
+    table = pd.read_csv(path, dtype={key: str for key in keys})
+    for key in keys:
+        if key in HISTORY_DEFAULTS:
+            table[key] = table[key].fillna(HISTORY_DEFAULTS[key]) if key in table else HISTORY_DEFAULTS[key]
+    return table
 
 
 def append_rows(path: Path, table: pd.DataFrame, keys: list[str]) -> None:
@@ -184,7 +203,7 @@ def append_rows(path: Path, table: pd.DataFrame, keys: list[str]) -> None:
         return
     table = table.astype({key: str for key in keys})
     if path.exists():
-        table = pd.concat([pd.read_csv(path, dtype={key: str for key in keys}), table], ignore_index=True)
+        table = pd.concat([read_history(path, keys), table], ignore_index=True)
     table = table.drop_duplicates(keys, keep="last").sort_values(keys)
     path.parent.mkdir(parents=True, exist_ok=True)
     table.to_csv(path, index=False)
@@ -211,7 +230,7 @@ def score_hourly(history: pd.DataFrame, city: pd.Series) -> pd.DataFrame:
     time = pd.to_datetime(rows["time"])
     as_of = pd.to_datetime(rows["as_of"])
     hour = time.dt.hour
-    known = as_of + pd.to_timedelta(hour.where(hour <= LAST_KNOWN_HOUR, hour - 24), unit="h")
+    known = as_of + pd.to_timedelta(hour.where(hour <= rows["known_hour"].astype(int), hour - 24), unit="h")
     rows["actual"] = city.reindex(time).to_numpy()
     rows["persistence"] = city.reindex(known).to_numpy()
     rows["period"] = time.dt.date.astype(str)
@@ -221,8 +240,9 @@ def score_hourly(history: pd.DataFrame, city: pd.Series) -> pd.DataFrame:
 def score_stations(history: pd.DataFrame, stations: pd.DataFrame) -> pd.DataFrame:
     """Score published station forecasts against each station's measured daily value.
 
-    `stations` has one column per location id, indexed by date. Persistence is
-    the station's own value on the day before the forecast was issued.
+    `stations` has one column per location id, indexed by date, and `history`
+    holds one target. Persistence is the station's own value on the day before
+    the forecast was issued.
     """
     measured = stations.copy()
     measured.columns = [str(column) for column in measured.columns]

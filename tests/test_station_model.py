@@ -58,3 +58,21 @@ def test_station_model_beats_using_the_city_forecast_for_every_station(tmp_path)
     assert rows[0]["today"]["pm25"] > rows[1]["today"]["pm25"]  # Station 101 runs higher than 102
     assert rows[0]["today"]["low"] <= rows[0]["today"]["pm25"] <= rows[0]["today"]["high"]
     assert "tomorrow" not in rows[0]
+
+
+def test_pm10_uses_its_own_sensors_and_is_merged_under_each_day():
+    from pm25.station_model import merge_pm10, model_filename
+
+    times = pd.date_range("2026-01-01", periods=48, freq="h", tz="Asia/Bangkok").tz_convert("UTC")
+    openaq = pd.DataFrame({"time": times, "sensor_id": 2, "parameter": "pm10", "value": 40.0})
+    sensors = (OpenAQSensor(1, "pm25", 701), OpenAQSensor(2, "pm10", 906))
+    daily = station_daily(openaq, pd.Timestamp("2026-01-03"), sensors, target="pm10")
+    assert list(daily.columns) == [906] and daily[906].tolist() == [40.0, 40.0]
+    assert model_filename(2, "pm10") == "station_pm10_h2.joblib"
+
+    merged = merge_pm10(
+        [{"location_id": 701, "today": {"pm25": 20.0}}, {"location_id": 906, "today": {"pm25": 25.0}}],
+        [{"location_id": 906, "today": {"pm10": 44.0}, "tomorrow": {"pm10": 46.0}}],
+    )
+    assert "pm10" not in merged[0]["today"]
+    assert merged[1]["today"]["pm10"] == {"pm10": 44.0} and merged[1]["tomorrow"]["pm10"] == {"pm10": 46.0}

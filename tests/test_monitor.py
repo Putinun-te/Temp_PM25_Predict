@@ -107,6 +107,7 @@ def test_hourly_scores_use_the_same_hour_known_at_issue_time(tmp_path):
     document = {
         "as_of": "2026-11-16",
         "method": "gradient_boosting",
+        "inputs_through": "2026-11-16T03:00",
         "hours": [
             {"time": "2026-11-16T04:00", "day": "today", "pm25": 20.0, "low": 15.0, "high": 25.0},
             {"time": "2026-11-17T02:00", "day": "tomorrow", "pm25": 30.0, "low": 28.0, "high": 32.0},
@@ -159,3 +160,53 @@ def test_station_scores_compare_each_station_with_its_own_persistence():
     assert len(scored) == 1  # Tomorrow is not measured, and 906 has no forecast
     row = scored.iloc[0]
     assert (row["label"], row["abs_error"], row["persistence_abs_error"], row["in_range"]) == ("today", 3.0, 9.0, True)
+
+
+def test_afternoon_hourly_rows_are_kept_beside_the_morning_ones_and_use_newer_persistence(tmp_path):
+    from pm25.monitor import HOURLY_KEYS, append_rows, hourly_rows, read_history, score_hourly
+
+    def document(inputs_through, value):
+        return {
+            "as_of": "2026-11-16",
+            "method": "gradient_boosting",
+            "inputs_through": inputs_through,
+            "hours": [{"time": "2026-11-17T08:00", "day": "tomorrow", "pm25": value, "low": 0.0, "high": 99.0}],
+        }
+
+    path = tmp_path / "hourly.csv"
+    # A file written before the known_hour column existed holds morning rows only.
+    hourly_rows(document("2026-11-16T03:00", 20.0)).drop(columns="known_hour").to_csv(path, index=False)
+    append_rows(path, hourly_rows(document("2026-11-16T09:00", 24.0)), HOURLY_KEYS)
+    history = read_history(path, HOURLY_KEYS)
+    assert sorted(history["known_hour"]) == ["3", "9"]
+
+    city = pd.Series(
+        {
+            pd.Timestamp("2026-11-15T08:00"): 10.0,  # What the morning run knew for 08:00
+            pd.Timestamp("2026-11-16T08:00"): 18.0,  # Known to the afternoon run
+            pd.Timestamp("2026-11-17T08:00"): 25.0,
+        }
+    )
+    scored = score_hourly(history, city).set_index("known_hour")
+    assert scored.loc["3", "persistence_abs_error"] == 15.0
+    assert scored.loc["9", "persistence_abs_error"] == 7.0
+
+
+def test_station_rows_include_pm10_when_it_is_forecast():
+    from pm25.monitor import station_rows
+
+    forecast = {
+        "as_of": "2026-11-16",
+        "station_forecasts": [
+            {
+                "location_id": 225629,
+                "today": {
+                    "pm25": 30.0, "low": 25.0, "high": 35.0, "method": "gradient_boosting",
+                    "pm10": {"pm10": 50.0, "low": 40.0, "high": 60.0, "method": "persistence"},
+                },
+            }
+        ],
+    }
+    rows = station_rows(forecast).set_index("target")
+    assert list(rows.index) == ["pm25", "pm10"]
+    assert rows.loc["pm10", "forecast"] == 50.0 and rows.loc["pm10", "method"] == "persistence"

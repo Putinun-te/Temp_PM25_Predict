@@ -1,0 +1,63 @@
+name: Afternoon hourly update
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 06:03 UTC is 13:03 in Bangkok. Station hours arrive two to three hours
+    # late, so hours up to 09:00 are in by then even if the run starts late.
+    - cron: "3 6 * * *"
+
+permissions:
+  contents: write # Needed only to update the data branch
+
+# Shares the daily forecast's group: both rewrite the data branch, so they must not overlap.
+concurrency:
+  group: daily-forecast
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PM25_DATA_DIR: state/data
+      PM25_MODELS_DIR: state/models
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install
+        run: pip install -e .
+
+      - name: Restore data and models
+        run: |
+          git fetch --depth 1 origin data
+          git worktree add --detach state FETCH_HEAD
+
+      - name: Fetch this morning's station hours
+        env:
+          OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
+        run: python -m pm25 backfill --source openaq
+
+      - name: Update the hourly forecast
+        run: python -m pm25 hourly-update
+
+      # Same single-commit layout as the daily forecast. Nothing is saved if a step above failed,
+      # so a broken update leaves the morning forecast in place.
+      - name: Save data and models
+        env:
+          REMOTE: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+        run: |
+          cd state
+          rm -rf .git
+          git init -q -b data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data models reports
+          git commit -q -m "Update data, models and reports"
+          git push --force "$REMOTE" data

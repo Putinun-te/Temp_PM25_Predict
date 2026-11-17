@@ -67,6 +67,8 @@ export interface StationValue {
   low: number | null;
   high: number | null;
   method: string;
+  /** Only the stations that measure PM10 have this. */
+  pm10?: { pm10: number | null; low: number | null; high: number | null; method: string };
 }
 
 export interface StationForecast {
@@ -147,7 +149,9 @@ export interface AccuracySummary {
   alerts: string[];
   /** Hourly city forecasts and per-station daily forecasts, PM2.5 only. Absent until first scored. */
   hourly?: ExtraAccuracyRow[];
+  hourly_afternoon?: ExtraAccuracyRow[];
   stations?: ExtraAccuracyRow[];
+  stations_pm10?: ExtraAccuracyRow[];
 }
 
 export interface ExtraAccuracyRow {

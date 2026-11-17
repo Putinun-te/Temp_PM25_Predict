@@ -58,7 +58,7 @@ Base URL: https://func-pm25-api-d0b8.azurewebsites.net/api
 |---|---|
 | `/help` | The list of endpoints |
 | `/forecast` | Today, tomorrow, the next three months, and each station |
-| `/hourly` | Hourly PM2.5 from 04:00 today to 23:00 tomorrow |
+| `/hourly` | Hourly PM2.5 to 23:00 tomorrow: from 04:00 after the morning run, from 10:00 after the afternoon update |
 | `/measured?target=pm25&from=2026-11-01&to=2026-11-12` | Measured Bangkok daily values; `target` is `pm25`, `pm10`, `temp_c` or `rh_pct` |
 | `/forecasts?target=pm25&label=tomorrow&from=…&to=…` | Every published daily forecast in the range |
 | `/accuracy` | Live accuracy over 7, 30 and 90 days |
@@ -198,7 +198,7 @@ Repository secrets: `OPENAQ_API_KEY`, `TMD_API_TOKEN` (optional), `FIRMS_MAP_KEY
 
 `python -m pm25 monitor` runs after the report. It joins every published daily forecast in `gold/forecast_history.csv` with the measured value once it exists, and compares it with persistence as it stood on the day the forecast was issued. It writes `gold/live_accuracy.csv` (one row per scored forecast) and `gold/live_accuracy_summary.json` (MAE, persistence MAE, skill and range coverage over 7, 30 and 90 days). If the published forecast for a target is worse than persistence over 30 days with at least 14 scored days, the summary carries an alert.
 
-The hourly forecast and the per-station forecasts are scored the same way. Each run appends them to `gold/hourly_forecast_history.csv` and `gold/station_forecast_history.csv`; `monitor` writes `gold/live_accuracy_hourly.csv` and `gold/live_accuracy_stations.csv` and adds `hourly` and `stations` sections to the summary. The hourly baseline is the same hour of the previous day as known at 03:00; the station baseline is the station's own last measured day.
+The hourly forecast and the per-station forecasts are scored the same way. Each run appends them to `gold/hourly_forecast_history.csv` and `gold/station_forecast_history.csv`; `monitor` writes `gold/live_accuracy_hourly.csv` and `gold/live_accuracy_stations.csv` and adds `hourly` and `stations` sections to the summary. The hourly baseline is the same hour of the previous day as known at 03:00; the station baseline is the station's own last measured day. The afternoon hourly update and the PM10 station forecasts are scored separately, as `hourly_afternoon` and `stations_pm10`.
 
 `.github/workflows/health-check.yml` runs at 10:37 Bangkok time on the `data` branch. It raises an alert when no forecast was published today, the newest complete station day is more than two days old, the data quality gate failed, or the live accuracy summary carries an alert. An alert opens a GitHub issue labelled `pipeline-health` (or comments on the open one), which emails the repository owner; the next healthy run closes it. GitHub also emails the owner when a scheduled run fails.
 
@@ -319,11 +319,17 @@ The range is the forecast plus or minus the error that 80 % of past walk-forward
 
 Walk-forward over 53,633 hours: MAE 3.66 µg/m³ against 4.91 for the same hour yesterday and 4.80 for yesterday's mean. Hours of today 2.79 against 3.95; hours of tomorrow 4.40 against 5.52. It is published only while it beats both baselines by 1 %.
 
+**Afternoon update.** The `Afternoon hourly update` workflow runs at about 13:00. It fetches the morning's station hours and repeats the forecast with a second model that sees hours up to 09:00, so `gold/hourly_forecast.json` then starts at 10:00. It trains nothing: the morning run trains both models. The job takes a few minutes and is skipped when the morning's hours have not arrived, which leaves the morning forecast in place. Walk-forward over 45,933 hours: MAE 3.41 against 4.76 for the same hour of the previous day; hours of tomorrow 4.02, against 4.40 for the morning model on the same hours.
+
+The dashboard also colours each forecast hour by the PCD band of its value. The official index uses the 24-hour average, so the colours are a guide to the time of day, not the official level.
+
 ### Station forecasts
 
 `station_forecasts` in the forecast document gives PM2.5 today and tomorrow for each of the 10 stations. One pooled model per horizon covers all stations, trained in the same GitHub Actions run: a row is a station on an origin day, with that station's recent values, its usual offset from the city, and all city features. Two models instead of twenty keeps training to seconds and lets stations with gaps borrow from the others.
 
 Walk-forward over about 11,900 station-days: MAE today 3.20 against 3.65 for the station's own persistence and 4.59 for giving every station the city forecast; tomorrow 4.59 against 5.46 and 5.45. The model beat persistence at every station.
+
+The three stations that measure PM10 also get a PM10 forecast, under `pm10` of each day's entry, from the same code with its own two models. Walk-forward: MAE today 4.59 against 5.05 for persistence and 5.50 for the city forecast; tomorrow 6.50 against 7.65 and 7.12.
 
 ### Limitations
 
@@ -334,7 +340,7 @@ Walk-forward over about 11,900 station-days: MAE today 3.20 against 3.65 for the
 - Recent Open-Meteo weather is preliminary and may be revised. Training uses revised history, so live inputs are slightly noisier than training inputs.
 - The station panel is fixed. If stations stop reporting for long, the city value is missing rather than estimated.
 - Burning-season smoke from outside Bangkok is only represented by regional fire totals. Weighting fires by wind direction did not help.
-- The hourly and station forecasts are not yet scored on the live accuracy page; only their walk-forward results are known.
+- Live scores for the hourly and station forecasts only start on 17 November 2026, so for some weeks their walk-forward results are the better guide.
 
 ## Data sources and attribution
 
