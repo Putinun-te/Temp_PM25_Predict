@@ -99,3 +99,63 @@ def test_summary_flags_a_model_worse_than_persistence():
 def test_summary_of_nothing_scored_is_empty():
     summary = summarize(score_history(pd.DataFrame(columns=["kind", "target"]), daily({})), "now")
     assert summary["rows"] == [] and summary["alerts"] == [] and summary["latest_scored"] is None
+
+
+def test_hourly_scores_use_the_same_hour_known_at_issue_time(tmp_path):
+    from pm25.monitor import HOURLY_KEYS, append_rows, hourly_rows, score_hourly, summarize_extra
+
+    document = {
+        "as_of": "2026-11-16",
+        "method": "gradient_boosting",
+        "hours": [
+            {"time": "2026-11-16T04:00", "day": "today", "pm25": 20.0, "low": 15.0, "high": 25.0},
+            {"time": "2026-11-17T02:00", "day": "tomorrow", "pm25": 30.0, "low": 28.0, "high": 32.0},
+            {"time": "2026-11-17T09:00", "day": "tomorrow", "pm25": 30.0, "low": 20.0, "high": 40.0},
+        ],
+    }
+    path = tmp_path / "hourly.csv"
+    append_rows(path, hourly_rows(document), HOURLY_KEYS)
+    append_rows(path, hourly_rows(document), HOURLY_KEYS)  # A rerun must not duplicate rows
+    history = pd.read_csv(path)
+    assert len(history) == 3
+
+    city = pd.Series(
+        {
+            pd.Timestamp("2026-11-15T04:00"): 10.0,  # Same hour yesterday, for 04:00
+            pd.Timestamp("2026-11-16T02:00"): 26.0,  # Already known at 03:00, for 02:00 tomorrow
+            pd.Timestamp("2026-11-16T04:00"): 22.0,
+            pd.Timestamp("2026-11-17T02:00"): 35.0,
+        }
+    )
+    scored = score_hourly(history, city)
+    assert list(scored["time"]) == ["2026-11-16T04:00", "2026-11-17T02:00"]  # 09:00 is not measured yet
+    assert list(scored["abs_error"]) == [2.0, 5.0]
+    assert list(scored["persistence_abs_error"]) == [12.0, 9.0]
+    assert list(scored["in_range"]) == [True, False]
+    rows = {row["label"]: row for row in summarize_extra(scored) if row["window_days"] == 30}
+    assert rows["today"]["mae"] == 2.0 and rows["tomorrow"]["persistence_mae"] == 9.0
+
+
+def test_station_scores_compare_each_station_with_its_own_persistence():
+    from pm25.monitor import score_stations, station_rows
+
+    forecast = {
+        "as_of": "2026-11-16",
+        "station_forecasts": [
+            {
+                "location_id": 701,
+                "today": {"pm25": 30.0, "low": 25.0, "high": 35.0, "method": "gradient_boosting"},
+                "tomorrow": {"pm25": 20.0, "low": 15.0, "high": 25.0, "method": "gradient_boosting"},
+            },
+            {"location_id": 906, "today": {"pm25": None, "low": None, "high": None, "method": "gradient_boosting"}},
+        ],
+    }
+    history = station_rows(forecast)
+    assert len(history) == 3
+    stations = pd.DataFrame(
+        {701: [24.0, 33.0], 906: [18.0, 19.0]}, index=pd.to_datetime(["2026-11-15", "2026-11-16"])
+    )
+    scored = score_stations(history, stations)
+    assert len(scored) == 1  # Tomorrow is not measured, and 906 has no forecast
+    row = scored.iloc[0]
+    assert (row["label"], row["abs_error"], row["persistence_abs_error"], row["in_range"]) == ("today", 3.0, 9.0, True)

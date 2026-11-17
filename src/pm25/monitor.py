@@ -8,6 +8,7 @@ the day the forecast was issued: the newest measured day before `as_of`.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -17,6 +18,14 @@ from pm25.features import ALL_TARGETS
 
 ACCURACY_FILENAME = "live_accuracy.csv"
 SUMMARY_FILENAME = "live_accuracy_summary.json"
+HOURLY_HISTORY_FILENAME = "hourly_forecast_history.csv"
+STATION_HISTORY_FILENAME = "station_forecast_history.csv"
+HOURLY_ACCURACY_FILENAME = "live_accuracy_hourly.csv"
+STATION_ACCURACY_FILENAME = "live_accuracy_stations.csv"
+HOURLY_KEYS = ["as_of", "time"]
+STATION_KEYS = ["as_of", "period", "location_id"]
+# The hourly model sees measurements up to this hour of the forecast day (see pm25.hourly).
+LAST_KNOWN_HOUR = 3
 WINDOWS = (7, 30, 90)
 # TMD forecasts are scored against the same measured series as our own temperature
 # and humidity forecasts, so the two can be compared directly.
@@ -139,3 +148,119 @@ def summarize(scored: pd.DataFrame, generated_at: str) -> dict[str, Any]:
                     f"persistence {persistence_mae:.2f} over the last {window} days ({len(paired)} days scored)"
                 )
     return summary
+
+
+def hourly_rows(hourly: dict[str, Any]) -> pd.DataFrame:
+    """Flatten one published hourly forecast document into history rows."""
+    rows = [
+        {"as_of": hourly["as_of"], "time": hour["time"], "label": hour["day"], "forecast": hour["pm25"],
+         "low": hour["low"], "high": hour["high"], "method": hourly["method"]}
+        for hour in hourly.get("hours", [])
+    ]
+    return pd.DataFrame(rows, columns=["as_of", "time", "label", "forecast", "low", "high", "method"])
+
+
+def station_rows(forecast: dict[str, Any]) -> pd.DataFrame:
+    """Flatten the per-station forecasts of one published forecast into history rows."""
+    as_of = pd.Timestamp(forecast["as_of"])
+    rows = []
+    for station in forecast.get("station_forecasts", []):
+        for offset, label in enumerate(("today", "tomorrow")):
+            value = station.get(label)
+            if value:
+                rows.append(
+                    {"as_of": forecast["as_of"], "period": (as_of + pd.Timedelta(days=offset)).date().isoformat(),
+                     "label": label, "location_id": station["location_id"], "forecast": value["pm25"],
+                     "low": value["low"], "high": value["high"], "method": value["method"]}
+                )
+    return pd.DataFrame(
+        rows, columns=["as_of", "period", "label", "location_id", "forecast", "low", "high", "method"]
+    )
+
+
+def append_rows(path: Path, table: pd.DataFrame, keys: list[str]) -> None:
+    """Add rows to a history file. Rerunning a day replaces that day's rows."""
+    if table.empty:
+        return
+    table = table.astype({key: str for key in keys})
+    if path.exists():
+        table = pd.concat([pd.read_csv(path, dtype={key: str for key in keys}), table], ignore_index=True)
+    table = table.drop_duplicates(keys, keep="last").sort_values(keys)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    table.to_csv(path, index=False)
+
+
+def _finish(scored: pd.DataFrame) -> pd.DataFrame:
+    """Add the error columns shared by the hourly and station scores."""
+    scored = scored.dropna(subset=["forecast", "actual"]).copy()
+    scored["abs_error"] = (scored["forecast"] - scored["actual"]).abs().round(3)
+    scored["persistence_abs_error"] = (scored["persistence"] - scored["actual"]).abs().round(3)
+    has_range = scored["low"].notna() & scored["high"].notna()
+    inside = (scored["actual"] >= scored["low"]) & (scored["actual"] <= scored["high"])
+    scored["in_range"] = inside.where(has_range)
+    return scored.reset_index(drop=True)
+
+
+def score_hourly(history: pd.DataFrame, city: pd.Series) -> pd.DataFrame:
+    """Score published hourly forecasts against the measured city hours.
+
+    `city` is the hourly city series indexed by local time. The baseline is the
+    newest value at the same hour of day that was known when the forecast was made.
+    """
+    rows = history.copy()
+    time = pd.to_datetime(rows["time"])
+    as_of = pd.to_datetime(rows["as_of"])
+    hour = time.dt.hour
+    known = as_of + pd.to_timedelta(hour.where(hour <= LAST_KNOWN_HOUR, hour - 24), unit="h")
+    rows["actual"] = city.reindex(time).to_numpy()
+    rows["persistence"] = city.reindex(known).to_numpy()
+    rows["period"] = time.dt.date.astype(str)
+    return _finish(rows)
+
+
+def score_stations(history: pd.DataFrame, stations: pd.DataFrame) -> pd.DataFrame:
+    """Score published station forecasts against each station's measured daily value.
+
+    `stations` has one column per location id, indexed by date. Persistence is
+    the station's own value on the day before the forecast was issued.
+    """
+    measured = stations.copy()
+    measured.columns = [str(column) for column in measured.columns]
+    long = measured.rename_axis("date").reset_index().melt(id_vars="date", var_name="location_id", value_name="actual")
+    rows = history.copy()
+    rows["location_id"] = rows["location_id"].astype(str)
+    rows["date"] = pd.to_datetime(rows["period"])
+    rows["origin"] = pd.to_datetime(rows["as_of"]) - pd.Timedelta(days=1)
+    scored = rows.merge(long, on=["date", "location_id"], how="left")
+    scored = scored.merge(
+        long.rename(columns={"date": "origin", "actual": "persistence"}), on=["origin", "location_id"], how="left"
+    )
+    return _finish(scored.drop(columns=["date", "origin"]))
+
+
+def summarize_extra(scored: pd.DataFrame) -> list[dict[str, Any]]:
+    """Rolling accuracy per label for the hourly or station scores, same windows as `summarize`."""
+    result: list[dict[str, Any]] = []
+    if scored.empty:
+        return result
+    periods = pd.to_datetime(scored["period"])
+    latest = periods.max()
+    for label, group in scored.groupby("label"):
+        group_periods = pd.to_datetime(group["period"])
+        for window in WINDOWS:
+            recent = group[group_periods > latest - pd.Timedelta(days=window)]
+            paired = recent.dropna(subset=["persistence_abs_error"])
+            result.append(
+                {
+                    "label": label,
+                    "window_days": window,
+                    "n": int(len(recent)),
+                    "days": int(recent["period"].nunique()),
+                    "mae": _round(recent["abs_error"].mean()),
+                    "mape_pct": _round((recent["abs_error"] / recent["actual"].where(recent["actual"] > 0)).mean() * 100),
+                    "paired_mae": _round(paired["abs_error"].mean()),
+                    "persistence_mae": _round(paired["persistence_abs_error"].mean()),
+                    "coverage": _round(recent["in_range"].astype(float).mean()),
+                }
+            )
+    return result

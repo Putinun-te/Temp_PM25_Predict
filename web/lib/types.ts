@@ -145,6 +145,22 @@ export interface AccuracySummary {
   windows: number[];
   rows: AccuracyRow[];
   alerts: string[];
+  /** Hourly city forecasts and per-station daily forecasts, PM2.5 only. Absent until first scored. */
+  hourly?: ExtraAccuracyRow[];
+  stations?: ExtraAccuracyRow[];
+}
+
+export interface ExtraAccuracyRow {
+  label: string;
+  window_days: number;
+  /** Scored forecasts: hours for the hourly rows, station-days for the station rows. */
+  n: number;
+  days: number;
+  mae: number | null;
+  mape_pct: number | null;
+  paired_mae: number | null;
+  persistence_mae: number | null;
+  coverage: number | null;
 }
 
 export interface ScoredForecast {

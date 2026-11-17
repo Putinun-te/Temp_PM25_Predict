@@ -34,6 +34,12 @@ export default function AccuracyView() {
   }, []);
 
   const rows = summary ? accuracyTable(summary, windowDays) : [];
+  const extras = (["hourly", "stations"] as const).flatMap((kind) =>
+    (summary?.[kind] ?? [])
+      .filter((row) => row.window_days === windowDays && row.n > 0)
+      .sort((a, b) => a.label.localeCompare(b.label))
+      .map((row) => ({ kind, ...row })),
+  );
   const recent = recentScored(scored, "pm25", "tomorrow", 14);
 
   return (
@@ -95,6 +101,47 @@ export default function AccuracyView() {
                       <td>{fmt(row.persistence_mae, 2)}</td>
                       <td className={skill === null ? "" : skill > 0 ? "good" : "bad"}>{percent(skill)}</td>
                       <td>{row.source === "tmd" ? "–" : percent(row.coverage)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {extras.length > 0 && (
+        <>
+          <h2>{t("extraTitle")}</h2>
+          <p className="note">{t("extraIntro")}</p>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>{t("kind")}</th>
+                  <th>{t("horizon")}</th>
+                  <th>{t("scored")}</th>
+                  <th>{t("matchAverage")}</th>
+                  <th>{t("mae")}</th>
+                  <th>{t("baselineMae")}</th>
+                  <th>{t("skill")}</th>
+                  <th>{t("coverage")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {extras.map((row) => {
+                  const skill =
+                    row.paired_mae !== null && row.persistence_mae ? 1 - row.paired_mae / row.persistence_mae : null;
+                  return (
+                    <tr key={`${row.kind}-${row.label}`}>
+                      <td>{t(row.kind === "hourly" ? "kindHourly" : "kindStations")}</td>
+                      <td>{row.label === "today" ? t("today") : t("tomorrow")}</td>
+                      <td>{row.n}</td>
+                      <td>{percent((matchPercent(row.mape_pct) ?? Number.NaN) / 100)}</td>
+                      <td>{fmt(row.mae, 2)}</td>
+                      <td>{fmt(row.persistence_mae, 2)}</td>
+                      <td className={skill === null ? "" : skill > 0 ? "good" : "bad"}>{percent(skill)}</td>
+                      <td>{percent(row.coverage)}</td>
                     </tr>
                   );
                 })}

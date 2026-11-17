@@ -44,7 +44,24 @@ from pm25.gistda import fetch_gistda_bangkok
 from pm25.nwp import NWP, backfill_nwp, daily_nwp
 from pm25.hourly import HOURLY_FILENAME, forecast_hourly, hourly_city, train_hourly
 from pm25.health import check_health, render
-from pm25.monitor import ACCURACY_FILENAME, SUMMARY_FILENAME, score_history, summarize
+from pm25.monitor import (
+    ACCURACY_FILENAME,
+    HOURLY_ACCURACY_FILENAME,
+    HOURLY_HISTORY_FILENAME,
+    HOURLY_KEYS,
+    STATION_ACCURACY_FILENAME,
+    STATION_HISTORY_FILENAME,
+    STATION_KEYS,
+    SUMMARY_FILENAME,
+    append_rows,
+    hourly_rows,
+    score_history,
+    score_hourly,
+    score_stations,
+    station_rows,
+    summarize,
+    summarize_extra,
+)
 from pm25.predict import FORECAST_FILENAME, build_forecast, write_forecast
 from pm25.publish import publish_forecast, service_account_token
 from pm25.report import (
@@ -330,8 +347,12 @@ def _report(args: argparse.Namespace, config: Config) -> int:
     if hourly_path.exists() and json.loads(hourly_path.read_text(encoding="utf-8"))["as_of"] == forecast["as_of"]:
         # Only today's hourly forecast is published; a stale one would mislead.
         (gold / HOURLY_FILENAME).write_text(hourly_path.read_text(encoding="utf-8"), encoding="utf-8")
+        append_rows(
+            gold / HOURLY_HISTORY_FILENAME, hourly_rows(json.loads(hourly_path.read_text(encoding="utf-8"))), HOURLY_KEYS
+        )
     else:
         (gold / HOURLY_FILENAME).unlink(missing_ok=True)
+    append_rows(gold / STATION_HISTORY_FILENAME, station_rows(forecast), STATION_KEYS)
     openaq = load_series(layer(config.data_dir, BRONZE) / OPENAQ_FILENAME)
     if not openaq.empty:
         stations = station_days(openaq, pd.Timestamp(forecast["as_of"]), forecast["generated_at"])
@@ -351,6 +372,28 @@ def _monitor(args: argparse.Namespace, config: Config) -> int:
     scored = score_history(pd.read_csv(history_path), pd.read_csv(silver_path))
     scored.to_csv(gold / ACCURACY_FILENAME, index=False)
     summary = summarize(scored, _generated_at())
+    openaq = load_series(layer(config.data_dir, BRONZE) / OPENAQ_FILENAME)
+    extras = (
+        ("hourly", HOURLY_HISTORY_FILENAME, HOURLY_ACCURACY_FILENAME, lambda h: score_hourly(h, hourly_city(openaq))),
+        (
+            "stations",
+            STATION_HISTORY_FILENAME,
+            STATION_ACCURACY_FILENAME,
+            lambda h: score_stations(h, station_daily(openaq, _as_of())),
+        ),
+    )
+    for name, history_name, accuracy_name, score in extras:
+        if openaq.empty or not (gold / history_name).exists():
+            continue
+        try:
+            extra = score(pd.read_csv(gold / history_name))
+        except Exception:
+            # These scores are additions; a failure must not hide the main accuracy file.
+            log.exception("Scoring the %s forecasts failed", name)
+            continue
+        extra.to_csv(gold / accuracy_name, index=False)
+        summary[name] = summarize_extra(extra)
+        log.info("Scored %d %s forecasts", len(extra), name)
     (gold / SUMMARY_FILENAME).write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     log.info("Scored %d published forecasts, latest date %s", len(scored), summary["latest_scored"])
     for alert in summary["alerts"]:
