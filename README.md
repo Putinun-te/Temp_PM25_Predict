@@ -349,6 +349,18 @@ Walk-forward over about 11,900 station-days: MAE today 3.20 against 3.65 for the
 
 The three stations that measure PM10 also get a PM10 forecast, under `pm10` of each day's entry, from the same code with its own models, one per horizon. Walk-forward: MAE today 4.59 against 5.05 for persistence and 5.50 for the city forecast; tomorrow 6.50 against 7.65 and 7.12.
 
+Walk-forward MAE (µg/m³) per horizon, run of 18 November 2026. Each cell is model / station persistence / city forecast; the published method is the model except where marked.
+
+| Horizon | PM2.5, about 10,800 station-days | PM10, about 3,250 station-days |
+|---|---|---|
+| Today | 3.20 / 3.64 / 4.57 | 4.59 / 5.06 / 5.51 |
+| Tomorrow | 4.62 / 5.47 / 5.45 | 6.50 / 7.66 / 7.12 |
+| In 2 days | 4.81 / 6.27 / 5.57 | 7.04 / 8.79 / 7.41 |
+| In 3 days | 4.94 / 6.58 / 5.63 | 7.12 / 9.23 / 7.42 |
+| In 4 days | 5.47 / 6.74 / 5.89 | 7.73 / 9.47 / 8.83 |
+| In 5 days | 5.51 / 6.81 / 6.02 | 8.02 / 9.50 / 7.93, city forecast published |
+| In 6 days | 5.49 / 6.87 / 6.03 | 8.04 / 9.64 / 9.05 |
+
 ### Limitations
 
 - The better of two candidate models is picked on the same walk-forward results that are reported, so the reported model error is slightly optimistic.
