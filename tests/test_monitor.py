@@ -210,3 +210,30 @@ def test_station_rows_include_pm10_when_it_is_forecast():
     rows = station_rows(forecast).set_index("target")
     assert list(rows.index) == ["pm25", "pm10"]
     assert rows.loc["pm10", "forecast"] == 50.0 and rows.loc["pm10", "method"] == "persistence"
+
+
+def test_later_station_days_and_hourly_pm10_become_history_rows():
+    from pm25.monitor import hourly_rows, station_rows
+
+    forecast = {
+        "as_of": "2026-11-16",
+        "station_forecasts": [
+            {"location_id": 701, "day3": {"pm25": 30.0, "low": 25.0, "high": 35.0, "method": "gradient_boosting"}}
+        ],
+    }
+    row = station_rows(forecast).iloc[0]
+    assert (row["label"], row["period"]) == ("day3", "2026-11-19")  # Three days after the issue date
+
+    hourly = {
+        "as_of": "2026-11-16",
+        "method": "gradient_boosting",
+        "pm10_method": "same_hour",
+        "inputs_through": "2026-11-16T03:00",
+        "hours": [
+            {"time": "2026-11-16T04:00", "day": "today", "pm25": 20.0, "low": 15.0, "high": 25.0,
+             "pm10": 40.0, "pm10_low": 30.0, "pm10_high": 50.0}
+        ],
+    }
+    rows = hourly_rows(hourly).set_index("target")
+    assert list(rows.index) == ["pm25", "pm10"]
+    assert rows.loc["pm10", "forecast"] == 40.0 and rows.loc["pm10", "method"] == "same_hour"

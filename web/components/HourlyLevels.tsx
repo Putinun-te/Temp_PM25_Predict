@@ -3,11 +3,11 @@
 import type { CSSProperties } from "react";
 import { bandFor } from "@/lib/aqi";
 import { fmt } from "@/lib/format";
-import type { HourlyPoint } from "@/lib/types";
+import type { HourlyPoint, HourlyTarget } from "@/lib/types";
 import { useLang } from "./LangProvider";
 
 /** One coloured cell per forecast hour, so the air quality level of each hour reads at a glance. */
-export default function HourlyLevels({ hours }: { hours: HourlyPoint[] }) {
+export default function HourlyLevels({ hours, target = "pm25" }: { hours: HourlyPoint[]; target?: HourlyTarget }) {
   const { lang, t } = useLang();
   return (
     <div className="hour-levels">
@@ -19,7 +19,8 @@ export default function HourlyLevels({ hours }: { hours: HourlyPoint[] }) {
             <span className="hour-day">{t(day)}</span>
             <div className="hour-cells">
               {points.map((point) => {
-                const band = bandFor("pm25", point.pm25);
+                const value = target === "pm10" ? (point.pm10 ?? null) : point.pm25;
+                const band = bandFor(target, value);
                 const level = band ? (lang === "th" ? band.th : band.en) : t("noData");
                 const hour = point.time.slice(11, 13);
                 return (
@@ -34,10 +35,10 @@ export default function HourlyLevels({ hours }: { hours: HourlyPoint[] }) {
                         "--start-narrow": (Number(hour) % 12) + 1,
                       } as CSSProperties
                     }
-                    title={`${point.time.replace("T", " ")}: ${fmt(point.pm25)} µg/m³, ${level}`}
+                    title={`${point.time.replace("T", " ")}: ${fmt(value)} µg/m³, ${level}`}
                   >
                     <small>{hour}</small>
-                    {fmt(point.pm25, 0)}
+                    {fmt(value, 0)}
                   </span>
                 );
               })}

@@ -71,11 +71,11 @@ export interface StationValue {
   pm10?: { pm10: number | null; low: number | null; high: number | null; method: string };
 }
 
-export interface StationForecast {
-  location_id: number;
-  today?: StationValue;
-  tomorrow?: StationValue;
-}
+/** Daily labels in order: today, tomorrow, then days after today. */
+export const DAY_LABELS = ["today", "tomorrow", "day2", "day3", "day4", "day5", "day6"] as const;
+export type DayLabel = (typeof DAY_LABELS)[number];
+
+export type StationForecast = { location_id: number } & Partial<Record<DayLabel, StationValue>>;
 
 export interface HourlyPoint {
   time: string; // Bangkok local time, YYYY-MM-DDTHH:MM
@@ -83,15 +83,22 @@ export interface HourlyPoint {
   pm25: number | null;
   low: number | null;
   high: number | null;
+  /** PM10 is present once its hourly model exists. */
+  pm10?: number | null;
+  pm10_low?: number | null;
+  pm10_high?: number | null;
 }
+
+export type HourlyTarget = "pm25" | "pm10";
 
 export interface HourlyForecast {
   generated_at: string;
   as_of: string;
   method: string;
   inputs_through: string;
-  measured: { time: string; pm25: number }[];
+  measured: { time: string; pm25: number; pm10?: number }[];
   hours: HourlyPoint[];
+  pm10_method?: string;
 }
 
 export interface DailyRow {
@@ -147,9 +154,11 @@ export interface AccuracySummary {
   windows: number[];
   rows: AccuracyRow[];
   alerts: string[];
-  /** Hourly city forecasts and per-station daily forecasts, PM2.5 only. Absent until first scored. */
+  /** Hourly city forecasts and per-station daily forecasts. Each section is absent until first scored. */
   hourly?: ExtraAccuracyRow[];
   hourly_afternoon?: ExtraAccuracyRow[];
+  hourly_pm10?: ExtraAccuracyRow[];
+  hourly_pm10_afternoon?: ExtraAccuracyRow[];
   stations?: ExtraAccuracyRow[];
   stations_pm10?: ExtraAccuracyRow[];
 }

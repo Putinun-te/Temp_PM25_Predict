@@ -4,8 +4,8 @@ import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import { bandFor } from "@/lib/aqi";
 import { latestStationValue } from "@/lib/data";
-import { fmt } from "@/lib/format";
-import type { StationForecast, StationsFile } from "@/lib/types";
+import { dayLabel, fmt } from "@/lib/format";
+import { DAY_LABELS, type DayLabel, type StationForecast, type StationsFile } from "@/lib/types";
 import { useLang } from "./LangProvider";
 
 const NO_DATA = "#9a9890";
@@ -14,7 +14,7 @@ function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
-export type MapMode = "measured" | "today" | "tomorrow";
+export type MapMode = "measured" | DayLabel;
 
 interface Props {
   data: StationsFile;
@@ -55,18 +55,19 @@ export default function StationMap({ data, forecasts = [], mode = "measured" }: 
           escapeHtml(station.locality),
           `${t("mapMeasured")} ${date}: PM2.5 ${measured === null ? t("noData") : `${fmt(measured)} µg/m³`}`,
         ];
-        for (const key of ["today", "tomorrow"] as const) {
+        const name = (key: DayLabel) => (key === "today" ? t("mapToday") : key === "tomorrow" ? t("mapTomorrow") : dayLabel(key, t));
+        for (const key of DAY_LABELS) {
           const value = forecast?.[key];
           if (value && value.pm25 !== null) {
-            lines.push(`${t(key === "today" ? "mapToday" : "mapTomorrow")}: ${fmt(value.pm25)} (${fmt(value.low)}–${fmt(value.high)})`);
+            lines.push(`${name(key)}: ${fmt(value.pm25)} (${fmt(value.low)}–${fmt(value.high)})`);
           }
         }
         lines.push(label);
         if (station.pm10) lines.push(`PM10 ${pm10 === null ? t("noData") : `${fmt(pm10)} µg/m³`}`);
-        for (const key of ["today", "tomorrow"] as const) {
+        for (const key of DAY_LABELS) {
           const value = forecast?.[key]?.pm10;
           if (value && value.pm10 !== null) {
-            lines.push(`PM10 ${t(key === "today" ? "mapToday" : "mapTomorrow")}: ${fmt(value.pm10)} (${fmt(value.low)}–${fmt(value.high)})`);
+            lines.push(`PM10 ${name(key)}: ${fmt(value.pm10)} (${fmt(value.low)}–${fmt(value.high)})`);
           }
         }
         // A coloured disc with the value inside, readable without opening the popup.

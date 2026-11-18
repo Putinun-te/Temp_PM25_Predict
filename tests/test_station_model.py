@@ -76,3 +76,18 @@ def test_pm10_uses_its_own_sensors_and_is_merged_under_each_day():
     )
     assert "pm10" not in merged[0]["today"]
     assert merged[1]["today"]["pm10"] == {"pm10": 44.0} and merged[1]["tomorrow"]["pm10"] == {"pm10": 46.0}
+
+
+def test_later_horizons_use_the_city_labels():
+    from pm25.station_model import HORIZONS, LABELS
+
+    assert HORIZONS == (1, 2, 3, 4, 5, 6, 7)
+    assert [LABELS[h] for h in HORIZONS] == ["today", "tomorrow", "day2", "day3", "day4", "day5", "day6"]
+
+    stations, targets, exogenous = synthetic()
+    as_of = targets.index.max() + pd.Timedelta(days=1)
+    registry = {"pm25_h5": {"method": "persistence", "residual_q80": 3.0}}
+    rows = forecast_stations(stations, targets, exogenous, registry, None, as_of, {})
+    origin = as_of - pd.Timedelta(days=1)
+    assert rows[0]["day4"]["pm25"] == round(stations.loc[origin, 101], 1)
+    assert "today" not in rows[0]

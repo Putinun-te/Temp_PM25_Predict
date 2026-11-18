@@ -17,6 +17,8 @@ const TARGET_NAMES: Record<string, { en: string; th: string }> = {
 const EXTRA_KINDS = {
   hourly: "kindHourly",
   hourly_afternoon: "kindHourlyAfternoon",
+  hourly_pm10: "kindHourlyPm10",
+  hourly_pm10_afternoon: "kindHourlyPm10Afternoon",
   stations: "kindStations",
   stations_pm10: "kindStationsPm10",
 } as const;
@@ -41,7 +43,7 @@ export default function AccuracyView() {
   }, []);
 
   const rows = summary ? accuracyTable(summary, windowDays) : [];
-  const extras = (["hourly", "hourly_afternoon", "stations", "stations_pm10"] as const).flatMap((kind) =>
+  const extras = (Object.keys(EXTRA_KINDS) as (keyof typeof EXTRA_KINDS)[]).flatMap((kind) =>
     (summary?.[kind] ?? [])
       .filter((row) => row.window_days === windowDays && row.n > 0)
       .sort((a, b) => a.label.localeCompare(b.label))

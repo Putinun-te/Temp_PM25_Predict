@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { type DayCheck, latestDayChecks } from "@/lib/accuracy";
 import type { ScoredForecast } from "@/lib/types";
 import { dataBase, dayBeforeForecasts, loadAccuracy, loadForecast, loadHistory, loadHourly, loadStations, measuredSeries } from "@/lib/data";
-import type { Forecast, HourlyForecast, Point, StationsFile } from "@/lib/types";
+import { DAY_LABELS, type Forecast, type HourlyForecast, type HourlyTarget, type Point, type StationsFile } from "@/lib/types";
+import { dayLabel } from "@/lib/format";
 import { AqiLegend } from "./AqiBadge";
 import ForecastCards from "./ForecastCards";
 import GistdaReference from "./GistdaReference";
@@ -32,6 +33,7 @@ export default function Dashboard() {
   const [scored, setScored] = useState<ScoredForecast[]>([]);
   const [hourly, setHourly] = useState<HourlyForecast | null>(null);
   const [mapMode, setMapMode] = useState<MapMode>("measured");
+  const [hourlyTarget, setHourlyTarget] = useState<HourlyTarget>("pm25");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -89,13 +91,23 @@ export default function Dashboard() {
       {hourly && hourly.as_of === forecast?.as_of && (
         <>
           <h2>{t("hourlyTitle")}</h2>
+          {hourly.hours.some((hour) => hour.pm10 != null) && (
+            <div className="lang" role="group" aria-label={t("hourlyTitle")}>
+              {(["pm25", "pm10"] as const).map((target) => (
+                <button key={target} type="button" aria-pressed={hourlyTarget === target} className={hourlyTarget === target ? "active" : ""} onClick={() => setHourlyTarget(target)}>
+                  {target === "pm25" ? "PM2.5" : "PM10"}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="chart">
             <HourlyChart
               data={hourly}
+              target={hourlyTarget}
               labels={{ measured: t("measured"), forecast: t("hourlyForecast"), range: t("hourlyRange") }}
             />
           </div>
-          <HourlyLevels hours={hourly.hours} />
+          <HourlyLevels hours={hourly.hours} target={hourlyTarget} />
           <p className="note">
             {t("hourlyInputs")} {hourly.inputs_through.replace("T", " ")}. {t("hourlyNote")} {t("hourlyLevelsNote")}
           </p>
@@ -130,9 +142,9 @@ export default function Dashboard() {
           <h2>{t("stationsTitle")}</h2>
           {forecast?.station_forecasts && (
             <div className="lang" role="group" aria-label={t("stationsTitle")}>
-              {(["measured", "today", "tomorrow"] as const).map((mode) => (
+              {(["measured", ...DAY_LABELS.filter((label) => forecast.station_forecasts?.some((item) => item[label]))] as MapMode[]).map((mode) => (
                 <button key={mode} type="button" aria-pressed={mapMode === mode} className={mapMode === mode ? "active" : ""} onClick={() => setMapMode(mode)}>
-                  {t(mode === "measured" ? "mapMeasured" : mode === "today" ? "mapToday" : "mapTomorrow")}
+                  {mode === "measured" ? t("mapMeasured") : mode === "today" ? t("mapToday") : mode === "tomorrow" ? t("mapTomorrow") : dayLabel(mode, t)}
                 </button>
               ))}
             </div>

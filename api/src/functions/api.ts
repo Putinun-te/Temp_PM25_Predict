@@ -40,10 +40,10 @@ function params(request: HttpRequest): URLSearchParams {
 }
 
 const ENDPOINTS = {
-  "/api/forecast": "Latest forecast: the next seven days (labels today, tomorrow, day2 to day6), the next three months, and each station (station_forecasts, with PM10 where measured)",
+  "/api/forecast": "Latest forecast: the next seven days (labels today, tomorrow, day2 to day6), the next three months, and each station for the same seven days (station_forecasts, with PM10 where measured)",
   "/api/measured?target=pm25&from=YYYY-MM-DD&to=YYYY-MM-DD": "Measured Bangkok daily values (pm25, pm10, temp_c, rh_pct)",
   "/api/forecasts?target=pm25&label=tomorrow&from=YYYY-MM-DD&to=YYYY-MM-DD": "Every published daily forecast in the range",
-  "/api/hourly": "Hourly PM2.5 forecast to 23:00 tomorrow, Bangkok time; updated after midday (see inputs_through)",
+  "/api/hourly": "Hourly PM2.5 and PM10 forecast to 23:00 tomorrow, Bangkok time; updated after midday (see inputs_through)",
   "/api/accuracy": "Live accuracy of published forecasts over 7, 30 and 90 days",
   "/api/stations": "Daily values per reference station for the last 14 days",
 };

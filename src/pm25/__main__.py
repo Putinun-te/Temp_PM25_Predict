@@ -43,14 +43,17 @@ from pm25.cams import archive_cams, fetch_cams_forecast
 from pm25.gistda import fetch_gistda_bangkok
 from pm25.nwp import backfill_nwp, daily_nwp, load_nwp
 from pm25.hourly import (
-    AFTERNOON_KEY,
     AFTERNOON_KNOWN_HOUR,
     HOURLY_FILENAME,
+    HOURLY_TARGETS,
+    LAST_KNOWN_HOUR,
     forecast_hourly,
     has_recent_hours,
     hourly_city,
+    registry_key,
     train_hourly,
 )
+from pm25.hourly import merge_pm10 as merge_hourly_pm10
 from pm25.health import check_health, render
 from pm25.monitor import (
     ACCURACY_FILENAME,
@@ -274,15 +277,19 @@ def _train_extras(
     registry = load_registry(config.models_dir)
     metrics_path = config.models_dir / METRICS_FILENAME
     report = json.loads(metrics_path.read_text(encoding="utf-8"))
-    city = hourly_city(openaq)
     nwp_hourly = load_nwp(bronze)
-    for key, extra in (("hourly", {}), (AFTERNOON_KEY, {"known_hour": AFTERNOON_KNOWN_HOUR})):
-        try:
-            entry, hourly_report = train_hourly(city, nwp_hourly, as_of, config.models_dir, _generated_at(), **extra)
-            registry[key], report[key] = entry, hourly_report
-            log.info("%s: %s", key, entry["method"])
-        except Exception:
-            log.exception("Training %s failed, keeping its previous method", key)
+    for target in HOURLY_TARGETS:
+        city = hourly_city(openaq, target)
+        for known_hour in (LAST_KNOWN_HOUR, AFTERNOON_KNOWN_HOUR):
+            key = registry_key(target, known_hour)
+            try:
+                entry, hourly_report = train_hourly(
+                    city, nwp_hourly, as_of, config.models_dir, _generated_at(), known_hour, target
+                )
+                registry[key], report[key] = entry, hourly_report
+                log.info("%s: %s", key, entry["method"])
+            except Exception:
+                log.exception("Training %s failed, keeping its previous method", key)
     registry.setdefault("stations", {})
     report.setdefault("stations", {})
     for target in STATION_TARGETS:
@@ -344,6 +351,31 @@ def _tmd_refresh(args: argparse.Namespace, config: Config) -> int:
     return 0
 
 
+def _hourly_document(
+    openaq: pd.DataFrame,
+    nwp_hourly: pd.DataFrame,
+    registry: dict,
+    models_dir: Path,
+    as_of: pd.Timestamp,
+    known_hour: int,
+) -> dict:
+    """Return the hourly PM2.5 forecast, with PM10 added when its model exists and runs."""
+    hourly = forecast_hourly(
+        hourly_city(openaq), nwp_hourly, registry[registry_key("pm25", known_hour)],
+        models_dir, as_of, _generated_at(), known_hour,
+    )
+    pm10_entry = registry.get(registry_key("pm10", known_hour))
+    if pm10_entry is not None:
+        try:
+            pm10 = forecast_hourly(
+                hourly_city(openaq, "pm10"), nwp_hourly, pm10_entry, models_dir, as_of, _generated_at(), known_hour, "pm10"
+            )
+            merge_hourly_pm10(hourly, pm10)
+        except Exception:
+            log.exception("Hourly PM10 forecast failed, publishing PM2.5 only")
+    return hourly
+
+
 def _predict(args: argparse.Namespace, config: Config) -> int:
     as_of = _as_of()
     inputs = _load_inputs(config, as_of)
@@ -384,14 +416,7 @@ def _predict(args: argparse.Namespace, config: Config) -> int:
             log.exception("Station forecast failed, publishing without it")
     if registry.get("hourly"):
         try:
-            hourly = forecast_hourly(
-                hourly_city(openaq),
-                load_nwp(bronze),
-                registry["hourly"],
-                config.models_dir,
-                as_of,
-                _generated_at(),
-            )
+            hourly = _hourly_document(openaq, load_nwp(bronze), registry, config.models_dir, as_of, LAST_KNOWN_HOUR)
             (config.models_dir / HOURLY_FILENAME).write_text(json.dumps(hourly, indent=1) + "\n", encoding="utf-8")
         except Exception:
             log.exception("Hourly forecast failed, publishing without it")
@@ -476,11 +501,16 @@ def _score_extras(gold: Path, openaq: pd.DataFrame) -> dict[str, list[dict]]:
     if openaq.empty:
         return sections
     if (gold / HOURLY_HISTORY_FILENAME).exists():
-        scored = score_hourly(read_history(gold / HOURLY_HISTORY_FILENAME, HOURLY_KEYS), hourly_city(openaq))
-        scored.to_csv(gold / HOURLY_ACCURACY_FILENAME, index=False)
-        afternoon = scored["known_hour"] == str(AFTERNOON_KNOWN_HOUR)
-        sections["hourly"] = summarize_extra(scored[~afternoon])
-        sections[AFTERNOON_KEY] = summarize_extra(scored[afternoon])
+        history = read_history(gold / HOURLY_HISTORY_FILENAME, HOURLY_KEYS)
+        parts = []
+        for target in HOURLY_TARGETS:
+            scored = score_hourly(history[history["target"] == target], hourly_city(openaq, target))
+            parts.append(scored)
+            for known_hour in (LAST_KNOWN_HOUR, AFTERNOON_KNOWN_HOUR):
+                rows = scored[scored["known_hour"] == str(known_hour)]
+                if not rows.empty or target == "pm25":
+                    sections[registry_key(target, known_hour)] = summarize_extra(rows)
+        pd.concat(parts, ignore_index=True).to_csv(gold / HOURLY_ACCURACY_FILENAME, index=False)
     if (gold / STATION_HISTORY_FILENAME).exists():
         history = read_history(gold / STATION_HISTORY_FILENAME, STATION_KEYS)
         parts = [
@@ -496,24 +526,16 @@ def _score_extras(gold: Path, openaq: pd.DataFrame) -> dict[str, list[dict]]:
 def _hourly_update(args: argparse.Namespace, config: Config) -> int:
     """Repeat the hourly forecast after midday with the morning's measurements."""
     as_of = _as_of()
-    entry = load_registry(config.models_dir).get(AFTERNOON_KEY)
-    if entry is None:
+    registry = load_registry(config.models_dir)
+    if registry.get(registry_key("pm25", AFTERNOON_KNOWN_HOUR)) is None:
         log.info("No afternoon hourly model yet, keeping the morning forecast")
         return 0
     bronze = layer(config.data_dir, BRONZE)
-    city = hourly_city(load_series(bronze / OPENAQ_FILENAME))
-    if not has_recent_hours(city, as_of, AFTERNOON_KNOWN_HOUR):
+    openaq = load_series(bronze / OPENAQ_FILENAME)
+    if not has_recent_hours(hourly_city(openaq), as_of, AFTERNOON_KNOWN_HOUR):
         log.warning("This morning's station hours have not arrived, keeping the morning forecast")
         return 0
-    hourly = forecast_hourly(
-        city,
-        load_nwp(bronze),
-        entry,
-        config.models_dir,
-        as_of,
-        _generated_at(),
-        AFTERNOON_KNOWN_HOUR,
-    )
+    hourly = _hourly_document(openaq, load_nwp(bronze), registry, config.models_dir, as_of, AFTERNOON_KNOWN_HOUR)
     text = json.dumps(hourly, indent=1) + "\n"
     gold = layer(config.data_dir, GOLD)
     (config.models_dir / HOURLY_FILENAME).write_text(text, encoding="utf-8")

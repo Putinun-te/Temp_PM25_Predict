@@ -82,3 +82,33 @@ def test_afternoon_run_sees_hours_up_to_nine_and_forecasts_from_ten(tmp_path):
 
     assert not has_recent_hours(city[city.index < as_of + pd.Timedelta(hours=7)], as_of, AFTERNOON_KNOWN_HOUR)
     assert has_recent_hours(city[city.index < as_of + pd.Timedelta(hours=8)], as_of, AFTERNOON_KNOWN_HOUR)
+
+
+def test_pm10_has_its_own_models_and_is_merged_into_each_hour(tmp_path):
+    from pm25.hourly import AFTERNOON_KNOWN_HOUR, merge_pm10, model_filename, registry_key
+
+    assert registry_key("pm25", 3) == "hourly" and registry_key("pm25", AFTERNOON_KNOWN_HOUR) == "hourly_afternoon"
+    assert registry_key("pm10", 3) == "hourly_pm10" and registry_key("pm10", 9) == "hourly_pm10_afternoon"
+    assert model_filename(3, "pm10") == "pm10_hourly_h03.joblib"
+    assert model_filename(3) == "pm25_hourly.joblib"  # Existing PM2.5 files keep their names
+
+    # Two PM10 stations are enough for a city value.
+    times = pd.to_datetime(["2026-11-14T17:00:00Z"] * 2)
+    openaq = pd.DataFrame({"time": times, "sensor_id": [1, 2], "parameter": "pm10", "value": [40.0, 60.0]})
+    assert hourly_city(openaq, "pm10").tolist() == [50.0]
+
+    pm25 = city_series()
+    pm10 = (pm25 * 1.6).rename("pm10")
+    as_of = pd.Timestamp("2026-03-06")
+    entry25, _ = train_hourly(pm25, pd.DataFrame(), as_of, tmp_path, "now")
+    entry10, _ = train_hourly(pm10, pd.DataFrame(), as_of, tmp_path, "now", target="pm10")
+    assert (tmp_path / "pm10_hourly_h03.joblib").exists() and (tmp_path / "pm25_hourly.joblib").exists()
+
+    document = forecast_hourly(pm25, pd.DataFrame(), entry25, tmp_path, as_of, "now")
+    extra = forecast_hourly(pm10, pd.DataFrame(), entry10, tmp_path, as_of, "now", target="pm10")
+    assert "pm10" in extra["hours"][0] and "pm25" not in extra["hours"][0]
+    merged = merge_pm10(document, extra)
+    hour = merged["hours"][0]
+    assert hour["pm10"] > hour["pm25"] and hour["pm10_low"] <= hour["pm10"] <= hour["pm10_high"]
+    assert merged["measured"][0]["pm10"] > merged["measured"][0]["pm25"]
+    assert merged["pm10_method"] == entry10["method"]

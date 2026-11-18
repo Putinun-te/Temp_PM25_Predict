@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 
 from pm25.features import ALL_TARGETS
+from pm25.station_model import LABELS as STATION_HORIZON_LABELS
 
 ACCURACY_FILENAME = "live_accuracy.csv"
 SUMMARY_FILENAME = "live_accuracy_summary.json"
@@ -22,7 +23,7 @@ HOURLY_HISTORY_FILENAME = "hourly_forecast_history.csv"
 STATION_HISTORY_FILENAME = "station_forecast_history.csv"
 HOURLY_ACCURACY_FILENAME = "live_accuracy_hourly.csv"
 STATION_ACCURACY_FILENAME = "live_accuracy_stations.csv"
-HOURLY_KEYS = ["as_of", "time", "known_hour"]
+HOURLY_KEYS = ["as_of", "time", "known_hour", "target"]
 STATION_KEYS = ["as_of", "period", "location_id", "target"]
 # The morning hourly run sees measurements up to this hour of the forecast day (see pm25.hourly).
 LAST_KNOWN_HOUR = 3
@@ -153,13 +154,17 @@ def summarize(scored: pd.DataFrame, generated_at: str) -> dict[str, Any]:
 def hourly_rows(hourly: dict[str, Any]) -> pd.DataFrame:
     """Flatten one published hourly forecast document into history rows."""
     known_hour = pd.Timestamp(hourly["inputs_through"]).hour
-    rows = [
-        {"as_of": hourly["as_of"], "time": hour["time"], "known_hour": known_hour, "label": hour["day"],
-         "forecast": hour["pm25"], "low": hour["low"], "high": hour["high"], "method": hourly["method"]}
-        for hour in hourly.get("hours", [])
-    ]
+    rows = []
+    for hour in hourly.get("hours", []):
+        base = {"as_of": hourly["as_of"], "time": hour["time"], "known_hour": known_hour, "label": hour["day"]}
+        rows.append({**base, "target": "pm25", "forecast": hour["pm25"], "low": hour["low"], "high": hour["high"],
+                     "method": hourly["method"]})
+        # PM10 sits next to PM2.5 in the same hour, when its model exists.
+        if "pm10" in hour:
+            rows.append({**base, "target": "pm10", "forecast": hour["pm10"], "low": hour["pm10_low"],
+                         "high": hour["pm10_high"], "method": hourly.get("pm10_method")})
     return pd.DataFrame(
-        rows, columns=["as_of", "time", "known_hour", "label", "forecast", "low", "high", "method"]
+        rows, columns=["as_of", "time", "known_hour", "target", "label", "forecast", "low", "high", "method"]
     )
 
 
@@ -168,7 +173,7 @@ def station_rows(forecast: dict[str, Any]) -> pd.DataFrame:
     as_of = pd.Timestamp(forecast["as_of"])
     rows = []
     for station in forecast.get("station_forecasts", []):
-        for offset, label in enumerate(("today", "tomorrow")):
+        for offset, label in enumerate(STATION_HORIZON_LABELS.values()):
             day = station.get(label) or {}
             # PM2.5 sits directly in the day's entry, PM10 in its own entry below it.
             for target, value in (("pm25", day), ("pm10", day.get("pm10") or {})):

@@ -1,4 +1,4 @@
-"""PM2.5 and PM10 forecast for each reference station, today and tomorrow.
+"""PM2.5 and PM10 forecast for each reference station, for the next seven days.
 
 One pooled model per horizon covers all stations: a row is a station on an
 origin day. It sees that station's own recent values, how it differs from the
@@ -31,8 +31,9 @@ from pm25.ingest import OPENAQ_PANEL, PARAMETER, SENSOR, TIME, VALUE, OpenAQSens
 
 MODEL = "gradient_boosting"
 BASELINES = ("persistence", "city_forecast")
-HORIZONS = (1, 2)
-LABELS = {1: "today", 2: "tomorrow"}
+HORIZONS = tuple(range(1, 8))
+# Same labels as the city forecast: today, tomorrow, then day2 to day6 (days after today).
+LABELS = {1: "today", 2: "tomorrow", **{horizon: f"day{horizon - 1}" for horizon in range(3, 8)}}
 STATION_LAGS = (0, 1, 2, 6)
 STATION_TARGETS = ("pm25", "pm10")
 
@@ -157,7 +158,7 @@ def forecast_stations(
     city_values: dict[int, float | None],
     target: str = "pm25",
 ) -> list[dict[str, Any]]:
-    """Return today's and tomorrow's forecast per station; the value sits under the target's name.
+    """Return each station's forecast for every horizon; the value sits under the target's name.
 
     `city_values` is the published city forecast per horizon, used when the
     city-forecast baseline is the published method.
@@ -191,7 +192,7 @@ def forecast_stations(
 
 
 def merge_pm10(stations: list[dict[str, Any]], pm10: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Add each station's PM10 forecast under `pm10` of its today and tomorrow entries."""
+    """Add each station's PM10 forecast under `pm10` of its daily entries."""
     by_location = {item["location_id"]: item for item in pm10}
     for station in stations:
         extra = by_location.get(station["location_id"], {})

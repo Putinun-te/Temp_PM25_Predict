@@ -85,6 +85,8 @@ const STRINGS = {
   kindStations: { en: "Per station", th: "รายสถานี" },
   kindHourlyAfternoon: { en: "Hourly, afternoon update", th: "รายชั่วโมง รอบบ่าย" },
   kindStationsPm10: { en: "Per station, PM10", th: "รายสถานี PM10" },
+  kindHourlyPm10: { en: "Hourly PM10 (city)", th: "PM10 รายชั่วโมง (ทั้งเมือง)" },
+  kindHourlyPm10Afternoon: { en: "Hourly PM10, afternoon update", th: "PM10 รายชั่วโมง รอบบ่าย" },
   baselineMae: { en: "Baseline MAE", th: "MAE วิธีพื้นฐาน" },
   recentErrors: { en: "Recent PM2.5 forecasts for tomorrow", th: "พยากรณ์ PM2.5 วันพรุ่งนี้ล่าสุด" },
   date: { en: "Date", th: "วันที่" },
@@ -113,7 +115,7 @@ const STRINGS = {
   },
   match: { en: "match", th: "ตรง" },
   matchAverage: { en: "Average match", th: "ตรงเฉลี่ย" },
-  hourlyTitle: { en: "Hourly PM2.5, today and tomorrow", th: "PM2.5 รายชั่วโมง วันนี้และพรุ่งนี้" },
+  hourlyTitle: { en: "Hourly forecast, today and tomorrow", th: "พยากรณ์รายชั่วโมง วันนี้และพรุ่งนี้" },
   hourlyNote: {
     en: "Made each morning from station hours up to 03:00, and again after midday from hours up to 09:00. The shaded band is where 80% of past forecasts landed. Hourly values swing more than the daily average.",
     th: "พยากรณ์ตอนเช้าจากข้อมูลสถานีถึง 03:00 และอัปเดตอีกครั้งหลังเที่ยงจากข้อมูลถึง 09:00 แถบสีคือช่วงที่ 80% ของการพยากรณ์ที่ผ่านมาอยู่ในนั้น ค่ารายชั่วโมงแกว่งมากกว่าค่าเฉลี่ยรายวัน",

@@ -1,4 +1,4 @@
-"""Hourly PM2.5 forecast for the rest of today and all of tomorrow.
+"""Hourly PM2.5 and PM10 forecast for the rest of today and all of tomorrow.
 
 The daily run makes this forecast once each morning, so it needs no extra
 scheduled jobs. Station hours reach OpenAQ two to three hours late and the run
@@ -12,6 +12,9 @@ are the strongest signal for the rest of the day.
 One model covers every lead time; the hour of day and the lead are features.
 Weather for each target hour comes from the same previous-run forecasts as the
 daily model (see pm25.nwp), so training never sees hindsight.
+
+PM10 uses the same code with its own models. Only three stations report PM10,
+so its city value is the median of at least two of them.
 """
 
 from __future__ import annotations
@@ -37,6 +40,13 @@ AFTERNOON_KNOWN_HOUR = 9  # The run after midday sees hours up to 09:00
 AFTERNOON_KEY = "hourly_afternoon"  # Registry and metrics key of the afternoon model
 # The afternoon update is skipped unless at least one of the newest hours has arrived.
 AFTERNOON_REQUIRED_HOURS = 3
+HOURLY_TARGETS = ("pm25", "pm10")
+
+
+def registry_key(target: str, known_hour: int) -> str:
+    """Registry and metrics key: hourly and hourly_afternoon for PM2.5, hourly_pm10 and so on for PM10."""
+    base = "hourly" if target == "pm25" else f"hourly_{target}"
+    return base if known_hour == LAST_KNOWN_HOUR else f"{base}_afternoon"
 
 
 def leads_for(known_hour: int) -> tuple[int, ...]:
@@ -44,8 +54,10 @@ def leads_for(known_hour: int) -> tuple[int, ...]:
     return tuple(range(known_hour + 1, 48))
 
 
-def model_filename(known_hour: int) -> str:
-    return MODEL_FILENAME if known_hour == LAST_KNOWN_HOUR else f"pm25_hourly_h{known_hour:02d}.joblib"
+def model_filename(known_hour: int, target: str = "pm25") -> str:
+    if target == "pm25" and known_hour == LAST_KNOWN_HOUR:
+        return MODEL_FILENAME
+    return f"{target}_hourly_h{known_hour:02d}.joblib"
 
 
 LEADS = leads_for(LAST_KNOWN_HOUR)
@@ -62,13 +74,13 @@ def make_model() -> Any:
     ))
 
 
-def hourly_city(openaq: pd.DataFrame) -> pd.Series:
-    """Return the Bangkok hourly PM2.5: the median across stations, by local hour."""
-    frame = openaq[openaq[PARAMETER] == "pm25"]
+def hourly_city(openaq: pd.DataFrame, target: str = "pm25") -> pd.Series:
+    """Return the Bangkok hourly value of `target`: the median across stations, by local hour."""
+    frame = openaq[openaq[PARAMETER] == target]
     grouped = frame.groupby(TIME)[VALUE].agg(["median", "count"])
-    series = grouped.loc[grouped["count"] >= MIN_STATIONS["pm25"], "median"]
+    series = grouped.loc[grouped["count"] >= MIN_STATIONS[target], "median"]
     series.index = series.index.tz_convert(TIMEZONE).tz_localize(None)
-    return series.rename("pm25").sort_index()
+    return series.rename(target).sort_index()
 
 
 def _local_nwp(nwp_hourly: pd.DataFrame) -> pd.DataFrame:
@@ -139,6 +151,7 @@ def train_hourly(
     models_dir: Path,
     now: str,
     known_hour: int = LAST_KNOWN_HOUR,
+    target: str = "pm25",
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Evaluate the hourly model walk-forward and return its registry entry and report."""
     first = city.index.min().normalize() + pd.Timedelta(days=1)
@@ -149,7 +162,7 @@ def train_hourly(
     frame["lead"] = features["lead"].to_numpy()
     frame = frame.dropna()
     if frame.empty:
-        raise ValueError("hourly: no rows to evaluate")
+        raise ValueError(f"hourly {target}: no rows to evaluate")
 
     overall = {name: metrics(frame["actual"], frame[name]) for name in (MODEL, *BASELINES)}
     parts = {"today": frame[frame["lead"] < 24], "tomorrow": frame[frame["lead"] >= 24]}
@@ -170,7 +183,7 @@ def train_hourly(
         known = labels.notna().to_numpy()
         model = make_model().fit(features[known], labels[known])
         models_dir.mkdir(parents=True, exist_ok=True)
-        joblib.dump(model, models_dir / model_filename(known_hour))
+        joblib.dump(model, models_dir / model_filename(known_hour, target))
         entry.update({"features": list(features.columns), "promoted_at": now})
     report = {
         "published_method": method,
@@ -190,12 +203,13 @@ def forecast_hourly(
     as_of: pd.Timestamp,
     generated_at: str,
     known_hour: int = LAST_KNOWN_HOUR,
+    target: str = "pm25",
 ) -> dict[str, Any]:
-    """Return the hourly forecast document for `as_of` and the following day."""
+    """Return the hourly forecast document for `as_of` and the following day; values sit under the target's name."""
     days = pd.DatetimeIndex([as_of])
     features, _, baselines = build_hourly(city, nwp_hourly, days, known_hour)
     if entry["method"] == MODEL:
-        model = joblib.load(models_dir / model_filename(known_hour))
+        model = joblib.load(models_dir / model_filename(known_hour, target))
         values = model.predict(features.reindex(columns=entry["features"]))
     else:
         values = baselines[entry["method"]].to_numpy()
@@ -209,7 +223,7 @@ def forecast_hourly(
             {
                 "time": (as_of + pd.Timedelta(hours=lead)).strftime("%Y-%m-%dT%H:%M"),
                 "day": part,
-                "pm25": None if missing else round(value, 1),
+                target: None if missing else round(value, 1),
                 "low": None if missing else round(max(value - q80, 0.0), 1),
                 "high": None if missing else round(value + q80, 1),
             }
@@ -223,7 +237,7 @@ def forecast_hourly(
         "unit": "ug/m3",
         "method": entry["method"],
         "inputs_through": known_until.strftime("%Y-%m-%dT%H:%M"),
-        "measured": [{"time": t.strftime("%Y-%m-%dT%H:%M"), "pm25": round(float(v), 1)} for t, v in recent.items()],
+        "measured": [{"time": t.strftime("%Y-%m-%dT%H:%M"), target: round(float(v), 1)} for t, v in recent.items()],
         "hours": hours,
     }
 
@@ -232,3 +246,22 @@ def has_recent_hours(city: pd.Series, as_of: pd.Timestamp, known_hour: int) -> b
     """True when at least one of the newest hours before `known_hour` has been measured."""
     newest = pd.date_range(end=as_of + pd.Timedelta(hours=known_hour), periods=AFTERNOON_REQUIRED_HOURS, freq="h")
     return bool(city.reindex(newest).notna().any())
+
+
+def merge_pm10(hourly: dict[str, Any], pm10: dict[str, Any]) -> dict[str, Any]:
+    """Add the PM10 hourly forecast to the PM2.5 document.
+
+    Each hour gains `pm10`, `pm10_low` and `pm10_high`, each measured hour gains
+    `pm10`, and `pm10_method` names the PM10 method. PM2.5 fields are unchanged.
+    """
+    by_time = {hour["time"]: hour for hour in pm10["hours"]}
+    for hour in hourly["hours"]:
+        extra = by_time.get(hour["time"])
+        if extra is not None:
+            hour.update({"pm10": extra["pm10"], "pm10_low": extra["low"], "pm10_high": extra["high"]})
+    measured = {item["time"]: item["pm10"] for item in pm10["measured"]}
+    for item in hourly["measured"]:
+        if item["time"] in measured:
+            item["pm10"] = measured[item["time"]]
+    hourly["pm10_method"] = pm10["method"]
+    return hourly
