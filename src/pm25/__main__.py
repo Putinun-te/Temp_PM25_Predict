@@ -284,8 +284,8 @@ def _predict(args: argparse.Namespace, config: Config) -> int:
     if config.tmd_api_token:
         try:
             tmd = fetch_tmd_daily(config.tmd_api_token, config.latitude, config.longitude, as_of)
-        except requests.RequestException as error:
-            # The TMD reference is optional, so its outage must not stop the forecast.
+        except (requests.RequestException, KeyError, IndexError, TypeError, ValueError, AttributeError) as error:
+            # The TMD reference is optional, so an outage or a changed response must not stop the forecast.
             log.warning("TMD forecast unavailable: %s", type(error).__name__)
     else:
         log.info("TMD_API_TOKEN is not set, skipping the TMD weather forecast")

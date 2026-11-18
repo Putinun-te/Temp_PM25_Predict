@@ -35,3 +35,13 @@ def test_days_with_too_few_hours_are_left_out(fake_response):
 
     summary = fetch_tmd_daily("t", 13.75, 100.5, AS_OF, http_get=api, sleep=lambda _: None)
     assert set(summary) == {"2026-11-11"}
+
+
+def test_hour_data_sent_as_a_list_is_read(fake_response):
+    listed = [{**item, "data": [{"tc": item["data"]["tc"]}, {"rh": item["data"]["rh"]}]} for item in hours("2026-11-11", 24)]
+
+    def api(url, params, timeout, headers):
+        return fake_response({"WeatherForecasts": [{"forecasts": listed}]})
+
+    summary = fetch_tmd_daily("t", 13.75, 100.5, AS_OF, http_get=api, sleep=lambda _: None)
+    assert summary["2026-11-11"]["rh_pct"] == 60.0

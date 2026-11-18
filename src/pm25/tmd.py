@@ -20,6 +20,17 @@ TMD_URL = "https://data.tmd.go.th/nwpapi/v1/forecast/location/hourly/at"
 MIN_HOURS_PER_DAY = 18
 
 
+def _field(data: Any, name: str) -> float | None:
+    """Read one field from an hour's data, which TMD sends as a dict or a list of dicts."""
+    if isinstance(data, dict):
+        return data.get(name)
+    if isinstance(data, list):
+        for part in data:
+            if isinstance(part, dict) and name in part:
+                return part[name]
+    return None
+
+
 def fetch_tmd_daily(
     token: str,
     latitude: float,
@@ -49,8 +60,8 @@ def fetch_tmd_daily(
     frame = pd.DataFrame(
         {
             "time": [item["time"] for item in forecasts],
-            "tc": [item["data"].get("tc") for item in forecasts],
-            "rh": [item["data"].get("rh") for item in forecasts],
+            "tc": [_field(item.get("data"), "tc") for item in forecasts],
+            "rh": [_field(item.get("data"), "rh") for item in forecasts],
         }
     )
     frame["date"] = pd.to_datetime(frame["time"], utc=True).dt.tz_convert(TIMEZONE).dt.date
