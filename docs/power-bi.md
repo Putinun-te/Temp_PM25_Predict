@@ -12,6 +12,9 @@ The pipeline loads its medallion layers into an Azure SQL Database free tier dat
 | `silver.daily_city` | Cleaned daily Bangkok series since 2021 | Seasonal and long-term charts |
 | `gold.live_accuracy` | Every published daily forecast next to the measured value and persistence | Live error over time |
 | `gold.v_live_accuracy_30d` | MAE, persistence MAE and range coverage over the last 30 scored days | Accuracy cards |
+| `gold.v_week_forecast` | The next seven days from the newest run, with `horizon` 1 (today) to 7 | Seven-day page |
+| `gold.v_skill_by_horizon` | Out-of-sample MAE and skill per target and horizon from the latest training | How error grows with lead time |
+| `gold.v_live_accuracy_by_horizon` | Live MAE and coverage per target and horizon over the last 30 scored days | Live error by lead time |
 
 ## Connect
 
@@ -34,6 +37,13 @@ Power BI Desktop runs on Windows only. On a Mac, use a Windows machine or the Po
 
 - Table: `v_live_accuracy_30d` with `target`, `label`, `source`, `days`, `mae`, `persistence_mae`, `coverage`.
 - Line chart: `period` on the axis, `abs_error` and `persistence_abs_error` from `live_accuracy`, filtered to `target = pm25`, `label = tomorrow`, `source = forecast`.
+
+## Seven-day page
+
+- Matrix: `date` and `label` as rows, `target` as columns, `value` as values, from `v_week_forecast`. Sort by `horizon`.
+- Line chart: `date` on the axis, `value`, `low` and `high` from `v_week_forecast` filtered to `target = pm25`.
+- Line chart: `horizon` on the axis, `best_mae` and `persistence_mae` from `v_skill_by_horizon` filtered to `target = pm25`. The gap is what the model adds at each lead time.
+- Table: `v_live_accuracy_by_horizon` with `target`, `horizon`, `days`, `mae`, `persistence_mae`, `coverage`, filtered to `source = forecast`. Horizons 3 to 7 fill in as their target days pass.
 
 ## Without Azure SQL (after graduation)
 

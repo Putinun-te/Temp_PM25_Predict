@@ -19,6 +19,12 @@ import pandas as pd
 
 BRONZE_LOOKBACK_DAYS = 14
 
+# Daily labels are today, tomorrow, then day2 to day6 (days after today).
+HORIZON_FROM_LABEL = (
+    "CASE label WHEN 'today' THEN 1 WHEN 'tomorrow' THEN 2 "
+    "ELSE TRY_CAST(SUBSTRING(label, 4, 2) AS INT) + 1 END"
+)
+
 DDL = [
     "IF SCHEMA_ID('bronze') IS NULL EXEC('CREATE SCHEMA bronze')",
     "IF SCHEMA_ID('silver') IS NULL EXEC('CREATE SCHEMA silver')",
@@ -68,6 +74,28 @@ DDL = [
     """CREATE OR ALTER VIEW gold.v_latest_forecast AS
         SELECT * FROM gold.forecast_history
         WHERE as_of = (SELECT MAX(as_of) FROM gold.forecast_history)""",
+    # The next seven days from the newest run, one row per day and target.
+    # horizon is 1 for today and 7 for six days after today.
+    f"""CREATE OR ALTER VIEW gold.v_week_forecast AS
+        SELECT as_of, TRY_CONVERT(DATE, period) AS date, label, {HORIZON_FROM_LABEL} AS horizon,
+               target, unit, value, low, high, method
+        FROM gold.forecast_history
+        WHERE kind = 'daily' AND as_of = (SELECT MAX(as_of) FROM gold.forecast_history)""",
+    # Out-of-sample error per target and horizon from the latest training run.
+    """CREATE OR ALTER VIEW gold.v_skill_by_horizon AS
+        SELECT as_of, LEFT(slot, CHARINDEX('_h', slot) - 1) AS target,
+               TRY_CAST(SUBSTRING(slot, CHARINDEX('_h', slot) + 2, 2) AS INT) AS horizon,
+               slot, published_method, best_candidate, best_mae, persistence_mae, skill, evaluated_days
+        FROM gold.model_metrics
+        WHERE as_of = (SELECT MAX(as_of) FROM gold.model_metrics)""",
+    # Live error per target and horizon over the last 30 scored days.
+    f"""CREATE OR ALTER VIEW gold.v_live_accuracy_by_horizon AS
+        SELECT target, source, label, {HORIZON_FROM_LABEL} AS horizon, COUNT(*) AS days,
+               AVG(abs_error) AS mae, AVG(persistence_abs_error) AS persistence_mae,
+               AVG(CAST(in_range AS FLOAT)) AS coverage
+        FROM gold.live_accuracy
+        WHERE period > DATEADD(DAY, -30, (SELECT MAX(period) FROM gold.live_accuracy))
+        GROUP BY target, source, label""",
 ]
 
 
