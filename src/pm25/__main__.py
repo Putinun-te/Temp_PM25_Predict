@@ -71,7 +71,7 @@ from pm25.monitor import (
     summarize,
     summarize_extra,
 )
-from pm25.predict import FORECAST_FILENAME, build_forecast, write_forecast
+from pm25.predict import FORECAST_FILENAME, build_forecast, fill_missing_tmd, write_forecast
 from pm25.publish import publish_forecast, service_account_token
 from pm25.report import (
     CSV_FILENAME,
@@ -301,6 +301,49 @@ def _train_extras(
     metrics_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
 
+def _fetch_tmd(config: Config, as_of: pd.Timestamp) -> dict[str, dict[str, float]]:
+    """Return the TMD daily summary, or nothing when it is not configured or unavailable."""
+    if not config.tmd_api_token:
+        log.info("TMD_API_TOKEN is not set, skipping the TMD weather forecast")
+        return {}
+    try:
+        return fetch_tmd_daily(config.tmd_api_token, config.latitude, config.longitude, as_of)
+    except (requests.RequestException, KeyError, IndexError, TypeError, ValueError, AttributeError) as error:
+        # The TMD reference is optional, so an outage or a changed response must not stop the forecast.
+        log.warning("TMD forecast unavailable: %s", type(error).__name__)
+        return {}
+
+
+def _tmd_refresh(args: argparse.Namespace, config: Config) -> int:
+    """Fill TMD values the morning run could not get, usually tomorrow's.
+
+    TMD publishes its new run around 07:45 Bangkok time, after the daily job
+    starts, so the morning fetch often lacks tomorrow's later hours.
+    """
+    as_of = _as_of()
+    gold = layer(config.data_dir, GOLD)
+    path = gold / FORECAST_FILENAME
+    forecast = _read_json(path)
+    if forecast is None or forecast["as_of"] != as_of.date().isoformat():
+        log.info("No forecast for today, nothing to refresh")
+        return 0
+    if all("tmd_temp_c" in row for row in forecast["daily"] if row["horizon_days"] <= 2):
+        log.info("TMD values are already complete")
+        return 0
+    filled = fill_missing_tmd(forecast, _fetch_tmd(config, as_of))
+    if not filled:
+        log.info("TMD still has no complete day to add")
+        return 0
+    text = json.dumps(forecast, indent=2) + "\n"
+    path.write_text(text, encoding="utf-8")
+    (config.models_dir / FORECAST_FILENAME).write_text(text, encoding="utf-8")
+    table = forecast_table(forecast)
+    added = table["target"].str.startswith("tmd_") & table["period"].isin(filled)
+    append_history(gold / HISTORY_FILENAME, table[added])
+    log.info("Added TMD values for %s", ", ".join(filled))
+    return 0
+
+
 def _predict(args: argparse.Namespace, config: Config) -> int:
     as_of = _as_of()
     inputs = _load_inputs(config, as_of)
@@ -310,15 +353,7 @@ def _predict(args: argparse.Namespace, config: Config) -> int:
     if not registry["daily"]:
         log.error("No trained methods found, run the train command first")
         return 2
-    tmd = {}
-    if config.tmd_api_token:
-        try:
-            tmd = fetch_tmd_daily(config.tmd_api_token, config.latitude, config.longitude, as_of)
-        except (requests.RequestException, KeyError, IndexError, TypeError, ValueError, AttributeError) as error:
-            # The TMD reference is optional, so an outage or a changed response must not stop the forecast.
-            log.warning("TMD forecast unavailable: %s", type(error).__name__)
-    else:
-        log.info("TMD_API_TOKEN is not set, skipping the TMD weather forecast")
+    tmd = _fetch_tmd(config, as_of)
     forecast = build_forecast(*inputs, registry, config.models_dir, as_of, _generated_at(), tmd)
     try:
         gistda = fetch_gistda_bangkok()
@@ -625,6 +660,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     commands.add_parser("hourly-update", help="repeat the hourly forecast with this morning's data").set_defaults(
         handler=_hourly_update
+    )
+    commands.add_parser("tmd-refresh", help="add TMD values the morning run could not get").set_defaults(
+        handler=_tmd_refresh
     )
     health = commands.add_parser("health", help="check that today's outputs are fresh")
     health.add_argument("--output", help="also write the result as Markdown to this file")

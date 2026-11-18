@@ -141,3 +141,23 @@ def test_publish_refuses_an_incomplete_document(fake_response):
 def test_publish_raises_on_http_error(fake_response):
     with pytest.raises(requests.HTTPError):
         publish_forecast("https://db.test", "t", document(), Recorder(fake_response, 401))
+
+
+def test_missing_tmd_values_are_filled_without_rewriting_published_ones():
+    from pm25.predict import fill_missing_tmd
+
+    forecast = {
+        "daily": [
+            {"date": "2026-11-18", "tmd_temp_c": 29.7},
+            {"date": "2026-11-19"},
+            {"date": "2026-11-20"},
+        ]
+    }
+    tmd = {
+        "2026-11-18": {"temp_c": 30.5},
+        "2026-11-19": {"temp_c": 30.1, "rh_pct": 70.0},
+    }
+    assert fill_missing_tmd(forecast, tmd) == ["2026-11-19"]
+    assert forecast["daily"][0]["tmd_temp_c"] == 29.7
+    assert forecast["daily"][1] == {"date": "2026-11-19", "tmd_temp_c": 30.1, "tmd_rh_pct": 70.0}
+    assert "tmd_temp_c" not in forecast["daily"][2]

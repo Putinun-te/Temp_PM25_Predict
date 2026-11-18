@@ -259,7 +259,7 @@ Each target and horizon is a slot. A slot publishes a fitted model only after th
 
 Temperature and humidity are trained and scored against Open-Meteo history from 2021, which is a model reanalysis and not a station measurement. Compared with station records from 2023 to 2026, it reads about 1 °C cooler than central Bangkok. Measured temperature that is free and updated daily was not found.
 
-The Thai Meteorological Department (TMD) forecast for today and tomorrow is published next to ours as `tmd_*` fields. It is an independent 3 km weather model, and its accuracy against Bangkok stations has not been measured here.
+The Thai Meteorological Department (TMD) forecast for today and tomorrow is published next to ours as `tmd_*` fields. It is an independent 3 km weather model, and its accuracy against Bangkok stations has not been measured here. TMD publishes its new run around 07:45, after the daily job starts, so the morning run often has today's values only. The afternoon update (`tmd-refresh`) adds the missing days and never changes values already published.
 
 ### How it is evaluated
 

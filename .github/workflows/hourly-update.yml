@@ -47,6 +47,13 @@ jobs:
       - name: Update the hourly forecast
         run: python -m pm25 hourly-update
 
+      # TMD publishes its new run after the morning job starts, so tomorrow's
+      # TMD values are often missing until now. Values already published stay.
+      - name: Add missing TMD values
+        env:
+          TMD_API_TOKEN: ${{ secrets.TMD_API_TOKEN }}
+        run: python -m pm25 tmd-refresh
+
       # Same single-commit layout as the daily forecast. Nothing is saved if a step above failed,
       # so a broken update leaves the morning forecast in place.
       - name: Save data and models

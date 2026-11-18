@@ -123,3 +123,35 @@ def test_train_always_runs_without_a_limit(calls, monkeypatch, tmp_path):
     _saved_training(tmp_path / "models", "2026-11-17")
     main(["train"])
     assert len(ran) == 1
+
+
+def test_tmd_refresh_fills_tomorrow_and_records_it(calls, monkeypatch, tmp_path):
+    import json
+
+    monkeypatch.setattr("pm25.__main__._as_of", lambda: pd.Timestamp("2026-11-18"))
+    monkeypatch.setenv("TMD_API_TOKEN", "t")
+    monkeypatch.setattr(
+        "pm25.__main__.fetch_tmd_daily",
+        lambda token, lat, lon, as_of: {
+            "2026-11-19": {"temp_c": 30.1, "temp_c_min": 26.0, "temp_c_max": 34.0, "rh_pct": 70.0}
+        },
+    )
+    forecast = {
+        "as_of": "2026-11-18",
+        "generated_at": "2026-11-18T07:31:19+07:00",
+        "daily": [
+            {"date": "2026-11-18", "label": "today", "horizon_days": 1, "tmd_temp_c": 29.7},
+            {"date": "2026-11-19", "label": "tomorrow", "horizon_days": 2},
+        ],
+        "monthly": [],
+    }
+    (tmp_path / "gold").mkdir()
+    (tmp_path / "models").mkdir()
+    (tmp_path / "gold" / "forecast.json").write_text(json.dumps(forecast))
+    assert main(["tmd-refresh"]) == 0
+    saved = json.loads((tmp_path / "gold" / "forecast.json").read_text())
+    assert saved["daily"][1]["tmd_temp_c"] == 30.1
+    assert json.loads((tmp_path / "models" / "forecast.json").read_text()) == saved
+    history = pd.read_csv(tmp_path / "gold" / "forecast_history.csv")
+    assert set(history["period"]) == {"2026-11-19"}
+    assert set(history["target"]) == {"tmd_temp_c", "tmd_temp_c_min", "tmd_temp_c_max", "tmd_rh_pct"}

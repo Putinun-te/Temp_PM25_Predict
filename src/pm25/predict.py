@@ -73,6 +73,22 @@ def _daily_row(
     return row
 
 
+def fill_missing_tmd(forecast: dict[str, Any], tmd: dict[str, dict[str, float]]) -> list[str]:
+    """Add TMD values to daily rows that have none yet; return the dates filled.
+
+    Rows that already carry TMD values keep them, so a later fetch never
+    rewrites what the morning run published.
+    """
+    filled = []
+    for row in forecast["daily"]:
+        if "tmd_temp_c" in row or row["date"] not in tmd:
+            continue
+        for name, value in tmd[row["date"]].items():
+            row[f"tmd_{name}"] = value
+        filled.append(row["date"])
+    return filled
+
+
 def _monthly_row(
     months_ahead: int,
     as_of: pd.Timestamp,
