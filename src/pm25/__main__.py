@@ -591,11 +591,18 @@ def _load_sql(args: argparse.Namespace, config: Config) -> int:
         BRONZE_TABLES,
         GOLD_ACCURACY,
         GOLD_HISTORY,
+        GOLD_HOURLY_ACCURACY,
+        GOLD_HOURLY_HISTORY,
         GOLD_METRICS,
+        GOLD_STATION_ACCURACY,
+        GOLD_STATION_HISTORY,
+        GOLD_STATIONS,
         SILVER_DAILY,
         Warehouse,
         connection_string,
+        extra_frame,
         metrics_frame,
+        stations_frame,
     )
 
     silver_path = layer(config.data_dir, SILVER) / DAILY_FILENAME
@@ -636,6 +643,20 @@ def _load_sql(args: argparse.Namespace, config: Config) -> int:
         if metrics_path.exists():
             metrics = metrics_frame(json.loads(metrics_path.read_text(encoding="utf-8")))
             log.info("%s: wrote %d rows", GOLD_METRICS.name, warehouse.replace(GOLD_METRICS, metrics))
+        gold = layer(config.data_dir, GOLD)
+        stations_path = gold / STATIONS_FILENAME
+        if stations_path.exists():
+            frame = stations_frame(json.loads(stations_path.read_text(encoding="utf-8")))
+            log.info("%s: wrote %d rows", GOLD_STATIONS.name, warehouse.replace(GOLD_STATIONS, frame))
+        for filename, table in (
+            (STATION_HISTORY_FILENAME, GOLD_STATION_HISTORY),
+            (STATION_ACCURACY_FILENAME, GOLD_STATION_ACCURACY),
+            (HOURLY_HISTORY_FILENAME, GOLD_HOURLY_HISTORY),
+            (HOURLY_ACCURACY_FILENAME, GOLD_HOURLY_ACCURACY),
+        ):
+            if (gold / filename).exists():
+                frame = extra_frame(pd.read_csv(gold / filename))
+                log.info("%s: wrote %d rows", table.name, warehouse.replace(table, frame))
     finally:
         connection.close()
     return 0

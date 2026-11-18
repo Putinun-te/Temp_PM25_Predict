@@ -74,6 +74,43 @@ DDL = [
     """CREATE OR ALTER VIEW gold.v_latest_forecast AS
         SELECT * FROM gold.forecast_history
         WHERE as_of = (SELECT MAX(as_of) FROM gold.forecast_history)""",
+    """IF OBJECT_ID('gold.stations') IS NULL CREATE TABLE gold.stations (
+        location_id INT NOT NULL PRIMARY KEY, name NVARCHAR(200), locality NVARCHAR(100),
+        latitude FLOAT, longitude FLOAT)""",
+    """IF OBJECT_ID('gold.station_forecast_history') IS NULL CREATE TABLE gold.station_forecast_history (
+        as_of DATE NOT NULL, period DATE NOT NULL, label VARCHAR(16), location_id INT NOT NULL,
+        target VARCHAR(8) NOT NULL, forecast FLOAT, low FLOAT, high FLOAT, method VARCHAR(32),
+        CONSTRAINT pk_station_forecast_history PRIMARY KEY (as_of, period, location_id, target))""",
+    """IF OBJECT_ID('gold.live_accuracy_stations') IS NULL CREATE TABLE gold.live_accuracy_stations (
+        as_of DATE NOT NULL, period DATE NOT NULL, label VARCHAR(16), location_id INT NOT NULL,
+        target VARCHAR(8) NOT NULL, method VARCHAR(32), forecast FLOAT, low FLOAT, high FLOAT,
+        actual FLOAT, persistence FLOAT, abs_error FLOAT, persistence_abs_error FLOAT, in_range BIT,
+        CONSTRAINT pk_live_accuracy_stations PRIMARY KEY (as_of, period, location_id, target))""",
+    # Hourly times are Bangkok local time, as in the published forecast.
+    """IF OBJECT_ID('gold.hourly_forecast_history') IS NULL CREATE TABLE gold.hourly_forecast_history (
+        as_of DATE NOT NULL, time_local DATETIME2(0) NOT NULL, known_hour INT NOT NULL,
+        target VARCHAR(8) NOT NULL, label VARCHAR(16), forecast FLOAT, low FLOAT, high FLOAT,
+        method VARCHAR(32),
+        CONSTRAINT pk_hourly_forecast_history PRIMARY KEY (as_of, time_local, known_hour, target))""",
+    """IF OBJECT_ID('gold.live_accuracy_hourly') IS NULL CREATE TABLE gold.live_accuracy_hourly (
+        as_of DATE NOT NULL, time_local DATETIME2(0) NOT NULL, known_hour INT NOT NULL,
+        target VARCHAR(8) NOT NULL, label VARCHAR(16), method VARCHAR(32), forecast FLOAT, low FLOAT,
+        high FLOAT, actual FLOAT, persistence FLOAT, abs_error FLOAT, persistence_abs_error FLOAT,
+        in_range BIT,
+        CONSTRAINT pk_live_accuracy_hourly PRIMARY KEY (as_of, time_local, known_hour, target))""",
+    # Each station's forecast from the newest run, with its name and position for a map.
+    """CREATE OR ALTER VIEW gold.v_latest_station_forecast AS
+        SELECT f.as_of, f.period, f.label, f.target, f.forecast, f.low, f.high, f.method,
+               s.location_id, s.name, s.locality, s.latitude, s.longitude
+        FROM gold.station_forecast_history AS f
+        JOIN gold.stations AS s ON s.location_id = f.location_id
+        WHERE f.as_of = (SELECT MAX(as_of) FROM gold.station_forecast_history)""",
+    # The newest hourly forecast: the latest run of the latest day (the afternoon update when it ran).
+    """CREATE OR ALTER VIEW gold.v_latest_hourly_forecast AS
+        SELECT h.* FROM gold.hourly_forecast_history AS h
+        WHERE h.as_of = (SELECT MAX(as_of) FROM gold.hourly_forecast_history)
+          AND h.known_hour = (SELECT MAX(known_hour) FROM gold.hourly_forecast_history
+                              WHERE as_of = h.as_of)""",
     # The next seven days from the newest run, one row per day and target.
     # horizon is 1 for today and 7 for six days after today.
     f"""CREATE OR ALTER VIEW gold.v_week_forecast AS
@@ -136,6 +173,28 @@ GOLD_ACCURACY = Table(
     ["as_of", "period", "label", "target", "source", "method", "forecast", "low", "high",
      "actual", "persistence", "abs_error", "persistence_abs_error", "in_range"],
 )
+GOLD_STATIONS = Table("gold.stations", ["location_id", "name", "locality", "latitude", "longitude"])
+GOLD_STATION_HISTORY = Table(
+    "gold.station_forecast_history",
+    ["as_of", "period", "label", "location_id", "target", "forecast", "low", "high", "method"],
+)
+GOLD_STATION_ACCURACY = Table(
+    "gold.live_accuracy_stations",
+    ["as_of", "period", "label", "location_id", "target", "method", "forecast", "low", "high",
+     "actual", "persistence", "abs_error", "persistence_abs_error", "in_range"],
+)
+GOLD_HOURLY_HISTORY = Table(
+    "gold.hourly_forecast_history",
+    ["as_of", "time_local", "known_hour", "target", "label", "forecast", "low", "high", "method"],
+)
+GOLD_HOURLY_ACCURACY = Table(
+    "gold.live_accuracy_hourly",
+    ["as_of", "time_local", "known_hour", "target", "label", "method", "forecast", "low", "high",
+     "actual", "persistence", "abs_error", "persistence_abs_error", "in_range"],
+)
+# Files written before these columns existed hold only the morning run and only PM2.5.
+EXTRA_DEFAULTS = {"known_hour": 3, "target": "pm25"}
+
 GOLD_METRICS = Table(
     "gold.model_metrics",
     ["as_of", "slot", "published_method", "best_candidate", "best_mae", "persistence_mae",
@@ -201,6 +260,22 @@ def metrics_frame(metrics: dict[str, Any]) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(records, columns=list(GOLD_METRICS.columns))
+
+
+def stations_frame(stations: dict[str, Any]) -> pd.DataFrame:
+    """One row per reference station from gold/stations.json."""
+    return pd.DataFrame(stations.get("stations", []), columns=list(GOLD_STATIONS.columns))
+
+
+def extra_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """Prepare a station or hourly gold file: fill older rows' defaults and parse local times."""
+    frame = frame.copy()
+    for column, default in EXTRA_DEFAULTS.items():
+        if column in frame:
+            frame[column] = frame[column].fillna(default)
+    if "time" in frame:
+        frame["time_local"] = pd.to_datetime(frame.pop("time"))
+    return frame
 
 
 class Warehouse:

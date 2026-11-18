@@ -15,6 +15,10 @@ The pipeline loads its medallion layers into an Azure SQL Database free tier dat
 | `gold.v_week_forecast` | The next seven days from the newest run, with `horizon` 1 (today) to 7 | Seven-day page |
 | `gold.v_skill_by_horizon` | Out-of-sample MAE and skill per target and horizon from the latest training | How error grows with lead time |
 | `gold.v_live_accuracy_by_horizon` | Live MAE and coverage per target and horizon over the last 30 scored days | Live error by lead time |
+| `gold.v_latest_station_forecast` | Each station's PM2.5 and PM10 forecast for seven days from the newest run, with name, latitude and longitude | Station map and table |
+| `gold.live_accuracy_stations` | Every published station forecast next to the station's measured value and persistence | Station live error |
+| `gold.v_latest_hourly_forecast` | The newest hourly PM2.5 and PM10 forecast (the afternoon update when it ran), times in Bangkok local time | Hourly chart |
+| `gold.live_accuracy_hourly` | Every published hourly forecast next to the measured city hour and persistence | Hourly live error |
 
 ## Connect
 
@@ -44,6 +48,13 @@ Power BI Desktop runs on Windows only. On a Mac, use a Windows machine or the Po
 - Line chart: `date` on the axis, `value`, `low` and `high` from `v_week_forecast` filtered to `target = pm25`.
 - Line chart: `horizon` on the axis, `best_mae` and `persistence_mae` from `v_skill_by_horizon` filtered to `target = pm25`. The gap is what the model adds at each lead time.
 - Table: `v_live_accuracy_by_horizon` with `target`, `horizon`, `days`, `mae`, `persistence_mae`, `coverage`, filtered to `source = forecast`. Horizons 3 to 7 fill in as their target days pass.
+
+## Stations and hourly pages
+
+- Map: `latitude` and `longitude` from `v_latest_station_forecast`, `forecast` as size or colour, filtered to one `target` and `label` with slicers.
+- Matrix: `name` as rows, `label` as columns, `forecast` as values, from `v_latest_station_forecast` filtered to `target = pm25`.
+- Line chart: `time_local` on the axis, `forecast`, `low` and `high` from `v_latest_hourly_forecast`, with a `target` slicer.
+- Table: `live_accuracy_hourly` and `live_accuracy_stations` averaged by `target` and `label`: `abs_error` against `persistence_abs_error`.
 
 ## Without Azure SQL (after graduation)
 

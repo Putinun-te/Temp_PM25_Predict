@@ -121,3 +121,21 @@ def test_load_is_skipped_without_azure(monkeypatch, tmp_path):
     monkeypatch.setenv("PM25_DATA_DIR", str(tmp_path))
     monkeypatch.setenv("PM25_ENV_FILE", str(tmp_path / "no.env"))
     assert main(["load-sql"]) == 0
+
+
+def test_station_and_hourly_files_are_prepared_for_their_tables():
+    from pm25.warehouse import GOLD_HOURLY_HISTORY, GOLD_STATIONS, extra_frame, rows, stations_frame
+
+    # Rows written before the target and known_hour columns existed are morning PM2.5 rows.
+    hourly = pd.DataFrame(
+        {"as_of": ["2026-11-17", "2026-11-18"], "time": ["2026-11-17T04:00", "2026-11-18T10:00"],
+         "label": ["today", "today"], "forecast": [19.7, 20.0], "low": [15.6, 16.0], "high": [23.8, 24.0],
+         "method": ["gradient_boosting"] * 2, "known_hour": [3, 9], "target": [None, "pm10"]}
+    )
+    prepared = rows(extra_frame(hourly), GOLD_HOURLY_HISTORY.columns)
+    assert prepared[0][:4] == ("2026-11-17", pd.Timestamp("2026-11-17 04:00").to_pydatetime(), 3, "pm25")
+    assert prepared[1][3] == "pm10"
+
+    stations = {"stations": [{"location_id": 701, "name": "A", "locality": "B", "latitude": 13.9,
+                              "longitude": 100.5, "pm25": [1.0]}]}
+    assert rows(stations_frame(stations), GOLD_STATIONS.columns) == [(701, "A", "B", 13.9, 100.5)]
