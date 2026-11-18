@@ -6,6 +6,7 @@ our own as an independent reference, never mixed into our model.
 
 from __future__ import annotations
 
+import logging
 import time as time_module
 from collections.abc import Callable
 from typing import Any
@@ -19,6 +20,8 @@ from pm25.ingest import get_with_retry
 TMD_URL = "https://data.tmd.go.th/nwpapi/v1/forecast/location/hourly/at"
 MIN_HOURS_PER_DAY = 18
 
+log = logging.getLogger("pm25")
+
 
 def _field(data: Any, name: str) -> float | None:
     """Read one field from an hour's data, which TMD sends as a dict or a list of dicts."""
@@ -29,6 +32,20 @@ def _field(data: Any, name: str) -> float | None:
             if isinstance(part, dict) and name in part:
                 return part[name]
     return None
+
+
+def _shape(forecasts: list[Any]) -> str:
+    """Describe the response layout without any values: data types and field names seen."""
+    types: dict[str, int] = {}
+    keys: set[str] = set()
+    for item in forecasts:
+        data = item.get("data") if isinstance(item, dict) else None
+        types[type(data).__name__] = types.get(type(data).__name__, 0) + 1
+        parts = data if isinstance(data, list) else [data]
+        for part in parts:
+            if isinstance(part, dict):
+                keys.update(str(key) for key in part)
+    return f"data types {types}, fields {sorted(keys)}"
 
 
 def fetch_tmd_daily(
@@ -69,6 +86,10 @@ def fetch_tmd_daily(
     for day, group in frame.groupby("date"):
         valid = group.dropna(subset=["tc", "rh"])
         if len(valid) < MIN_HOURS_PER_DAY:
+            log.warning(
+                "TMD %s left out: %d of %d hours have both fields; %s",
+                day.isoformat(), len(valid), len(group), _shape(forecasts),
+            )
             continue
         summary[day.isoformat()] = {
             "temp_c": round(float(valid["tc"].mean()), 1),

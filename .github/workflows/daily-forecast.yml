@@ -2,6 +2,11 @@ name: Daily forecast
 
 on:
   workflow_dispatch:
+    inputs:
+      retrain:
+        description: Train every model now instead of reusing this week's
+        type: boolean
+        default: false
   schedule:
     # 00:17 UTC is 07:17 in Bangkok. An off-minute avoids the busiest start
     # times; GitHub may still start scheduled runs some minutes late.
@@ -55,8 +60,18 @@ jobs:
       - name: Check data quality and build silver
         run: python -m pm25 check
 
+      # Training takes about half an hour, so models are refitted weekly and on
+      # request. Daily predictions still use the newest data. A slot missing from
+      # the registry (new code) also triggers training.
       - name: Train and evaluate
-        run: python -m pm25 train
+        env:
+          RETRAIN: ${{ inputs.retrain }}
+        run: |
+          if [ "$RETRAIN" = "true" ]; then
+            python -m pm25 train
+          else
+            python -m pm25 train --max-age-days 7
+          fi
 
       - name: Predict
         env:

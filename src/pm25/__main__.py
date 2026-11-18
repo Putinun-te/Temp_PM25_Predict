@@ -15,7 +15,7 @@ import requests
 
 from pm25.config import Config, load_env_file
 from pm25.tmd import fetch_tmd_daily
-from pm25.features import TIMEZONE, daily_exogenous, daily_targets
+from pm25.features import ALL_TARGETS, TIMEZONE, daily_exogenous, daily_targets
 from pm25.layers import (
     BRONZE,
     GOLD,
@@ -87,6 +87,7 @@ from pm25.stations import STATIONS_FILENAME, station_days
 from pm25.station_model import HORIZONS as STATION_HORIZONS
 from pm25.station_model import STATION_TARGETS, forecast_stations, merge_pm10, station_daily, train_stations
 from pm25.train import (
+    DAILY_HORIZONS,
     METRICS_FILENAME,
     PLOT_FILENAME,
     REGISTRY_FILENAME,
@@ -213,8 +214,37 @@ def _check(args: argparse.Namespace, config: Config) -> int:
     return 0
 
 
+def _training_due(models_dir: Path, as_of: pd.Timestamp, max_age_days: int) -> str | None:
+    """Return why the models must be retrained now, or None when the saved ones are fresh enough.
+
+    Predictions always use today's data; only the fitted models and the published
+    method per slot are reused. A slot missing from the registry (new code) forces
+    training, so new slots never wait for the weekly run.
+    """
+    try:
+        metrics = json.loads((models_dir / METRICS_FILENAME).read_text(encoding="utf-8"))
+        trained = pd.Timestamp(metrics["as_of"])
+    except (OSError, ValueError, KeyError):
+        return "no previous training found"
+    registry = load_registry(models_dir)
+    expected = [f"{target}_h{horizon}" for target in ALL_TARGETS for horizon in DAILY_HORIZONS]
+    missing = [slot for slot in expected if slot not in registry["daily"]]
+    if missing:
+        return f"registry lacks {', '.join(missing)}"
+    age = (as_of - trained).days
+    if age >= max_age_days:
+        return f"models are {age} days old"
+    return None
+
+
 def _train(args: argparse.Namespace, config: Config) -> int:
     as_of = _as_of()
+    if args.max_age_days is not None:
+        reason = _training_due(config.models_dir, as_of, args.max_age_days)
+        if reason is None:
+            log.info("Models were trained within %d days, reusing them", args.max_age_days)
+            return 0
+        log.info("Training: %s", reason)
     inputs = _load_inputs(config, as_of)
     if inputs is None:
         return 2
@@ -581,7 +611,13 @@ def main(argv: list[str] | None = None) -> int:
     commands.add_parser("check", help="run data quality checks and build silver").set_defaults(
         handler=_check
     )
-    commands.add_parser("train", help="evaluate, then promote methods").set_defaults(handler=_train)
+    train = commands.add_parser("train", help="evaluate, then promote methods")
+    train.add_argument(
+        "--max-age-days",
+        type=int,
+        help="skip training when the saved models are younger than this and cover every slot",
+    )
+    train.set_defaults(handler=_train)
     commands.add_parser("predict", help="write forecast.json").set_defaults(handler=_predict)
     commands.add_parser("report", help="write the daily report").set_defaults(handler=_report)
     commands.add_parser("monitor", help="score published forecasts against measurements").set_defaults(

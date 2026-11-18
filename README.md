@@ -268,6 +268,7 @@ The Thai Meteorological Department (TMD) forecast for today and tomorrow is publ
 - Baselines: persistence (yesterday), seven-day seasonal naive (same weekday last week), and for monthly forecasts, climatology.
 - Promotion gate: a candidate must cut MAE by at least 1 % against every baseline over the latest 90 days and over all folds. If a model is already published, the candidate must also beat it on days that model never trained on, and at least 14 such days must exist.
 - Tests check that no feature uses data after its forecast origin and that walk-forward training never sees a test-period outcome.
+- Training takes about half an hour, so the daily job runs `train --max-age-days 7`: it refits only when the saved models are a week old or a forecast slot is missing from the registry. Predictions still use each day's newest data. Running the workflow by hand with `retrain` ticked trains at once. The 14-day rule above means a refit model rarely replaced the published one more often than this anyway.
 
 ### Results
 
@@ -334,7 +335,7 @@ Without the weather forecasts for the target day, PM2.5 in 6 days would be 5.85,
 
 Walk-forward over 53,633 hours: MAE 3.66 µg/m³ against 4.91 for the same hour yesterday and 4.80 for yesterday's mean. Hours of today 2.79 against 3.95; hours of tomorrow 4.40 against 5.52. It is published only while it beats both baselines by 1 %.
 
-**Afternoon update.** The `Afternoon hourly update` workflow runs at about 13:00. It fetches the morning's station hours and repeats the forecast with a second model that sees hours up to 09:00, so `gold/hourly_forecast.json` then starts at 10:00. It trains nothing: the morning run trains both models. The job takes a few minutes and is skipped when the morning's hours have not arrived, which leaves the morning forecast in place. Walk-forward over 45,933 hours: MAE 3.41 against 4.76 for the same hour of the previous day; hours of tomorrow 4.02, against 4.40 for the morning model on the same hours.
+**Afternoon update.** The `Afternoon hourly update` workflow runs at about 13:00. It fetches the morning's station hours and repeats the forecast with a second model that sees hours up to 09:00, so `gold/hourly_forecast.json` then starts at 10:00. It trains nothing: the morning run trains both models when it retrains. The job takes a few minutes and is skipped when the morning's hours have not arrived, which leaves the morning forecast in place. Walk-forward over 45,933 hours: MAE 3.41 against 4.76 for the same hour of the previous day; hours of tomorrow 4.02, against 4.40 for the morning model on the same hours.
 
 The dashboard also colours each forecast hour by the PCD band of its value. The official index uses the 24-hour average, so the colours are a guide to the time of day, not the official level.
 

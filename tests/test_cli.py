@@ -77,3 +77,49 @@ def test_missing_key_fails_before_any_download(calls, monkeypatch, source):
     monkeypatch.delenv("OPENAQ_API_KEY")
     assert main(["backfill", "--source", source]) == 2
     assert calls["open_meteo"] == [] and calls["openaq"] == []
+
+
+def _saved_training(models_dir, as_of, slots=None):
+    import json
+
+    from pm25.features import ALL_TARGETS
+    from pm25.train import DAILY_HORIZONS
+
+    models_dir.mkdir(parents=True, exist_ok=True)
+    if slots is None:
+        slots = [f"{target}_h{horizon}" for target in ALL_TARGETS for horizon in DAILY_HORIZONS]
+    (models_dir / "metrics.json").write_text(json.dumps({"as_of": as_of}))
+    (models_dir / "registry.json").write_text(json.dumps({"daily": {slot: {} for slot in slots}, "monthly": {}}))
+
+
+def _no_training(monkeypatch):
+    ran = []
+    monkeypatch.setattr("pm25.__main__._load_inputs", lambda config, as_of: ran.append(as_of))
+    monkeypatch.setattr("pm25.__main__._as_of", lambda: pd.Timestamp("2026-11-18"))
+    return ran
+
+
+def test_train_reuses_models_younger_than_the_limit(calls, monkeypatch, tmp_path):
+    ran = _no_training(monkeypatch)
+    _saved_training(tmp_path / "models", "2026-11-15")
+    assert main(["train", "--max-age-days", "7"]) == 0
+    assert ran == []
+
+
+@pytest.mark.parametrize(
+    "as_of, slots",
+    [("2026-11-11", None), ("2026-11-17", ["pm25_h1"])],
+    ids=["too old", "slot missing"],
+)
+def test_train_runs_when_models_are_old_or_incomplete(calls, monkeypatch, tmp_path, as_of, slots):
+    ran = _no_training(monkeypatch)
+    _saved_training(tmp_path / "models", as_of, slots)
+    assert main(["train", "--max-age-days", "7"]) == 2  # The stubbed inputs are missing, so training stops early
+    assert len(ran) == 1
+
+
+def test_train_always_runs_without_a_limit(calls, monkeypatch, tmp_path):
+    ran = _no_training(monkeypatch)
+    _saved_training(tmp_path / "models", "2026-11-17")
+    main(["train"])
+    assert len(ran) == 1
