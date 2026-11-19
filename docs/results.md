@@ -12,9 +12,9 @@ Bangkok's PM2.5 rises above the Thai standard (37.5 µg/m³ as a 24-hour mean) m
 
 | Output | Horizon | Where |
 |---|---|---|
-| City PM2.5, PM10, temperature, humidity | Today and the next six days, daily mean with a range | Dashboard, API, Power BI, Firebase |
+| City PM2.5, PM10, temperature, humidity | Today and the next six days, daily mean with a range, and the chance PM2.5 goes above the standard | Dashboard, API, Power BI, Firebase |
 | City PM2.5 and PM10 by hour | Up to 23:00 tomorrow, updated at about 07:30, 13:00 and 19:00 | Dashboard, API, Power BI |
-| PM2.5 per station (20 stations), PM10 per station (8) | Today and the next six days | Station map, API, Power BI |
+| PM2.5 per station (20 stations), PM10 per station (8) | Today and the next six days, with the chance PM2.5 goes above the standard | Station map, a page per station, API, Power BI |
 | City monthly means | The next three months | Dashboard, API |
 
 ## How well it works
@@ -40,24 +40,25 @@ The model removes 10 to 30 % of the error of the best rule. The gain is smallest
 
 **Stations.** One pooled model per horizon covers all 20 stations. PM2.5 tomorrow: MAE 4.63 against 5.61 for each station's own yesterday and 5.41 for giving every station the city forecast; in 6 days 5.54 against 6.97 and 5.98. PM10 at 8 stations: 6.48 tomorrow against 8.14 and 8.09. All 14 station slots pass the gate.
 
-## Ranges
+## Ranges and chances
 
-Each forecast has a range meant to hold 80 % of outcomes. Two ways of sizing it compete in every slot: by the season of the target date, or by the level of the forecast itself (a high forecast misses by more). Both are calibrated on older forecasts and scored on the newest year; the lower interval score is published.
+Each forecast has a range meant to hold 80 % of outcomes. Six ways of sizing it compete in every slot: by season or by forecast level, calibrated on all history, the newest two years or the newest year. Each is checked on the newest year; among those within 7 points of 80 %, the sharpest is published.
 
-| Slot | By season | By level |
+| Slot | Old method | Now |
 |---|---|---|
-| PM2.5 today | 90 % held, 11.8 µg/m³ wide | 90 %, 11.1 |
-| PM2.5 in 4 days | 89 %, 19.0 | 86 %, 16.5 |
-| PM10 in 6 days | 92 %, 33.6 | 84 %, 28.3 |
+| PM2.5 today | 90 % held | 81 %, 8.7 µg/m³ wide |
+| PM2.5 tomorrow | 86 % | 83 %, 14.1 µg/m³ |
+| Humidity today | 69 % | 84 % |
+| Humidity tomorrow | 70 % | 82 % |
 
-Level bands won every PM2.5 and PM10 slot, giving narrower ranges for the same or better coverage. Humidity ranges held only about 70 % in the newest year with either method, which is an open problem.
+The PM2.5 forecast also says how likely the day is to go above the Thai standard of 37.5 µg/m³, from how past forecasts at the same level missed. It is published only where it beat quoting the historical rate on the newest year: Brier 0.027 against 0.054 for today and 0.050 against 0.054 for tomorrow. With only 18 days above the standard in that year, it is a rough guide.
 
 ## What was learned
 
 - **Beat the baseline or say so.** A promotion gate per forecast slot keeps a model off the page unless it beats persistence, the weekly mean and the same weekday by 1 %. Several slots failed it at times (temperature today, humidity today, PM10 in five days), and the published forecast fell back to the rule without anyone noticing a problem.
 - **The weather forecast for the target day matters most.** Adding the JMA forecast as it was issued before each target day (Open-Meteo Previous Runs) cut PM2.5 tomorrow from 4.55 to 4.28 and temperature tomorrow from 0.83 to 0.64 °C. Using the observed weather instead would have looked better in testing and failed in production.
 - **Plausible features can hurt.** Regional fire power weighted by wind direction made every slot slightly worse, including the haze season it was meant to help. It is not in the code.
-- **One range for the year is wrong half the year.** A single 80 % range held only 63 % of outcomes in the haze season and 94 % in the rainy season.
+- **One range for the year is wrong half the year.** A single 80 % range held only 63 % of outcomes in the haze season and 94 % in the rainy season. Calibrating on all history also hid drift: humidity ranges held 70 % until they were calibrated on the newest year.
 - **Small operational details decide whether it works.** The TMD forecast publishes after the morning job starts, station hours arrive two to three hours late, and GitHub starts scheduled jobs up to 40 minutes late. Each needed its own fix (an afternoon TMD refresh, a known-hour per hourly model, a later Power BI refresh).
 - **Watch the outputs, not just the jobs.** A job can succeed and still publish nothing new. The health check reads the published files and the database back and opens a GitHub issue when anything is stale.
 

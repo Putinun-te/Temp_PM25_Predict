@@ -2,7 +2,7 @@
 
 A pipeline that collects public air quality and weather data, forecasts PM2.5, PM10, temperature and humidity for Bangkok, and serves the forecast through a dashboard, a JSON API and Power BI. GitHub Actions runs it every day; nothing runs on a server of its own.
 
-It forecasts the next seven days as daily means (city-wide and for 20 reference stations), each hour to the end of tomorrow, and the next three calendar months as monthly means, each with a range. The results so far are summarised in [docs/results.md](docs/results.md).
+It forecasts the next seven days as daily means (city-wide and for 20 reference stations) with a range and the chance of going above the Thai PM2.5 standard, each hour to the end of tomorrow, and the next three calendar months as monthly means. Each station has its own page on the dashboard. The results so far are summarised in [docs/results.md](docs/results.md).
 
 ## Architecture
 
@@ -63,7 +63,7 @@ Every job reads the `data` branch, adds to it and writes it back as a single com
 - Main: https://app-pm25-forecast-1716.azurewebsites.net (Azure App Service, free F1 plan)
 - Backup: https://stpm25webd0b881.z23.web.core.windows.net (Azure Blob Storage static website)
 
-Pages: the forecast with Thai air quality colours (PCD scale) and a station map, and `/accuracy/` with live accuracy. Both have Thai and English text (`?lang=th` or `?lang=en`, or the switch at the top).
+Pages: the forecast with Thai air quality colours (PCD scale) and a station map, `/station/?id=<location>` for one station (its last 14 days, its seven-day forecast and how its forecasts have done, linked from the map), and `/accuracy/` with live accuracy. Both have Thai and English text (`?lang=th` or `?lang=en`, or the switch at the top).
 
 Both sites serve the same Next.js static export from `web/` (TypeScript, React, Chart.js). The page is plain files with no server, and it fetches the `data` branch in the browser, so each morning's forecast appears without a rebuild. Types in `web/lib/types.ts` mirror the forecast document, so a schema change on the Python side fails the TypeScript build. `deploy-dashboard-pages.yml` publishes the same build to GitHub Pages once Azure is removed.
 
@@ -345,19 +345,24 @@ The range is the forecast plus or minus the error that 80 % of past walk-forward
 | PM10 today | 63 % | 87 % | 89 % | 84 % |
 | PM10 tomorrow | 62 % | 80 % | 93 % | 82 % |
 
-**Ranges by forecast level.** Errors also grow with the forecast itself: a forecast of 60 µg/m³ misses by more than one of 15 in any season. Since 19 November 2026 each slot can instead use four bands of forecast level, each with its own 80 % error size. Training calibrates both methods on all but the newest year of walk-forward forecasts, scores them on that year with the interval score (width plus a penalty for each miss, scaled by how far outside it fell), and publishes the one with the lower score. The comparison is kept in `metrics.json` under `range`; hourly ranges still use one value per day.
+**How each range is chosen.** Errors also grow with the forecast itself (a forecast of 60 µg/m³ misses by more than one of 15), and humidity errors have grown in recent years, so one fixed recipe is not right for every slot. Training tries two shapes, by season of the target date and by four bands of forecast level, each calibrated on all past walk-forward forecasts, on the newest two years only and on the newest year only. Each of the six is calibrated on all but the newest year and checked on that year. Those whose coverage there is within 7 points of 80 % are eligible, and the one with the lowest interval score (width plus a penalty for each miss, scaled by how far outside it fell) is published, refitted on the same window up to the newest forecast. The comparison is kept in `metrics.json` under `range`. Hourly ranges do the same per part of the forecast (rest of today, tomorrow), with one value or level bands.
 
-Newest year, coverage and mean width (µg/m³), season against level:
+Coverage on the newest year, run of 19 November 2026: old method (seasons, all history) against the published one, with its mean width:
 
-| Slot | Season | Level | Published |
+| Slot | Seasons, all history | Published | Width |
 |---|---|---|---|
-| PM2.5 today | 90 %, 11.8 | 90 %, 11.1 | Level |
-| PM2.5 tomorrow | 86 %, 15.0 | 88 %, 15.5 | Level |
-| PM2.5 in 4 days | 89 %, 19.0 | 86 %, 16.5 | Level |
-| PM10 in 6 days | 92 %, 33.6 | 84 %, 28.3 | Level |
-| Station PM2.5 in 3 days | 86 %, 18.0 | 85 %, 17.1 | Level |
+| PM2.5 today | 90 % | 81 %, seasons, newest year | 8.7 µg/m³ |
+| PM2.5 tomorrow | 86 % | 83 %, level bands, two years | 14.1 µg/m³ |
+| PM10 in 6 days | 92 % | 85 %, level bands, two years | 27.2 µg/m³ |
+| Humidity today | 69 % | 84 %, level bands, newest year | 12.4 % |
+| Humidity tomorrow | 70 % | 82 %, level bands, newest year | 15.6 % |
+| Hourly PM2.5 today, evening run | 94 % | 86 %, one value, newest year | 4.8 µg/m³ |
 
-Level bands won every PM2.5 and PM10 slot, city and station: the ranges are narrower for the same or better coverage. Temperature from 3 days on and most humidity slots kept seasons. Humidity ranges cover only about 70 % in the newest year with either method, so they are too narrow; the weather has been less predictable than in the years they were calibrated on.
+Air quality ranges were too wide and humidity ranges too narrow; both are now closer to 80 %. Coverage is measured on the same year that picked the method, so it flatters the chosen one a little. Humidity 4 to 6 days ahead still covers only 73 to 78 %.
+
+### Chance above the standard
+
+City and station daily PM2.5 forecasts carry `pm25_p_above_standard` (stations: `p_above_standard`), the chance that the daily mean goes above the Thai 24-hour standard of 37.5 µg/m³. It comes from the signed errors of past walk-forward forecasts in the same band of forecast level: the share of them that, added to today's forecast, would land above the standard. It is published for a slot only when, on the newest year, the standard was crossed at least ten times and the chance beat always quoting the historical rate (Brier score). City PM2.5: Brier 0.027 against 0.054 for today and 0.050 against 0.054 for tomorrow, on 18 days above the standard. Stations: 0.032 against 0.087 for today, about 590 station-days above. PM10 never went above its standard of 120 µg/m³ in the newest year, so no PM10 chance is published. With 18 city events the chance is coarse: in testing, days given 60 to 80 % went above about half the time.
 
 ### Seven-day forecast
 
@@ -380,7 +385,7 @@ Without the weather forecasts for the target day, PM2.5 in 6 days would be 5.85,
 
 Walk-forward over 53,633 hours: MAE 3.66 µg/m³ against 4.91 for the same hour yesterday and 4.80 for yesterday's mean. Hours of today 2.79 against 3.95; hours of tomorrow 4.40 against 5.52. It is published only while it beats both baselines by 1 %.
 
-**Afternoon and evening updates.** The `Hourly update` workflow runs at about 13:00 and 19:00. It fetches the newest station hours and repeats the forecast with a model that sees hours up to 09:00 (afternoon) or 16:00 (evening), so `gold/hourly_forecast.json` then starts at 10:00 or 17:00. It trains nothing: the morning run trains all the models when it retrains. The job takes a few minutes and is skipped when the newest hours have not arrived, which leaves the earlier forecast in place. Walk-forward MAE, run of 19 November 2026:
+**Afternoon and evening updates.** The `Hourly update` workflow runs at about 13:00 and 19:00. It fetches the newest station hours and repeats the forecast with a model that sees hours up to 09:00 (afternoon) or 16:00 (evening), so `gold/hourly_forecast.json` then starts at 10:00 or 17:00. It trains nothing: the morning run trains all the models when it retrains. The job takes a few minutes and is skipped when the newest hours have not arrived, which leaves the earlier forecast in place. A daily run started by hand later in the day keeps a newer update rather than replacing it with the morning forecast. Walk-forward MAE, run of 19 November 2026:
 
 | Run | Hours known | Hours evaluated | MAE | Same hour yesterday | Rest of today | Tomorrow |
 |---|---|---|---|---|---|---|
