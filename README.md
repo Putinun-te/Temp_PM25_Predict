@@ -58,6 +58,8 @@ Every job reads the `data` branch, adds to it and writes it back as a single com
 
 ## Live dashboard
 
+![The dashboard: today's values, the seven-day table, the hourly chart switched to PM10, the station map for tomorrow and in six days, a station's popup, and the live accuracy page](docs/media/dashboard-demo.gif)
+
 - Main: https://app-pm25-forecast-1716.azurewebsites.net (Azure App Service, free F1 plan)
 - Backup: https://stpm25webd0b881.z23.web.core.windows.net (Azure Blob Storage static website)
 

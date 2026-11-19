@@ -2,6 +2,8 @@
 
 A summary of what the Bangkok forecast does, how well it works and what was learned building it. The details behind each number are in the [README](../README.md) model card. All errors are out of sample: every forecast was made by a model trained only on data from before its forecast day (walk-forward evaluation), and every model is compared with a simple rule that needs no learning.
 
+![Dashboard walkthrough](media/dashboard-demo.gif)
+
 ## The problem
 
 Bangkok's PM2.5 rises above the Thai standard (37.5 µg/m³ as a 24-hour mean) most days from December to March. Official forecasts exist, but they are city-wide or satellite-based and say little about how far to trust them. The goal was a forecast that is honest about its own error: published only where it beats the obvious rules, with a range, and scored against what was measured every day after publication.
