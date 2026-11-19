@@ -1,8 +1,9 @@
 """Check that the published outputs are fresh and trustworthy.
 
 Runs after the daily forecast, on the saved data branch. A failed daily run,
-stale station data, a failed quality gate or a model that has fallen behind
-persistence each produce a problem. The workflow turns problems into a GitHub
+stale station data, a failed quality gate, a model that has fallen behind
+persistence, a missing hourly forecast or missing station forecasts each
+produce a problem. The workflow turns problems into a GitHub
 issue, which emails the repository owner.
 """
 
@@ -12,6 +13,7 @@ from datetime import date
 from typing import Any
 
 MAX_DATA_AGE_DAYS = 2
+STATION_DAYS = ("today", "tomorrow", "day2", "day3", "day4", "day5", "day6")
 
 
 def check_health(
@@ -19,6 +21,7 @@ def check_health(
     quality: dict[str, Any] | None,
     accuracy: dict[str, Any] | None,
     today: date,
+    hourly: dict[str, Any] | None = None,
 ) -> list[str]:
     """Return a list of problems in plain English. An empty list means healthy."""
     problems: list[str] = []
@@ -39,6 +42,8 @@ def check_health(
                 f"Station data is {age} days old (newest complete day {latest}). "
                 "OpenAQ or Air4Thai may be delayed."
             )
+        problems.extend(_station_problems(forecast.get("station_forecasts") or []))
+        problems.extend(_hourly_problems(hourly, today))
     if quality is None:
         problems.append("No data quality report found (silver/quality_report.json is missing).")
     elif not quality.get("passed", False):
@@ -47,6 +52,29 @@ def check_health(
     if accuracy:
         problems.extend(f"Live accuracy: {alert}." for alert in accuracy.get("alerts", []))
     return problems
+
+
+def _station_problems(stations: list[dict[str, Any]]) -> list[str]:
+    if not stations:
+        return ["The forecast has no station forecasts, so the map has nothing to show."]
+    missing = [day for day in STATION_DAYS if not any(day in station for station in stations)]
+    if missing:
+        return ["No station has a forecast for " + ", ".join(missing) + "."]
+    return []
+
+
+def _hourly_problems(hourly: dict[str, Any] | None, today: date) -> list[str]:
+    if hourly is None:
+        return ["No hourly forecast has been published today (gold/hourly_forecast.json is missing)."]
+    issued = date.fromisoformat(hourly["as_of"])
+    if issued < today:
+        return [f"The hourly forecast is for {issued}, not today."]
+    hours = hourly.get("hours") or []
+    if not hours:
+        return ["The hourly forecast has no hours."]
+    if not any(hour.get("pm10") is not None for hour in hours):
+        return ["The hourly forecast has no PM10 values."]
+    return []
 
 
 def render(problems: list[str], today: date) -> str:

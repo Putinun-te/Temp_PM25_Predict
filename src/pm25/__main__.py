@@ -557,6 +557,7 @@ def _health(args: argparse.Namespace, config: Config) -> int:
         _read_json(layer(config.data_dir, SILVER) / QUALITY_FILENAME),
         _read_json(gold / SUMMARY_FILENAME),
         _as_of().date(),
+        _read_json(gold / HOURLY_FILENAME),
     )
     text = render(problems, _as_of().date())
     if args.output:

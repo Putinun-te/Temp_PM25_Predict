@@ -2,7 +2,8 @@ name: Health check
 
 # Runs after the daily forecast should have finished. When the forecast was not
 # published today, station data is more than two days old, the quality gate
-# failed or the model has fallen behind persistence, it opens (or updates) a
+# failed, the model has fallen behind persistence, or the hourly or station
+# forecasts are missing, it opens (or updates) a
 # GitHub issue labelled pipeline-health, which emails the repository owner.
 # The issue is closed automatically on the next healthy run.
 on:
