@@ -141,8 +141,9 @@ def train_slot(
             }
         )
 
-    entry.pop("residual_q80_by_level", None)
-    range_fields, range_report = range_entry(frame["actual"], frame[entry["method"]], horizon)
+    for stale in ("residual_q80_by_level", "exceedance"):
+        entry.pop(stale, None)
+    range_fields, range_report = range_entry(frame["actual"], frame[entry["method"]], horizon, target)
     entry.update(range_fields)
     report: dict[str, Any] = {
         "published_method": entry["method"],

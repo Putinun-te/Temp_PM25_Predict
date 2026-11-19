@@ -28,7 +28,7 @@ import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.pipeline import make_pipeline
 
-from pm25.evaluate import metrics, promotion_gate, walk_forward_predict
+from pm25.evaluate import fitted_range, metrics, promotion_gate, walk_forward_predict, width_for
 from pm25.features import MIN_STATIONS, TIMEZONE
 from pm25.transform import DropEmptyColumns
 from pm25.ingest import PARAMETER, TIME, VALUE, city_panel
@@ -186,6 +186,11 @@ def train_hourly(
             part: float(np.quantile((rows["actual"] - rows[method]).abs(), 0.8)) for part, rows in parts.items()
         },
     }
+    # Each part of the forecast picks its own range: one value, or bands of forecast level.
+    ranges, range_report = {}, {}
+    for part, rows in parts.items():
+        ranges[part], range_report[part] = fitted_range(rows["actual"], rows[method], None, ("flat", "level"))
+    entry["range"] = ranges
     if promote:
         known = labels.notna().to_numpy()
         model = make_model().fit(features[known], labels[known])
@@ -198,6 +203,7 @@ def train_hourly(
         "overall": overall,
         "mae_by_day": by_part,
         "evaluated_hours": int(len(frame)),
+        "range": range_report,
     }
     return entry, report
 
@@ -223,9 +229,9 @@ def forecast_hourly(
     hours = []
     for lead, value in zip(leads_for(known_hour), values):
         part = "today" if lead < 24 else "tomorrow"
-        q80 = entry["residual_q80"][part]
         missing = pd.isna(value)
         value = max(float(value), 0.0) if not missing else None
+        q80 = hourly_width(entry, part, value)
         hours.append(
             {
                 "time": (as_of + pd.Timedelta(hours=lead)).strftime("%Y-%m-%dT%H:%M"),
@@ -247,6 +253,13 @@ def forecast_hourly(
         "measured": [{"time": t.strftime("%Y-%m-%dT%H:%M"), target: round(float(v), 1)} for t, v in recent.items()],
         "hours": hours,
     }
+
+
+def hourly_width(entry: dict[str, Any], part: str, value: float | None) -> float:
+    """Range half-width for one hour; models trained before per-part ranges use the flat value."""
+    spec = (entry.get("range") or {}).get(part)
+    width = width_for(spec, value) if spec else None
+    return entry["residual_q80"][part] if width is None else width
 
 
 def has_recent_hours(city: pd.Series, as_of: pd.Timestamp, known_hour: int) -> bool:

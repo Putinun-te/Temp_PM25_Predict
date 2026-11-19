@@ -70,6 +70,8 @@ export default function StationMap({ data, forecasts = [], mode = "measured" }: 
             lines.push(`PM10 ${name(key)}: ${fmt(value.pm10)} (${fmt(value.low)}–${fmt(value.high)})`);
           }
         }
+        // Relative, so the link also works under the GitHub Pages base path.
+        lines.push(`<a href="station/?id=${station.location_id}&lang=${lang}">${escapeHtml(t("stationDetails"))} →</a>`);
         // A coloured disc with the value inside, readable without opening the popup.
         const icon = L.divIcon({
           className: "station-marker",

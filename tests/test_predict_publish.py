@@ -161,3 +161,14 @@ def test_missing_tmd_values_are_filled_without_rewriting_published_ones():
     assert forecast["daily"][0]["tmd_temp_c"] == 29.7
     assert forecast["daily"][1] == {"date": "2026-11-19", "tmd_temp_c": 30.1, "tmd_rh_pct": 70.0}
     assert "tmd_temp_c" not in forecast["daily"][2]
+
+
+def test_chance_above_the_standard_is_published_only_for_slots_that_earned_it():
+    reg = registry()
+    # Past errors of -10 to +10 around the forecast: 20 + error stays below 37.5.
+    reg["daily"]["pm25_h1"]["exceedance"] = {"threshold": 37.5, "edges": [], "quantiles": [list(np.linspace(-10, 10, 50))]}
+    targets, exogenous = inputs()
+    result = build_forecast(targets, exogenous, reg, "unused", AS_OF, NOW)
+    today, tomorrow = result["daily"][0], result["daily"][1]
+    assert today["pm25_p_above_standard"] == 0.0
+    assert "pm25_p_above_standard" not in tomorrow and "pm10_p_above_standard" not in today

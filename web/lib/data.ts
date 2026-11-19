@@ -1,5 +1,14 @@
 import type { HourlyForecast } from "./types";
-import type { AccuracySummary, DailyRow, Forecast, HistoryRow, Point, ScoredForecast, StationsFile } from "./types";
+import type {
+  AccuracySummary,
+  DailyRow,
+  Forecast,
+  HistoryRow,
+  Point,
+  ScoredForecast,
+  ScoredStationForecast,
+  StationsFile,
+} from "./types";
 
 export const DEFAULT_DATA_BASE =
   process.env.NEXT_PUBLIC_DATA_BASE ||
@@ -130,4 +139,65 @@ export function loadHourly(base: string): Promise<HourlyForecast | null> {
 /** "2026-11-16T04:00" becomes "16 04:00": short enough for a chart axis. */
 export function hourLabel(time: string): string {
   return `${time.slice(8, 10)} ${time.slice(11, 16)}`;
+}
+
+export function toScoredStationRows(records: Record<string, string>[]): ScoredStationForecast[] {
+  return records.map((row) => ({
+    as_of: row.as_of ?? "",
+    period: row.period ?? "",
+    label: row.label ?? "",
+    location_id: Number(row.location_id),
+    target: row.target || "pm25",
+    forecast: toNumber(row.forecast),
+    actual: toNumber(row.actual),
+    abs_error: toNumber(row.abs_error),
+    persistence_abs_error: toNumber(row.persistence_abs_error),
+    in_range: row.in_range === "True" ? true : row.in_range === "False" ? false : null,
+  }));
+}
+
+export async function loadStationScores(base: string): Promise<ScoredStationForecast[]> {
+  return (
+    (await fetchOptional(base, "data/gold/live_accuracy_stations.csv", (text) => toScoredStationRows(parseCsv(text)))) ?? []
+  );
+}
+
+/** The station id in `?id=`, or null. */
+export function stationIdFrom(search: string): number | null {
+  const id = Number(new URLSearchParams(search).get("id"));
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+export interface StationSummary {
+  days: number;
+  mae: number | null;
+  baselineMae: number | null;
+  coverage: number | null;
+}
+
+/** Mean error, baseline error and range coverage of one station's scored forecasts for a target. */
+export function summarizeStation(rows: ScoredStationForecast[], id: number, target: string): StationSummary {
+  const mine = rows.filter((row) => row.location_id === id && row.target === target && row.abs_error !== null);
+  const mean = (values: number[]) => (values.length ? values.reduce((a, b) => a + b, 0) / values.length : null);
+  const ranged = mine.filter((row) => row.in_range !== null);
+  return {
+    days: mine.length,
+    mae: mean(mine.map((row) => row.abs_error as number)),
+    baselineMae: mean(mine.filter((row) => row.persistence_abs_error !== null).map((row) => row.persistence_abs_error as number)),
+    coverage: ranged.length ? ranged.filter((row) => row.in_range).length / ranged.length : null,
+  };
+}
+
+/** Dates `as_of` + 0 to 6 as YYYY-MM-DD, matching the labels today to day6. */
+export function forecastDates(asOf: string): string[] {
+  const start = new Date(`${asOf}T00:00:00Z`);
+  return Array.from({ length: 7 }, (_, i) => new Date(start.getTime() + i * 86_400_000).toISOString().slice(0, 10));
+}
+
+/** "23%" for 0.23; "<1%" and ">99%" at the ends, so a small chance never reads as none. */
+export function chanceText(p: number | null | undefined): string {
+  if (p === null || p === undefined || Number.isNaN(p)) return "n/a";
+  if (p < 0.01) return "<1%";
+  if (p > 0.99) return ">99%";
+  return `${Math.round(p * 100)}%`;
 }

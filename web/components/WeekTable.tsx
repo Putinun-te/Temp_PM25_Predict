@@ -1,17 +1,34 @@
 "use client";
 
 import { bandFor } from "@/lib/aqi";
+import { chanceText } from "@/lib/data";
 import { dayLabel, fmt, methodName } from "@/lib/format";
 import type { DailyForecast } from "@/lib/types";
 import { useLang } from "./LangProvider";
 
-function Value({ value, low, high, method, digits = 1 }: { value?: number | null; low?: number | null; high?: number | null; method?: string; digits?: number }) {
+interface ValueProps {
+  value?: number | null;
+  low?: number | null;
+  high?: number | null;
+  method?: string;
+  digits?: number;
+  /** Chance above the Thai standard, shown only for slots that publish one. */
+  chance?: number | null;
+  chanceLabel?: string;
+}
+
+function Value({ value, low, high, method, digits = 1, chance, chanceLabel }: ValueProps) {
   return (
     <>
       <strong>{fmt(value, digits)}</strong>{" "}
       <span className="range">
         ({fmt(low, digits)}–{fmt(high, digits)})
       </span>
+      {chance !== undefined && chance !== null && (
+        <div className="chance">
+          {chanceLabel} {chanceText(chance)}
+        </div>
+      )}
       <div className="method">{methodName(method)}</div>
     </>
   );
@@ -46,10 +63,24 @@ export default function WeekTable({ days }: { days: DailyForecast[] }) {
                 </td>
                 <td>
                   {band && <span className="aqi-dot small" style={{ background: band.color }} title={lang === "th" ? band.th : band.en} />}
-                  <Value value={day.pm25} low={day.pm25_low} high={day.pm25_high} method={day.pm25_method} />
+                  <Value
+                    value={day.pm25}
+                    low={day.pm25_low}
+                    high={day.pm25_high}
+                    method={day.pm25_method}
+                    chance={day.pm25_p_above_standard}
+                    chanceLabel={t("chanceAboveShort")}
+                  />
                 </td>
                 <td>
-                  <Value value={day.pm10} low={day.pm10_low} high={day.pm10_high} method={day.pm10_method} />
+                  <Value
+                    value={day.pm10}
+                    low={day.pm10_low}
+                    high={day.pm10_high}
+                    method={day.pm10_method}
+                    chance={day.pm10_p_above_standard}
+                    chanceLabel={t("chanceAboveShort")}
+                  />
                 </td>
                 <td>
                   <Value value={day.temp_c} low={day.temp_c_low} high={day.temp_c_high} method={day.temp_c_method} />
@@ -62,6 +93,9 @@ export default function WeekTable({ days }: { days: DailyForecast[] }) {
           })}
         </tbody>
       </table>
+      {days.some((day) => day.pm25_p_above_standard != null || day.pm10_p_above_standard != null) && (
+        <p className="note">{t("chanceAboveNote")}</p>
+      )}
     </div>
   );
 }

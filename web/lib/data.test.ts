@@ -66,3 +66,31 @@ describe("formatting", () => {
     expect(methodName("random_forest")).toBe("random forest");
   });
 });
+
+describe("station page helpers", () => {
+  it("reads the station id and builds the seven forecast dates", async () => {
+    const { stationIdFrom, forecastDates } = await import("./data");
+    expect(stationIdFrom("?id=225679&lang=th")).toBe(225679);
+    expect(stationIdFrom("?id=abc")).toBeNull();
+    expect(forecastDates("2026-11-30")).toEqual([
+      "2026-11-30", "2026-12-01", "2026-12-02", "2026-12-03", "2026-12-04", "2026-12-05", "2026-12-06",
+    ]);
+  });
+
+  it("summarises one station's scored forecasts", async () => {
+    const { summarizeStation, toScoredStationRows } = await import("./data");
+    const rows = toScoredStationRows([
+      { location_id: "1", target: "pm25", abs_error: "2", persistence_abs_error: "4", in_range: "True" },
+      { location_id: "1", target: "pm25", abs_error: "4", persistence_abs_error: "6", in_range: "False" },
+      { location_id: "2", target: "pm25", abs_error: "9", persistence_abs_error: "9", in_range: "True" },
+    ]);
+    expect(summarizeStation(rows, 1, "pm25")).toEqual({ days: 2, mae: 3, baselineMae: 5, coverage: 0.5 });
+  });
+
+  it("writes chances so a small one never reads as zero", async () => {
+    const { chanceText } = await import("./data");
+    expect(chanceText(0.004)).toBe("<1%");
+    expect(chanceText(0.234)).toBe("23%");
+    expect(chanceText(null)).toBe("n/a");
+  });
+});

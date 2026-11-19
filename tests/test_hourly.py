@@ -124,3 +124,17 @@ def test_map_only_stations_stay_out_of_the_city_median():
     rows = [{"time": time, "sensor_id": s.sensor_id, "parameter": "pm25", "value": 20.0} for s in panel]
     rows += [{"time": time, "sensor_id": s.sensor_id, "parameter": "pm25", "value": 90.0} for s in MAP_PANEL[:9]]
     assert hourly_city(pd.DataFrame(rows), "pm25").tolist() == [20.0]
+
+
+def test_hourly_width_uses_the_fitted_range_per_part():
+    from pm25.hourly import hourly_width
+
+    entry = {
+        "residual_q80": {"today": 3.0, "tomorrow": 5.0},
+        "range": {"today": {"range_method": "level", "residual_q80_by_level": {"edges": [20.0], "q80": [2.0, 6.0]}}},
+    }
+    assert hourly_width(entry, "today", 10.0) == 2.0
+    assert hourly_width(entry, "today", 40.0) == 6.0
+    assert hourly_width(entry, "today", None) == 3.0  # No value: the flat fallback
+    assert hourly_width(entry, "tomorrow", 40.0) == 5.0  # No fitted range for this part
+    assert hourly_width({"residual_q80": {"today": 3.0}}, "today", 40.0) == 3.0  # Older models

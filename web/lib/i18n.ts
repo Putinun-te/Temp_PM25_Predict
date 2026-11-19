@@ -119,8 +119,8 @@ const STRINGS = {
   matchAverage: { en: "Average match", th: "ตรงเฉลี่ย" },
   hourlyTitle: { en: "Hourly forecast, today and tomorrow", th: "พยากรณ์รายชั่วโมง วันนี้และพรุ่งนี้" },
   hourlyNote: {
-    en: "Made each morning from station hours up to 03:00, and again after midday from hours up to 09:00. The shaded band is where 80% of past forecasts landed. Hourly values swing more than the daily average.",
-    th: "พยากรณ์ตอนเช้าจากข้อมูลสถานีถึง 03:00 และอัปเดตอีกครั้งหลังเที่ยงจากข้อมูลถึง 09:00 แถบสีคือช่วงที่ 80% ของการพยากรณ์ที่ผ่านมาอยู่ในนั้น ค่ารายชั่วโมงแกว่งมากกว่าค่าเฉลี่ยรายวัน",
+    en: "Made each morning from station hours up to 03:00, then again at about 13:00 from hours up to 09:00 and at about 19:00 from hours up to 16:00. The shaded band is where 80% of past forecasts landed. Hourly values swing more than the daily average.",
+    th: "พยากรณ์ตอนเช้าจากข้อมูลสถานีถึง 03:00 อัปเดตราว 13:00 จากข้อมูลถึง 09:00 และราว 19:00 จากข้อมูลถึง 16:00 แถบสีคือช่วงที่ 80% ของการพยากรณ์ที่ผ่านมาอยู่ในนั้น ค่ารายชั่วโมงแกว่งมากกว่าค่าเฉลี่ยรายวัน",
   },
   hourlyInputs: { en: "Uses measurements through", th: "ใช้ค่าวัดถึง" },
   hourlyLevelsNote: {
@@ -133,6 +133,30 @@ const STRINGS = {
   mapToday: { en: "Forecast today", th: "พยากรณ์วันนี้" },
   mapTomorrow: { en: "Forecast tomorrow", th: "พยากรณ์พรุ่งนี้" },
   stationsTitle: { en: "Stations", th: "รายสถานี" },
+  stationDetails: { en: "Details", th: "ดูรายละเอียด" },
+  stationPick: { en: "Station", th: "สถานี" },
+  stationNotFound: { en: "Choose a station from the list.", th: "เลือกสถานีจากรายการ" },
+  stationChartTitle: { en: "Last 14 days and the next 7", th: "14 วันที่ผ่านมาและ 7 วันข้างหน้า" },
+  stationForecastTitle: { en: "Forecast for this station", th: "พยากรณ์ของสถานีนี้" },
+  stationAccuracyTitle: { en: "How this station's forecasts have done", th: "ความแม่นของพยากรณ์สถานีนี้" },
+  stationAccuracyNote: {
+    en: "Forecasts published since 17 November 2026 and scored once the day was measured. Baseline is the station's own last measured day.",
+    th: "พยากรณ์ที่เผยแพร่ตั้งแต่ 17 พ.ย. 2026 และเทียบเมื่อวัดค่าวันนั้นได้แล้ว วิธีพื้นฐานคือค่าวันล่าสุดที่สถานีนี้วัดได้",
+  },
+  stationNoScores: { en: "No forecasts for this station have been scored yet.", th: "ยังไม่มีพยากรณ์ของสถานีนี้ที่เทียบกับค่าจริงได้" },
+  stationNote: {
+    en: "Daily means. The line is what the station measured; the band is where 80% of past forecasts landed. Dots are the forecasts made the day before for days already measured.",
+    th: "ค่าเฉลี่ยรายวัน เส้นคือค่าที่สถานีวัดได้ แถบสีคือช่วงที่ 80% ของการพยากรณ์ที่ผ่านมาอยู่ในนั้น จุดคือค่าที่ทายไว้ล่วงหน้าหนึ่งวันสำหรับวันที่วัดค่าได้แล้ว",
+  },
+  chanceAbove: { en: "Chance above standard", th: "โอกาสเกินมาตรฐาน" },
+  chanceAboveShort: { en: "Above standard:", th: "โอกาสเกินมาตรฐาน:" },
+  chanceAboveNote: {
+    en: "Chance that the daily mean goes above the Thai 24-hour standard (PM2.5 37.5 µg/m³, PM10 120 µg/m³), from how far past forecasts at the same level missed.",
+    th: "โอกาสที่ค่าเฉลี่ยรายวันจะเกินมาตรฐาน 24 ชั่วโมงของไทย (PM2.5 37.5 µg/m³, PM10 120 µg/m³) คำนวณจากความคลาดเคลื่อนของการพยากรณ์ที่ผ่านมาที่ระดับใกล้เคียงกัน",
+  },
+  scoredDays: { en: "Scored days", th: "จำนวนวันที่เทียบแล้ว" },
+  withinRange: { en: "Within range", th: "อยู่ในช่วง" },
+  backToMap: { en: "Back to the forecast", th: "กลับไปหน้าพยากรณ์" },
   gistdaNote: {
     en: "A reference from GISTDA's satellite and model estimate, not a station measurement and not used by our model.",
     th: "ค่าอ้างอิงจากการประมาณด้วยดาวเทียมและแบบจำลองของ GISTDA ไม่ใช่ค่าจากสถานีตรวจวัด และไม่ได้ใช้ในโมเดลของเรา",

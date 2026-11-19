@@ -20,7 +20,7 @@ from pm25.features import (
     monthly_targets,
     with_weather_targets,
 )
-from pm25.evaluate import range_for
+from pm25.evaluate import entry_chance_above, range_for
 from pm25.train import CANDIDATES, model_path
 
 FORECAST_FILENAME = "forecast.json"
@@ -67,6 +67,8 @@ def _daily_row(
             value = daily_baselines(targets[target], horizon)[method].loc[origin]
         _with_range(row, target, value, range_for(entry, target_date, value))
         row[f"{target}_method"] = method
+        if entry.get("exceedance"):
+            row[f"{target}_p_above_standard"] = entry_chance_above(entry, row[target])
     # The TMD forecast is a separate reference, kept under its own names.
     for name, value in tmd.get(date_key, {}).items():
         row[f"tmd_{name}"] = value

@@ -200,3 +200,35 @@ def test_short_history_keeps_seasonal_ranges():
 
     actual, predicted = _heteroscedastic(days=200)
     assert compare_ranges(actual, predicted, horizon=1)["chosen"] == "season"
+
+
+def test_a_recent_window_wins_when_errors_have_grown():
+    from pm25.evaluate import compare_ranges, range_entry
+
+    rng = np.random.default_rng(1)
+    index = pd.date_range("2022-01-01", periods=1500, freq="D")
+    predicted = pd.Series(70.0 + rng.normal(0, 5, len(index)), index=index)
+    # Errors double in the last 600 days, as humidity errors grew: old calibration is too narrow.
+    scale = np.where(np.arange(len(index)) >= 900, 8.0, 4.0)
+    actual = predicted + rng.normal(0, 1, len(index)) * scale
+    comparison = compare_ranges(actual, predicted, horizon=1)
+    assert comparison["season"]["coverage"] < 0.73
+    assert comparison["chosen"] in {"season_365", "level_365"}
+    fields, _ = range_entry(actual, predicted, 1, "rh_pct")
+    assert fields["range_method"] == comparison["chosen"] and "exceedance" not in fields
+
+
+def test_chance_above_the_standard_follows_past_errors():
+    from pm25.evaluate import chance_above, compare_exceedance, entry_chance_above, exceedance_quantiles, range_entry
+
+    actual, predicted = _heteroscedastic(days=1200)
+    spec = exceedance_quantiles(actual, predicted)
+    assert chance_above(spec, 15.0, 37.5) == 0.0
+    assert 0.3 < chance_above(spec, 37.5, 37.5) < 0.7
+    assert chance_above(spec, 75.0, 37.5) == 1.0
+    check = compare_exceedance(actual, predicted, 37.5)
+    assert check["published"] and check["brier"] < check["climatology_brier"]
+    fields, report = range_entry(actual, predicted, 1, "pm25")
+    assert fields["exceedance"]["threshold"] == 37.5 and report["exceedance"]["published"]
+    assert entry_chance_above(fields, 75.0) == 1.0
+    assert entry_chance_above({}, 75.0) is None

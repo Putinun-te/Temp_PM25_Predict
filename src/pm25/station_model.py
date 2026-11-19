@@ -24,7 +24,7 @@ import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.pipeline import make_pipeline
 
-from pm25.evaluate import metrics, promotion_gate, range_entry, range_for, walk_forward_predict
+from pm25.evaluate import entry_chance_above, metrics, promotion_gate, range_entry, range_for, walk_forward_predict
 from pm25.features import MIN_HOURS_PER_DAY, TIMEZONE, build_features
 from pm25.transform import DropEmptyColumns
 from pm25.ingest import OPENAQ_SENSORS, PARAMETER, SENSOR, TIME, VALUE, OpenAQSensor
@@ -128,7 +128,7 @@ def train_stations(
         "method": method,
         "reason": f"promoted: {reason}" if promote else f"baseline used: model {reason}",
     }
-    range_fields, range_report = range_entry(frame["actual"], frame[method], horizon)
+    range_fields, range_report = range_entry(frame["actual"], frame[method], horizon, target)
     entry.update(range_fields)
     if promote:
         known = labels.notna().to_numpy()
@@ -188,6 +188,7 @@ def forecast_stations(
                 "low": None if missing or q80 is None else round(max(value - q80, 0.0), 1),
                 "high": None if missing or q80 is None else round(value + q80, 1),
                 "method": entry["method"],
+                "p_above_standard": None if missing else entry_chance_above(entry, value),
             }
     return list(result.values())
 

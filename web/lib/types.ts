@@ -15,6 +15,9 @@ export interface DailyForecast {
   pm10_low: number | null;
   pm10_high: number | null;
   pm10_method: Method;
+  /** Chance (0 to 1) that the daily mean goes above the Thai 24-hour standard. */
+  pm25_p_above_standard?: number | null;
+  pm10_p_above_standard?: number | null;
   temp_c?: number | null;
   temp_c_low?: number | null;
   temp_c_high?: number | null;
@@ -67,8 +70,10 @@ export interface StationValue {
   low: number | null;
   high: number | null;
   method: string;
+  /** Chance (0 to 1) that the station's daily mean goes above the Thai standard. */
+  p_above_standard?: number | null;
   /** Only the stations that measure PM10 have this. */
-  pm10?: { pm10: number | null; low: number | null; high: number | null; method: string };
+  pm10?: { pm10: number | null; low: number | null; high: number | null; method: string; p_above_standard?: number | null };
 }
 
 /** Daily labels in order: today, tomorrow, then days after today. */
@@ -176,6 +181,20 @@ export interface ExtraAccuracyRow {
   paired_mae: number | null;
   persistence_mae: number | null;
   coverage: number | null;
+}
+
+/** One scored station forecast from gold/live_accuracy_stations.csv. */
+export interface ScoredStationForecast {
+  as_of: string;
+  period: string;
+  label: string;
+  location_id: number;
+  target: string;
+  forecast: number | null;
+  actual: number | null;
+  abs_error: number | null;
+  persistence_abs_error: number | null;
+  in_range: boolean | null;
 }
 
 export interface ScoredForecast {
