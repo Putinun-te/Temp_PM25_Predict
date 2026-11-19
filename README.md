@@ -1,24 +1,46 @@
 # Bangkok PM2.5 and PM10 Forecast
 
-A daily pipeline that collects public air quality and weather data, forecasts PM2.5 and PM10 for Bangkok, and publishes the forecast to Firebase Realtime Database through GitHub Actions.
+A pipeline that collects public air quality and weather data, forecasts PM2.5, PM10, temperature and humidity for Bangkok, and serves the forecast through a dashboard, a JSON API and Power BI. GitHub Actions runs it every day; nothing runs on a server of its own.
 
-It forecasts today and tomorrow as daily means, and the next three calendar months as monthly means with a range.
+It forecasts the next seven days as daily means (city-wide and for 20 reference stations), each hour to the end of tomorrow, and the next three calendar months as monthly means, each with a range. The results so far are summarised in [docs/results.md](docs/results.md).
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    OA["OpenAQ API<br/>Air4Thai reference stations"] --> BF
-    OM["Open-Meteo<br/>air quality model and weather"] --> BF
-    subgraph GA["GitHub Actions, once a day"]
-        BF["backfill<br/>fetch missing hours only"] --> TR["train<br/>walk-forward evaluation<br/>and promotion gate"]
-        TR --> PR["predict<br/>forecast.json"]
-        PR --> PB["publish"]
+    subgraph SRC["Public sources"]
+        OA["OpenAQ<br/>Air4Thai stations, hourly"]
+        OM["Open-Meteo<br/>weather, past forecasts, CAMS"]
+        FI["NASA FIRMS<br/>fires"]
+        TM["TMD and GISTDA<br/>reference forecasts"]
     end
-    BF <--> DB[("data branch<br/>CSV, models, metrics")]
-    TR <--> DB
-    PB --> FB[("Firebase Realtime Database<br/>/predictions")]
+    subgraph GA["GitHub Actions"]
+        D["Daily forecast, 07:17<br/>backfill, quality check, train weekly,<br/>predict, report, score, load SQL"]
+        H["Hourly update, 13:03 and 19:03<br/>newer station hours"]
+        HC["Health check, 10:37"]
+    end
+    SRC --> D
+    OA --> H
+    D <--> DB[("data branch<br/>bronze, silver, gold CSV and JSON,<br/>models, metrics")]
+    H <--> DB
+    DB --> HC
+    HC -->|"problem"| IS["GitHub issue<br/>emails the owner"]
+    D --> SQL[("Azure SQL<br/>bronze, silver, gold, views")]
+    SQL -->|"refresh 10:00"| PBI["Power BI report"]
+    DB --> WEB["Dashboard<br/>Next.js static, App Service and Blob"]
+    DB --> API["JSON API<br/>Azure Functions"]
+    D --> FB[("Firebase<br/>/predictions")]
 ```
+
+Every job reads the `data` branch, adds to it and writes it back as a single commit, so the branch is the only state. The dashboard and the API read it directly, so a new forecast appears without a deploy. Azure is optional: without it, the forecast, the dashboard on GitHub Pages and the JSON on the `data` branch keep working.
+
+| Time (Bangkok) | Job | What it does |
+|---|---|---|
+| 07:17 | Daily forecast | Fetches missing hours, checks data quality, retrains weekly, forecasts, scores past forecasts, loads Azure SQL |
+| 10:00 | Power BI refresh | Imports the views from Azure SQL |
+| 10:37 | Health check | Opens a GitHub issue if any output is missing or stale |
+| 13:03 | Hourly update | Repeats the hourly forecast with station hours up to 09:00, adds TMD values the morning missed |
+| 19:03 | Hourly update | Repeats it again with hours up to 16:00 |
 
 | Module | Responsibility |
 |---|---|
@@ -28,6 +50,11 @@ flowchart LR
 | `pm25.train` | Compares models with baselines and decides what each forecast slot publishes |
 | `pm25.predict` | Builds the forecast document |
 | `pm25.publish` | Writes the document to Firebase in one atomic request |
+| `pm25.hourly` | Hourly city forecast for the morning, afternoon and evening runs |
+| `pm25.station_model` | Pooled per-station forecasts for seven days |
+| `pm25.monitor` | Scores every published forecast against what was measured |
+| `pm25.warehouse` | Loads the layers into Azure SQL and reads back what it holds |
+| `pm25.health` | Decides whether today's outputs are fresh and trustworthy |
 
 ## Live dashboard
 
@@ -58,7 +85,7 @@ Base URL: https://func-pm25-api-d0b8.azurewebsites.net/api
 |---|---|
 | `/help` | The list of endpoints |
 | `/forecast` | The next seven days, the next three months, and each station |
-| `/hourly` | Hourly PM2.5 and PM10 to 23:00 tomorrow: from 04:00 after the morning run, from 10:00 after the afternoon update |
+| `/hourly` | Hourly PM2.5 and PM10 to 23:00 tomorrow: from 04:00 after the morning run, from 10:00 after the afternoon update, from 17:00 after the evening update |
 | `/measured?target=pm25&from=2026-11-01&to=2026-11-12` | Measured Bangkok daily values; `target` is `pm25`, `pm10`, `temp_c` or `rh_pct` |
 | `/forecasts?target=pm25&label=tomorrow&from=…&to=…` | Every published daily forecast in the range; labels `today`, `tomorrow`, `day2` to `day6` |
 | `/accuracy` | Live accuracy over 7, 30 and 90 days |
@@ -84,7 +111,7 @@ The database accepts Microsoft Entra sign-in only. CI opens the SQL firewall for
 
 | Source | Role | Data | Access |
 |---|---|---|---|
-| OpenAQ, Air4Thai reference monitors | Forecast target | Hourly PM2.5 at 10 stations and PM10 at 3 stations | Free API key |
+| OpenAQ, Air4Thai reference monitors | Forecast target | Hourly PM2.5 at 20 stations and PM10 at 8; the city value uses a fixed panel of 10 and 3 of them | Free API key |
 | Open-Meteo Air Quality | Feature | PM2.5, NO2, O3, SO2 and CO from the CAMS global model | No key |
 | Open-Meteo Historical Weather | Feature, and the target for temperature and humidity | Temperature, humidity, precipitation and wind from 2021 | No key |
 | TMD Weather Forecast API | Reference shown next to our forecast | Hourly temperature and humidity forecast, 3 km model | Free token |
@@ -94,6 +121,8 @@ The database accepts Microsoft Entra sign-in only. CI opens the SQL firewall for
 | NASA FIRMS (VIIRS NOAA-20) | Feature, optional | Daily fire detection count and total fire radiative power in a box over central Thailand, western Cambodia and the Myanmar border (97.5–105.5 E, 11.5–17.5 N) | Free MAP_KEY |
 
 The daily target is the median across a fixed panel of stations, so one faulty station cannot move it. A station-day needs 18 hours of data, and a city-day needs at least 5 PM2.5 stations or 2 PM10 stations. Days are Bangkok local days. Gaps in the measured target are never filled with model data.
+
+Ten more Air4Thai stations (five with PM10) were added on 19 November 2026 for the station map and the per-station models. Each reported on at least 90 % of days over the previous year. They are kept out of the city median, so the city series the daily models learn from is unchanged.
 
 Modelled PM10 from Open-Meteo is not used, because its ratio to PM2.5 changes abruptly in November 2024.
 
@@ -186,7 +215,7 @@ The first OpenAQ load takes about 30 minutes because requests are paced for the 
 |---|---|
 | Schedule | 00:17 UTC, which is 07:17 in Bangkok; GitHub may start it some minutes late |
 | Overlap | A concurrency group stops two runs overlapping |
-| Timeout | 60 minutes |
+| Timeout | 120 minutes, for the first load of a new data source |
 | State | Data, models and reports live on a `data` branch that always holds a single commit |
 | Daily report | Markdown, CSV and PDF in the run summary and the `daily-report-<date>` artifact, kept 30 days |
 | Report history | `reports/<date>.md` and `reports/forecast_history.csv` on the `data` branch |
@@ -305,7 +334,7 @@ The fire rows are a caution against assuming a plausible feature helps. A daily 
 
 ### Forecast ranges
 
-The range is the forecast plus or minus the error that 80 % of past walk-forward forecasts stayed within. One value for the whole year was too narrow in the haze season and too wide in the rainy season, so the value now depends on the season of the target date. Coverage measured out of sample, each year's ranges taken from earlier years only (target 80 %):
+The range is the forecast plus or minus the error that 80 % of past walk-forward forecasts stayed within. One value for the whole year was too narrow in the haze season and too wide in the rainy season, so the value depends on the season of the target date. Coverage measured out of sample, each year's ranges taken from earlier years only (target 80 %):
 
 | Slot | Haze season, one range | Haze season, seasonal | Rainy season, one range | Rainy season, seasonal |
 |---|---|---|---|---|
@@ -313,6 +342,20 @@ The range is the forecast plus or minus the error that 80 % of past walk-forward
 | PM2.5 tomorrow | 63 % | 77 % | 94 % | 82 % |
 | PM10 today | 63 % | 87 % | 89 % | 84 % |
 | PM10 tomorrow | 62 % | 80 % | 93 % | 82 % |
+
+**Ranges by forecast level.** Errors also grow with the forecast itself: a forecast of 60 µg/m³ misses by more than one of 15 in any season. Since 19 November 2026 each slot can instead use four bands of forecast level, each with its own 80 % error size. Training calibrates both methods on all but the newest year of walk-forward forecasts, scores them on that year with the interval score (width plus a penalty for each miss, scaled by how far outside it fell), and publishes the one with the lower score. The comparison is kept in `metrics.json` under `range`; hourly ranges still use one value per day.
+
+Newest year, coverage and mean width (µg/m³), season against level:
+
+| Slot | Season | Level | Published |
+|---|---|---|---|
+| PM2.5 today | 90 %, 11.8 | 90 %, 11.1 | Level |
+| PM2.5 tomorrow | 86 %, 15.0 | 88 %, 15.5 | Level |
+| PM2.5 in 4 days | 89 %, 19.0 | 86 %, 16.5 | Level |
+| PM10 in 6 days | 92 %, 33.6 | 84 %, 28.3 | Level |
+| Station PM2.5 in 3 days | 86 %, 18.0 | 85 %, 17.1 | Level |
+
+Level bands won every PM2.5 and PM10 slot, city and station: the ranges are narrower for the same or better coverage. Temperature from 3 days on and most humidity slots kept seasons. Humidity ranges cover only about 70 % in the newest year with either method, so they are too narrow; the weather has been less predictable than in the years they were calibrated on.
 
 ### Seven-day forecast
 
@@ -335,38 +378,46 @@ Without the weather forecasts for the target day, PM2.5 in 6 days would be 5.85,
 
 Walk-forward over 53,633 hours: MAE 3.66 µg/m³ against 4.91 for the same hour yesterday and 4.80 for yesterday's mean. Hours of today 2.79 against 3.95; hours of tomorrow 4.40 against 5.52. It is published only while it beats both baselines by 1 %.
 
-**Afternoon update.** The `Afternoon hourly update` workflow runs at about 13:00. It fetches the morning's station hours and repeats the forecast with a second model that sees hours up to 09:00, so `gold/hourly_forecast.json` then starts at 10:00. It trains nothing: the morning run trains both models when it retrains. The job takes a few minutes and is skipped when the morning's hours have not arrived, which leaves the morning forecast in place. Walk-forward over 45,933 hours: MAE 3.41 against 4.76 for the same hour of the previous day; hours of tomorrow 4.02, against 4.40 for the morning model on the same hours.
+**Afternoon and evening updates.** The `Hourly update` workflow runs at about 13:00 and 19:00. It fetches the newest station hours and repeats the forecast with a model that sees hours up to 09:00 (afternoon) or 16:00 (evening), so `gold/hourly_forecast.json` then starts at 10:00 or 17:00. It trains nothing: the morning run trains all the models when it retrains. The job takes a few minutes and is skipped when the newest hours have not arrived, which leaves the earlier forecast in place. Walk-forward MAE, run of 19 November 2026:
 
-**Hourly PM10.** Each hour also carries `pm10`, `pm10_low` and `pm10_high`, from the same code with its own morning and afternoon models (`pm10_method` names the method). The city value is the median of at least two of the three PM10 stations. Walk-forward over 53,506 hours: MAE 5.47 µg/m³ against 6.84 for yesterday's mean and 7.18 for the same hour yesterday; hours of today 4.29, tomorrow 6.48. The afternoon model: 5.19 against 7.00; hours of today 3.74. Both passed the promotion gate.
+| Run | Hours known | Hours evaluated | MAE | Same hour yesterday | Rest of today | Tomorrow |
+|---|---|---|---|---|---|---|
+| Morning | to 03:00 | 53,818 | 3.67 | 4.92 | 2.79 | 4.42 |
+| Afternoon | to 09:00 | 46,015 | 3.42 | 4.77 | 2.37 | 4.03 |
+| Evening | to 16:00 | 37,061 | 3.21 | 4.54 | 2.12 | 3.51 |
+
+Each later run sees more of the day, so its forecast for tomorrow is better too: 4.42, 4.03 and 3.51 µg/m³.
+
+**Hourly PM10.** Each hour also carries `pm10`, `pm10_low` and `pm10_high`, from the same code with its own morning and afternoon models (`pm10_method` names the method). The city value is the median of at least two of the three PM10 stations. Walk-forward over 53,506 hours: MAE 5.47 µg/m³ against 6.84 for yesterday's mean and 7.18 for the same hour yesterday; hours of today 4.29, tomorrow 6.48. The afternoon model: 5.18 against 7.00; hours of today 3.74. The evening model: 4.95 against 6.71; hours of today 3.47, tomorrow 5.37. All three passed the promotion gate.
 
 The dashboard also colours each forecast hour by the PCD band of its value. The official index uses the 24-hour average, so the colours are a guide to the time of day, not the official level.
 
 ### Station forecasts
 
-`station_forecasts` in the forecast document gives PM2.5 for each of the 10 stations for the same seven days as the city forecast (`today`, `tomorrow`, `day2` to `day6`). One pooled model per horizon covers all stations, trained in the same GitHub Actions run: a row is a station on an origin day, with that station's recent values, its usual offset from the city, and all city features. Seven models instead of seventy keeps training short and lets stations with gaps borrow from the others. Each horizon passes the promotion gate on its own; a horizon that fails publishes the better of persistence and the city forecast.
+`station_forecasts` in the forecast document gives PM2.5 for each of 20 stations for the same seven days as the city forecast (`today`, `tomorrow`, `day2` to `day6`). One pooled model per horizon covers all stations, trained in the same GitHub Actions run: a row is a station on an origin day, with that station's recent values, its usual offset from the city, and all city features. Seven models instead of 140 keeps training short and lets stations with gaps borrow from the others. Each horizon passes the promotion gate on its own; a horizon that fails publishes the better of persistence and the city forecast.
 
-Walk-forward over about 11,900 station-days: MAE today 3.20 against 3.65 for the station's own persistence and 4.59 for giving every station the city forecast; tomorrow 4.59 against 5.46 and 5.45. The model beat persistence at every station.
+The eight stations that measure PM10 also get a PM10 forecast, under `pm10` of each day's entry, from the same code with its own models, one per horizon.
 
-The three stations that measure PM10 also get a PM10 forecast, under `pm10` of each day's entry, from the same code with its own models, one per horizon. Walk-forward: MAE today 4.59 against 5.05 for persistence and 5.50 for the city forecast; tomorrow 6.50 against 7.65 and 7.12.
+Walk-forward MAE (µg/m³) per horizon, run of 19 November 2026, after the ten new stations were added. Each cell is model / station persistence / city forecast. The model is published for every horizon of both targets.
 
-Walk-forward MAE (µg/m³) per horizon, run of 18 November 2026. Each cell is model / station persistence / city forecast; the published method is the model except where marked.
-
-| Horizon | PM2.5, about 10,800 station-days | PM10, about 3,250 station-days |
+| Horizon | PM2.5, about 18,600 station-days | PM10, about 5,500 station-days |
 |---|---|---|
-| Today | 3.20 / 3.64 / 4.57 | 4.59 / 5.06 / 5.51 |
-| Tomorrow | 4.62 / 5.47 / 5.45 | 6.50 / 7.66 / 7.12 |
-| In 2 days | 4.81 / 6.27 / 5.57 | 7.04 / 8.79 / 7.41 |
-| In 3 days | 4.94 / 6.58 / 5.63 | 7.12 / 9.23 / 7.42 |
-| In 4 days | 5.47 / 6.74 / 5.89 | 7.73 / 9.47 / 8.83 |
-| In 5 days | 5.51 / 6.81 / 6.02 | 8.02 / 9.50 / 7.93, city forecast published |
-| In 6 days | 5.49 / 6.87 / 6.03 | 8.04 / 9.64 / 9.05 |
+| Today | 3.23 / 3.77 / 4.60 | 4.80 / 5.54 / 7.22 |
+| Tomorrow | 4.63 / 5.61 / 5.41 | 6.48 / 8.14 / 8.09 |
+| In 2 days | 4.86 / 6.41 / 5.56 | 7.07 / 9.19 / 8.22 |
+| In 3 days | 5.02 / 6.73 / 5.59 | 7.42 / 9.63 / 8.30 |
+| In 4 days | 5.45 / 6.85 / 5.86 | 7.68 / 9.92 / 9.89 |
+| In 5 days | 5.49 / 6.96 / 5.98 | 7.90 / 9.91 / 8.58 |
+| In 6 days | 5.54 / 6.97 / 5.98 | 7.83 / 10.06 / 10.04 |
+
+With 10 PM2.5 stations the same table read 3.20 / 3.64 / 4.57 for today and 5.49 / 6.87 / 6.03 for 6 days, so the new stations, mostly further from the centre, are about as predictable as the old ones. PM10 in 5 days, which published the city forecast with three stations, now passes the gate.
 
 ### Limitations
 
 - The better of two candidate models is picked on the same walk-forward results that are reported, so the reported model error is slightly optimistic.
 - R² is flattered by the strong seasonal cycle. Skill against persistence is the more honest number, and it is small for the same-day forecast.
 - About five years of station data contain only five cool seasons, so monthly forecasts cannot learn much beyond the seasonal average.
-- PM10 rests on three stations and represents the city less well than PM2.5.
+- The city PM10 value rests on three stations and represents the city less well than PM2.5.
 - Recent Open-Meteo weather is preliminary and may be revised. Training uses revised history, so live inputs are slightly noisier than training inputs.
 - The station panel is fixed. If stations stop reporting for long, the city value is missing rather than estimated.
 - Burning-season smoke from outside Bangkok is only represented by regional fire totals. Weighting fires by wind direction did not help.
