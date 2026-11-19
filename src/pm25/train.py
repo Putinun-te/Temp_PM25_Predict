@@ -23,9 +23,9 @@ from pm25.evaluate import (
     metrics,
     monthly_walk_forward,
     promotion_gate,
+    range_entry,
     residual_q80,
     season_errors,
-    seasonal_q80,
     skill,
     walk_forward_predict,
 )
@@ -141,8 +141,9 @@ def train_slot(
             }
         )
 
-    entry["residual_q80"] = residual_q80(frame["actual"], frame[entry["method"]])
-    entry["residual_q80_by_season"] = seasonal_q80(frame["actual"], frame[entry["method"]], horizon)
+    entry.pop("residual_q80_by_level", None)
+    range_fields, range_report = range_entry(frame["actual"], frame[entry["method"]], horizon)
+    entry.update(range_fields)
     report: dict[str, Any] = {
         "published_method": entry["method"],
         "decision": entry["reason"],
@@ -153,6 +154,7 @@ def train_slot(
             name: metrics(latest["actual"], latest[name]) for name in methods
         },
         "by_season": season_errors(frame, methods, horizon),
+        "range": range_report,
     }
     if reference is not None:
         paired = pd.DataFrame({"actual": frame["actual"], "cams": reference}).dropna()

@@ -157,8 +157,10 @@ export interface AccuracySummary {
   /** Hourly city forecasts and per-station daily forecasts. Each section is absent until first scored. */
   hourly?: ExtraAccuracyRow[];
   hourly_afternoon?: ExtraAccuracyRow[];
+  hourly_evening?: ExtraAccuracyRow[];
   hourly_pm10?: ExtraAccuracyRow[];
   hourly_pm10_afternoon?: ExtraAccuracyRow[];
+  hourly_pm10_evening?: ExtraAccuracyRow[];
   stations?: ExtraAccuracyRow[];
   stations_pm10?: ExtraAccuracyRow[];
 }

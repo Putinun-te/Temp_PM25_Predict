@@ -79,17 +79,21 @@ def test_missing_key_fails_before_any_download(calls, monkeypatch, source):
     assert calls["open_meteo"] == [] and calls["openaq"] == []
 
 
-def _saved_training(models_dir, as_of, slots=None):
+def _saved_training(models_dir, as_of, slots=None, hourly_keys=None):
     import json
 
     from pm25.features import ALL_TARGETS
+    from pm25.hourly import HOURLY_TARGETS, KNOWN_HOURS, registry_key
     from pm25.train import DAILY_HORIZONS
 
     models_dir.mkdir(parents=True, exist_ok=True)
     if slots is None:
         slots = [f"{target}_h{horizon}" for target in ALL_TARGETS for horizon in DAILY_HORIZONS]
     (models_dir / "metrics.json").write_text(json.dumps({"as_of": as_of}))
-    (models_dir / "registry.json").write_text(json.dumps({"daily": {slot: {} for slot in slots}, "monthly": {}}))
+    if hourly_keys is None:
+        hourly_keys = [registry_key(target, hour) for target in HOURLY_TARGETS for hour in KNOWN_HOURS]
+    registry = {"daily": {slot: {} for slot in slots}, "monthly": {}, **{key: {} for key in hourly_keys}}
+    (models_dir / "registry.json").write_text(json.dumps(registry))
 
 
 def _no_training(monkeypatch):
@@ -107,13 +111,13 @@ def test_train_reuses_models_younger_than_the_limit(calls, monkeypatch, tmp_path
 
 
 @pytest.mark.parametrize(
-    "as_of, slots",
-    [("2026-11-11", None), ("2026-11-17", ["pm25_h1"])],
-    ids=["too old", "slot missing"],
+    "as_of, slots, hourly_keys",
+    [("2026-11-11", None, None), ("2026-11-17", ["pm25_h1"], None), ("2026-11-17", None, ["hourly"])],
+    ids=["too old", "slot missing", "hourly model missing"],
 )
-def test_train_runs_when_models_are_old_or_incomplete(calls, monkeypatch, tmp_path, as_of, slots):
+def test_train_runs_when_models_are_old_or_incomplete(calls, monkeypatch, tmp_path, as_of, slots, hourly_keys):
     ran = _no_training(monkeypatch)
-    _saved_training(tmp_path / "models", as_of, slots)
+    _saved_training(tmp_path / "models", as_of, slots, hourly_keys)
     assert main(["train", "--max-age-days", "7"]) == 2  # The stubbed inputs are missing, so training stops early
     assert len(ran) == 1
 

@@ -139,3 +139,12 @@ def test_station_and_hourly_files_are_prepared_for_their_tables():
     stations = {"stations": [{"location_id": 701, "name": "A", "locality": "B", "latitude": 13.9,
                               "longitude": 100.5, "pm25": [1.0]}]}
     assert rows(stations_frame(stations), GOLD_STATIONS.columns) == [(701, "A", "B", 13.9, 100.5)]
+
+
+def test_newest_runs_reads_back_each_forecast_table():
+    from pm25.warehouse import SQL_FRESHNESS_TABLES, Warehouse
+
+    connection = FakeConnection(latest=dt.date(2026, 11, 19))
+    newest = Warehouse(connection).newest_runs()
+    assert newest == {name: "2026-11-19" for name in SQL_FRESHNESS_TABLES}
+    assert Warehouse(FakeConnection(latest=None)).newest_runs()["gold.forecast_history"] is None

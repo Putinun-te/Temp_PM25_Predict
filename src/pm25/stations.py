@@ -8,7 +8,7 @@ from typing import Any
 import pandas as pd
 
 from pm25.features import MIN_HOURS_PER_DAY, TIMEZONE
-from pm25.ingest import OPENAQ_PANEL, PARAMETER, SENSOR, TIME, VALUE, OpenAQSensor
+from pm25.ingest import OPENAQ_SENSORS, PARAMETER, SENSOR, TIME, VALUE, OpenAQSensor
 
 STATIONS_FILENAME = "stations.json"
 STATION_DAYS = 14
@@ -26,6 +26,16 @@ LOCATIONS = {
     225637: ("South Bangkok Power Plant", "Samut Prakan", 13.618, 100.5562),
     225650: ("The Government Public Relations Department", "Bangkok", 13.783185, 100.540489),
     225653: ("Chokchai Police Station", "Bangkok", 13.7954248, 100.5930298),
+    225568: ("Bang Khen District Office", "Bangkok", 13.873603, 100.595839),
+    225677: ("Lak Si District Office", "Bangkok", 13.887395, 100.579247),
+    225671: ("Khlong Sam Wa District Office", "Bangkok", 13.859911, 100.704002),
+    225651: ("Saphan Sung District Office", "Bangkok", 13.768892, 100.685743),
+    225604: ("Seacon Square", "Bangkok", 13.695561, 100.647615),
+    225678: ("Bang Khae District Office", "Bangkok", 13.696314, 100.409049),
+    225621: ("Thon Buri Market Sanam Luang 2", "Bangkok", 13.746257, 100.355099),
+    225595: ("Bang Bon 5 Market", "Bangkok", 13.639165, 100.372958),
+    225622: ("Huai Khwang District Office", "Bangkok", 13.77682, 100.579543),
+    225679: ("Dusit District Office", "Bangkok", 13.776664, 100.520982),
 }
 
 
@@ -37,7 +47,7 @@ def station_days(
     openaq: pd.DataFrame,
     as_of: pd.Timestamp,
     generated_at: str,
-    sensors: Sequence[OpenAQSensor] = OPENAQ_PANEL,
+    sensors: Sequence[OpenAQSensor] = OPENAQ_SENSORS,
     days: int = STATION_DAYS,
 ) -> dict[str, Any]:
     """Return each station's daily means for the last complete `days` days.

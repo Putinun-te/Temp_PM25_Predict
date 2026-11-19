@@ -65,7 +65,7 @@ def _daily_row(
             value = joblib.load(model_path(models_dir, slot)).predict(model_inputs(features, entry))[0]
         else:
             value = daily_baselines(targets[target], horizon)[method].loc[origin]
-        _with_range(row, target, value, range_for(entry, target_date))
+        _with_range(row, target, value, range_for(entry, target_date, value))
         row[f"{target}_method"] = method
     # The TMD forecast is a separate reference, kept under its own names.
     for name, value in tmd.get(date_key, {}).items():

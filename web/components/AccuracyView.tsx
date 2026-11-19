@@ -17,8 +17,10 @@ const TARGET_NAMES: Record<string, { en: string; th: string }> = {
 const EXTRA_KINDS = {
   hourly: "kindHourly",
   hourly_afternoon: "kindHourlyAfternoon",
+  hourly_evening: "kindHourlyEvening",
   hourly_pm10: "kindHourlyPm10",
   hourly_pm10_afternoon: "kindHourlyPm10Afternoon",
+  hourly_pm10_evening: "kindHourlyPm10Evening",
   stations: "kindStations",
   stations_pm10: "kindStationsPm10",
 } as const;

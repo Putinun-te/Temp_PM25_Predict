@@ -24,10 +24,10 @@ import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.pipeline import make_pipeline
 
-from pm25.evaluate import metrics, promotion_gate, range_for, seasonal_q80, walk_forward_predict
+from pm25.evaluate import metrics, promotion_gate, range_entry, range_for, walk_forward_predict
 from pm25.features import MIN_HOURS_PER_DAY, TIMEZONE, build_features
 from pm25.transform import DropEmptyColumns
-from pm25.ingest import OPENAQ_PANEL, PARAMETER, SENSOR, TIME, VALUE, OpenAQSensor
+from pm25.ingest import OPENAQ_SENSORS, PARAMETER, SENSOR, TIME, VALUE, OpenAQSensor
 
 MODEL = "gradient_boosting"
 BASELINES = ("persistence", "city_forecast")
@@ -52,7 +52,7 @@ def make_model() -> Any:
 def station_daily(
     openaq: pd.DataFrame,
     as_of: pd.Timestamp,
-    sensors: Sequence[OpenAQSensor] = OPENAQ_PANEL,
+    sensors: Sequence[OpenAQSensor] = OPENAQ_SENSORS,
     target: str = "pm25",
 ) -> pd.DataFrame:
     """Return the daily mean per station (columns are location ids), complete days before `as_of`."""
@@ -127,9 +127,9 @@ def train_stations(
     entry: dict[str, Any] = {
         "method": method,
         "reason": f"promoted: {reason}" if promote else f"baseline used: model {reason}",
-        "residual_q80": float(np.quantile((frame["actual"] - frame[method]).abs(), 0.8)),
-        "residual_q80_by_season": seasonal_q80(frame["actual"], frame[method], horizon),
     }
+    range_fields, range_report = range_entry(frame["actual"], frame[method], horizon)
+    entry.update(range_fields)
     if promote:
         known = labels.notna().to_numpy()
         models_dir.mkdir(parents=True, exist_ok=True)
@@ -144,6 +144,7 @@ def train_stations(
         "decision": entry["reason"],
         "overall": overall,
         "mae_by_station": by_station,
+        "range": range_report,
     }
     return entry, report
 
@@ -178,10 +179,10 @@ def forecast_stations(
             values = persistence[at_origin].to_numpy()
         else:
             values = np.full(int(at_origin.sum()), city_values.get(horizon) or np.nan, dtype=float)
-        q80 = range_for(entry, origin + pd.Timedelta(days=horizon))
         for location, value in zip(ids[at_origin], values):
             missing = pd.isna(value)
             value = None if missing else max(float(value), 0.0)
+            q80 = None if missing else range_for(entry, origin + pd.Timedelta(days=horizon), value)
             result[int(location)][LABELS[horizon]] = {
                 target: None if missing else round(value, 1),
                 "low": None if missing or q80 is None else round(max(value - q80, 0.0), 1),

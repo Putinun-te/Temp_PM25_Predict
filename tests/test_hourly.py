@@ -89,6 +89,8 @@ def test_pm10_has_its_own_models_and_is_merged_into_each_hour(tmp_path):
 
     assert registry_key("pm25", 3) == "hourly" and registry_key("pm25", AFTERNOON_KNOWN_HOUR) == "hourly_afternoon"
     assert registry_key("pm10", 3) == "hourly_pm10" and registry_key("pm10", 9) == "hourly_pm10_afternoon"
+    assert registry_key("pm25", 16) == "hourly_evening" and registry_key("pm10", 16) == "hourly_pm10_evening"
+    assert model_filename(16, "pm25") == "pm25_hourly_h16.joblib"
     assert model_filename(3, "pm10") == "pm10_hourly_h03.joblib"
     assert model_filename(3) == "pm25_hourly.joblib"  # Existing PM2.5 files keep their names
 
@@ -112,3 +114,13 @@ def test_pm10_has_its_own_models_and_is_merged_into_each_hour(tmp_path):
     assert hour["pm10"] > hour["pm25"] and hour["pm10_low"] <= hour["pm10"] <= hour["pm10_high"]
     assert merged["measured"][0]["pm10"] > merged["measured"][0]["pm25"]
     assert merged["pm10_method"] == entry10["method"]
+
+
+def test_map_only_stations_stay_out_of_the_city_median():
+    from pm25.ingest import MAP_PANEL, OPENAQ_PANEL
+
+    time = pd.Timestamp("2026-11-19T03:00", tz="UTC")
+    panel = [s for s in OPENAQ_PANEL if s.parameter == "pm25"][:5]
+    rows = [{"time": time, "sensor_id": s.sensor_id, "parameter": "pm25", "value": 20.0} for s in panel]
+    rows += [{"time": time, "sensor_id": s.sensor_id, "parameter": "pm25", "value": 90.0} for s in MAP_PANEL[:9]]
+    assert hourly_city(pd.DataFrame(rows), "pm25").tolist() == [20.0]

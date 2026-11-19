@@ -31,12 +31,18 @@ from sklearn.pipeline import make_pipeline
 from pm25.evaluate import metrics, promotion_gate, walk_forward_predict
 from pm25.features import MIN_STATIONS, TIMEZONE
 from pm25.transform import DropEmptyColumns
-from pm25.ingest import PARAMETER, TIME, VALUE
+from pm25.ingest import PARAMETER, TIME, VALUE, city_panel
 
 HOURLY_FILENAME = "hourly_forecast.json"
 MODEL_FILENAME = "pm25_hourly.joblib"
 LAST_KNOWN_HOUR = 3  # 03:00 on the forecast day, for the morning run
 AFTERNOON_KNOWN_HOUR = 9  # The run after midday sees hours up to 09:00
+# The evening run at 19:03 sees hours up to 16:00 and refreshes the rest of today and tomorrow.
+EVENING_KNOWN_HOUR = 16
+# The morning model comes with the daily run; these update it later in the day.
+UPDATE_KNOWN_HOURS = (AFTERNOON_KNOWN_HOUR, EVENING_KNOWN_HOUR)
+KNOWN_HOURS = (LAST_KNOWN_HOUR, *UPDATE_KNOWN_HOURS)
+_RUN_SUFFIX = {LAST_KNOWN_HOUR: "", AFTERNOON_KNOWN_HOUR: "_afternoon", EVENING_KNOWN_HOUR: "_evening"}
 AFTERNOON_KEY = "hourly_afternoon"  # Registry and metrics key of the afternoon model
 # The afternoon update is skipped unless at least one of the newest hours has arrived.
 AFTERNOON_REQUIRED_HOURS = 3
@@ -44,9 +50,9 @@ HOURLY_TARGETS = ("pm25", "pm10")
 
 
 def registry_key(target: str, known_hour: int) -> str:
-    """Registry and metrics key: hourly and hourly_afternoon for PM2.5, hourly_pm10 and so on for PM10."""
+    """Registry and metrics key: hourly, hourly_afternoon, hourly_evening for PM2.5; hourly_pm10 and so on for PM10."""
     base = "hourly" if target == "pm25" else f"hourly_{target}"
-    return base if known_hour == LAST_KNOWN_HOUR else f"{base}_afternoon"
+    return base + _RUN_SUFFIX[known_hour]
 
 
 def leads_for(known_hour: int) -> tuple[int, ...]:
@@ -76,7 +82,8 @@ def make_model() -> Any:
 
 def hourly_city(openaq: pd.DataFrame, target: str = "pm25") -> pd.Series:
     """Return the Bangkok hourly value of `target`: the median across stations, by local hour."""
-    frame = openaq[openaq[PARAMETER] == target]
+    frame = city_panel(openaq)
+    frame = frame[frame[PARAMETER] == target]
     grouped = frame.groupby(TIME)[VALUE].agg(["median", "count"])
     series = grouped.loc[grouped["count"] >= MIN_STATIONS[target], "median"]
     series.index = series.index.tz_convert(TIMEZONE).tz_localize(None)

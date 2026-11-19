@@ -202,6 +202,11 @@ GOLD_METRICS = Table(
 )
 
 
+# The health check reads these back to confirm Power BI has today's runs.
+SQL_FRESHNESS_TABLES = ("gold.forecast_history", "gold.station_forecast_history", "gold.hourly_forecast_history")
+SQL_LOAD_FILENAME = "sql_load.json"
+
+
 def connection_string(server: str, database: str) -> str:
     host = server if "." in server else f"{server}.database.windows.net"
     return (
@@ -295,6 +300,16 @@ class Warehouse:
         cursor.execute(f"SELECT MAX({table.time_column}) FROM {table.name}")
         value = cursor.fetchone()[0]
         return None if value is None else pd.Timestamp(value)
+
+    def newest_runs(self) -> dict[str, str | None]:
+        """Return the newest as_of of each forecast table, read back after a load."""
+        result: dict[str, str | None] = {}
+        cursor = self.connection.cursor()
+        for name in SQL_FRESHNESS_TABLES:
+            cursor.execute(f"SELECT MAX(as_of) FROM {name}")
+            value = cursor.fetchone()[0]
+            result[name] = None if value is None else pd.Timestamp(value).date().isoformat()
+        return result
 
     def _insert(self, table: Table, data: Iterable[tuple[Any, ...]]) -> int:
         data = list(data)

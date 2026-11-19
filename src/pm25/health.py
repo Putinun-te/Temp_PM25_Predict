@@ -2,8 +2,8 @@
 
 Runs after the daily forecast, on the saved data branch. A failed daily run,
 stale station data, a failed quality gate, a model that has fallen behind
-persistence, a missing hourly forecast or missing station forecasts each
-produce a problem. The workflow turns problems into a GitHub
+persistence, a missing hourly forecast, missing station forecasts or an Azure
+SQL load that did not bring in today's runs each produce a problem. The workflow turns problems into a GitHub
 issue, which emails the repository owner.
 """
 
@@ -22,6 +22,7 @@ def check_health(
     accuracy: dict[str, Any] | None,
     today: date,
     hourly: dict[str, Any] | None = None,
+    sql_load: dict[str, Any] | None = None,
 ) -> list[str]:
     """Return a list of problems in plain English. An empty list means healthy."""
     problems: list[str] = []
@@ -44,6 +45,7 @@ def check_health(
             )
         problems.extend(_station_problems(forecast.get("station_forecasts") or []))
         problems.extend(_hourly_problems(hourly, today))
+    problems.extend(_sql_problems(sql_load, today))
     if quality is None:
         problems.append("No data quality report found (silver/quality_report.json is missing).")
     elif not quality.get("passed", False):
@@ -74,6 +76,23 @@ def _hourly_problems(hourly: dict[str, Any] | None, today: date) -> list[str]:
         return ["The hourly forecast has no hours."]
     if not any(hour.get("pm10") is not None for hour in hours):
         return ["The hourly forecast has no PM10 values."]
+    return []
+
+
+def _sql_problems(sql_load: dict[str, Any] | None, today: date) -> list[str]:
+    # No record means Azure SQL is not configured, which is allowed.
+    if sql_load is None:
+        return []
+    loaded = date.fromisoformat(sql_load["loaded_at"][:10])
+    if loaded < today:
+        return [f"Azure SQL was last loaded on {loaded}, so Power BI shows old data. Check the load step of the daily run."]
+    stale = [
+        f"{table} ({newest or 'empty'})"
+        for table, newest in sql_load.get("newest_as_of", {}).items()
+        if newest is None or date.fromisoformat(newest) < today
+    ]
+    if stale:
+        return ["Azure SQL does not have today's run in " + ", ".join(stale) + "."]
     return []
 
 

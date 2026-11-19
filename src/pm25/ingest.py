@@ -286,6 +286,37 @@ OPENAQ_PANEL = (
     OpenAQSensor(1304271, "pm10", 225650),
 )
 
+# More Air4Thai monitors for the station map and the per-station models. Each
+# reported at least 90 % of days from November 2025 to November 2026. They are
+# kept out of the city median, which stays on the fixed panel above, so adding
+# them does not change the city series the daily models learn from.
+MAP_PANEL = (
+    OpenAQSensor(1304254, "pm25", 225568),
+    OpenAQSensor(1304185, "pm25", 225677),
+    OpenAQSensor(1304229, "pm25", 225671),
+    OpenAQSensor(1304179, "pm25", 225651),
+    OpenAQSensor(1304378, "pm25", 225604),
+    OpenAQSensor(1304073, "pm25", 225678),
+    OpenAQSensor(1304323, "pm25", 225621),
+    OpenAQSensor(1304064, "pm25", 225595),
+    OpenAQSensor(1304203, "pm25", 225622),
+    OpenAQSensor(1304309, "pm25", 225679),
+    OpenAQSensor(1304158, "pm10", 225671),
+    OpenAQSensor(1304199, "pm10", 225678),
+    OpenAQSensor(1304069, "pm10", 225621),
+    OpenAQSensor(1304298, "pm10", 225622),
+    OpenAQSensor(1304243, "pm10", 225679),
+)
+OPENAQ_SENSORS = OPENAQ_PANEL + MAP_PANEL
+MAP_ONLY_SENSOR_IDS = frozenset(sensor.sensor_id for sensor in MAP_PANEL)
+
+
+def city_panel(openaq: pd.DataFrame) -> pd.DataFrame:
+    """Drop the map-only stations, leaving the fixed panel the city median is built from."""
+    if SENSOR not in openaq:
+        return openaq
+    return openaq[~openaq[SENSOR].isin(MAP_ONLY_SENSOR_IDS)]
+
 
 def _openaq_get(
     http_get: Callable[..., Any],
@@ -354,7 +385,7 @@ def backfill_openaq(
     start: pd.Timestamp,
     end: pd.Timestamp,
     lookback_days: int = 14,
-    sensors: Sequence[OpenAQSensor] = OPENAQ_PANEL,
+    sensors: Sequence[OpenAQSensor] = OPENAQ_SENSORS,
     http_get: Callable[..., Any] = requests.get,
     sleep: Callable[[float], None] = time_module.sleep,
 ) -> int:

@@ -1,11 +1,18 @@
-name: Afternoon hourly update
+name: Hourly update
 
 on:
   workflow_dispatch:
+    inputs:
+      known_hour:
+        description: "Last local hour to use: 9 (afternoon run) or 16 (evening run)"
+        type: choice
+        options: ["9", "16"]
+        default: "9"
   schedule:
-    # 06:03 UTC is 13:03 in Bangkok. Station hours arrive two to three hours
-    # late, so hours up to 09:00 are in by then even if the run starts late.
-    - cron: "3 6 * * *"
+    # Station hours arrive two to three hours late, so the hours each run uses
+    # are in even if GitHub starts it late.
+    - cron: "3 6 * * *" # 13:03 in Bangkok, uses hours up to 09:00
+    - cron: "3 12 * * *" # 19:03 in Bangkok, uses hours up to 16:00
 
 permissions:
   contents: write # Needed only to update the data branch
@@ -22,6 +29,7 @@ jobs:
     env:
       PM25_DATA_DIR: state/data
       PM25_MODELS_DIR: state/models
+      KNOWN_HOUR: ${{ inputs.known_hour || (github.event.schedule == '3 12 * * *' && '16') || '9' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -39,13 +47,13 @@ jobs:
           git fetch --depth 1 origin data
           git worktree add --detach state FETCH_HEAD
 
-      - name: Fetch this morning's station hours
+      - name: Fetch today's station hours
         env:
           OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
         run: python -m pm25 backfill --source openaq
 
       - name: Update the hourly forecast
-        run: python -m pm25 hourly-update
+        run: python -m pm25 hourly-update --known-hour "$KNOWN_HOUR"
 
       # TMD publishes its new run after the morning job starts, so tomorrow's
       # TMD values are often missing until now. Values already published stay.

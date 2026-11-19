@@ -158,3 +158,45 @@ def test_seasonal_ranges_follow_the_target_month_and_fall_back():
     assert range_for(entry, pd.Timestamp("2026-01-15")) == 8.0
     assert range_for(entry, pd.Timestamp("2026-07-15")) == 3.0  # Season missing
     assert range_for({"residual_q80": 3.0}, pd.Timestamp("2026-01-15")) == 3.0  # Older registry entry
+
+
+def _heteroscedastic(days=900, seed=0):
+    rng = np.random.default_rng(seed)
+    index = pd.date_range("2023-01-01", periods=days, freq="D")
+    predicted = pd.Series(rng.uniform(10, 80, days), index=index)
+    # The error grows with the forecast level, as PM2.5 errors do.
+    actual = predicted + rng.normal(0, 1, days) * predicted * 0.25
+    return actual, predicted
+
+
+def test_level_bands_widen_with_the_forecast():
+    from pm25.evaluate import level_q80, range_for
+
+    actual, predicted = _heteroscedastic()
+    spec = level_q80(actual, predicted)
+    assert len(spec["q80"]) == 4 and spec["q80"] == sorted(spec["q80"])
+    entry = {"range_method": "level", "residual_q80_by_level": spec, "residual_q80": 9.0}
+    day = pd.Timestamp("2026-07-01")
+    assert range_for(entry, day, 15.0) < range_for(entry, day, 70.0)
+    # Without a value, or for an entry that chose seasons, the seasonal range applies.
+    assert range_for(entry, day) == 9.0
+    assert range_for({**entry, "range_method": "season"}, day, 70.0) == 9.0
+
+
+def test_level_ranges_win_when_errors_grow_with_level():
+    from pm25.evaluate import compare_ranges, range_entry
+
+    actual, predicted = _heteroscedastic()
+    comparison = compare_ranges(actual, predicted, horizon=1)
+    assert comparison["chosen"] == "level"
+    assert comparison["level"]["interval_score"] < comparison["season"]["interval_score"]
+    assert 0.7 < comparison["level"]["coverage"] < 0.9
+    fields, _ = range_entry(actual, predicted, 1)
+    assert fields["range_method"] == "level" and fields["residual_q80_by_level"]["edges"]
+
+
+def test_short_history_keeps_seasonal_ranges():
+    from pm25.evaluate import compare_ranges
+
+    actual, predicted = _heteroscedastic(days=200)
+    assert compare_ranges(actual, predicted, horizon=1)["chosen"] == "season"

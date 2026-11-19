@@ -87,6 +87,8 @@ const STRINGS = {
   kindStationsPm10: { en: "Per station, PM10", th: "รายสถานี PM10" },
   kindHourlyPm10: { en: "Hourly PM10 (city)", th: "PM10 รายชั่วโมง (ทั้งเมือง)" },
   kindHourlyPm10Afternoon: { en: "Hourly PM10, afternoon update", th: "PM10 รายชั่วโมง รอบบ่าย" },
+  kindHourlyEvening: { en: "Hourly, evening update", th: "รายชั่วโมง รอบเย็น" },
+  kindHourlyPm10Evening: { en: "Hourly PM10, evening update", th: "PM10 รายชั่วโมง รอบเย็น" },
   baselineMae: { en: "Baseline MAE", th: "MAE วิธีพื้นฐาน" },
   recentErrors: { en: "Recent PM2.5 forecasts for tomorrow", th: "พยากรณ์ PM2.5 วันพรุ่งนี้ล่าสุด" },
   date: { en: "Date", th: "วันที่" },

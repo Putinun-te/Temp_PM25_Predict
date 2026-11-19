@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from pm25.ingest import PARAMETER, SENSOR, TIME, VALUE
+from pm25.ingest import PARAMETER, SENSOR, TIME, VALUE, city_panel
 
 TIMEZONE = "Asia/Bangkok"
 TARGETS = ("pm25", "pm10")
@@ -61,6 +61,7 @@ def daily_targets(openaq: pd.DataFrame, as_of: pd.Timestamp) -> pd.DataFrame:
     enough stations. Days before `as_of` only, because the current day is still
     incomplete. The median resists one station reading abnormally.
     """
+    openaq = city_panel(openaq)
     frame = openaq.assign(date=_local_date(openaq[TIME]))
     frame = frame[frame["date"] < as_of]
     station_days = (

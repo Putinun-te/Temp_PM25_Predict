@@ -65,3 +65,19 @@ def test_missing_or_stale_hourly_forecast_is_reported():
     assert check_health(FORECAST, QUALITY, None, TODAY, {**HOURLY, "hours": []}) == ["The hourly forecast has no hours."]
     no_pm10 = {**HOURLY, "hours": [{"time": "2026-11-13T10:00", "pm25": 18.0}]}
     assert check_health(FORECAST, QUALITY, None, TODAY, no_pm10) == ["The hourly forecast has no PM10 values."]
+
+
+def test_azure_sql_load_must_hold_today_runs():
+    fresh = {
+        "loaded_at": "2026-11-13T07:50:00+07:00",
+        "newest_as_of": {"gold.forecast_history": "2026-11-13", "gold.hourly_forecast_history": "2026-11-13"},
+    }
+    assert check_health(FORECAST, QUALITY, None, TODAY, HOURLY, fresh) == []
+    old = {**fresh, "loaded_at": "2026-11-12T07:50:00+07:00"}
+    assert check_health(FORECAST, QUALITY, None, TODAY, HOURLY, old) == [
+        "Azure SQL was last loaded on 2026-11-12, so Power BI shows old data. Check the load step of the daily run."
+    ]
+    missing = {**fresh, "newest_as_of": {"gold.forecast_history": "2026-11-13", "gold.hourly_forecast_history": None}}
+    assert check_health(FORECAST, QUALITY, None, TODAY, HOURLY, missing) == [
+        "Azure SQL does not have today's run in gold.hourly_forecast_history (empty)."
+    ]

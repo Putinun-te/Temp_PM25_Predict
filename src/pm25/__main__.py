@@ -44,6 +44,8 @@ from pm25.gistda import fetch_gistda_bangkok
 from pm25.nwp import backfill_nwp, daily_nwp, load_nwp
 from pm25.hourly import (
     AFTERNOON_KNOWN_HOUR,
+    KNOWN_HOURS,
+    UPDATE_KNOWN_HOURS,
     HOURLY_FILENAME,
     HOURLY_TARGETS,
     LAST_KNOWN_HOUR,
@@ -55,6 +57,7 @@ from pm25.hourly import (
 )
 from pm25.hourly import merge_pm10 as merge_hourly_pm10
 from pm25.health import check_health, render
+from pm25.warehouse import SQL_LOAD_FILENAME
 from pm25.monitor import (
     ACCURACY_FILENAME,
     HOURLY_ACCURACY_FILENAME,
@@ -232,6 +235,12 @@ def _training_due(models_dir: Path, as_of: pd.Timestamp, max_age_days: int) -> s
     registry = load_registry(models_dir)
     expected = [f"{target}_h{horizon}" for target in ALL_TARGETS for horizon in DAILY_HORIZONS]
     missing = [slot for slot in expected if slot not in registry["daily"]]
+    missing += [
+        registry_key(target, known_hour)
+        for target in HOURLY_TARGETS
+        for known_hour in KNOWN_HOURS
+        if registry_key(target, known_hour) not in registry
+    ]
     if missing:
         return f"registry lacks {', '.join(missing)}"
     age = (as_of - trained).days
@@ -280,7 +289,7 @@ def _train_extras(
     nwp_hourly = load_nwp(bronze)
     for target in HOURLY_TARGETS:
         city = hourly_city(openaq, target)
-        for known_hour in (LAST_KNOWN_HOUR, AFTERNOON_KNOWN_HOUR):
+        for known_hour in KNOWN_HOURS:
             key = registry_key(target, known_hour)
             try:
                 entry, hourly_report = train_hourly(
@@ -506,7 +515,7 @@ def _score_extras(gold: Path, openaq: pd.DataFrame) -> dict[str, list[dict]]:
         for target in HOURLY_TARGETS:
             scored = score_hourly(history[history["target"] == target], hourly_city(openaq, target))
             parts.append(scored)
-            for known_hour in (LAST_KNOWN_HOUR, AFTERNOON_KNOWN_HOUR):
+            for known_hour in KNOWN_HOURS:
                 rows = scored[scored["known_hour"] == str(known_hour)]
                 if not rows.empty or target == "pm25":
                     sections[registry_key(target, known_hour)] = summarize_extra(rows)
@@ -524,18 +533,19 @@ def _score_extras(gold: Path, openaq: pd.DataFrame) -> dict[str, list[dict]]:
 
 
 def _hourly_update(args: argparse.Namespace, config: Config) -> int:
-    """Repeat the hourly forecast after midday with the morning's measurements."""
+    """Repeat the hourly forecast later in the day with the newest measurements."""
     as_of = _as_of()
+    known_hour = args.known_hour
     registry = load_registry(config.models_dir)
-    if registry.get(registry_key("pm25", AFTERNOON_KNOWN_HOUR)) is None:
-        log.info("No afternoon hourly model yet, keeping the morning forecast")
+    if registry.get(registry_key("pm25", known_hour)) is None:
+        log.info("No hourly model for hours known up to %02d:00 yet, keeping the current forecast", known_hour)
         return 0
     bronze = layer(config.data_dir, BRONZE)
     openaq = load_series(bronze / OPENAQ_FILENAME)
-    if not has_recent_hours(hourly_city(openaq), as_of, AFTERNOON_KNOWN_HOUR):
-        log.warning("This morning's station hours have not arrived, keeping the morning forecast")
+    if not has_recent_hours(hourly_city(openaq), as_of, known_hour):
+        log.warning("Station hours up to %02d:00 have not arrived, keeping the current forecast", known_hour)
         return 0
-    hourly = _hourly_document(openaq, load_nwp(bronze), registry, config.models_dir, as_of, AFTERNOON_KNOWN_HOUR)
+    hourly = _hourly_document(openaq, load_nwp(bronze), registry, config.models_dir, as_of, known_hour)
     text = json.dumps(hourly, indent=1) + "\n"
     gold = layer(config.data_dir, GOLD)
     (config.models_dir / HOURLY_FILENAME).write_text(text, encoding="utf-8")
@@ -558,6 +568,7 @@ def _health(args: argparse.Namespace, config: Config) -> int:
         _read_json(gold / SUMMARY_FILENAME),
         _as_of().date(),
         _read_json(gold / HOURLY_FILENAME),
+        _read_json(gold / SQL_LOAD_FILENAME),
     )
     text = render(problems, _as_of().date())
     if args.output:
@@ -658,6 +669,12 @@ def _load_sql(args: argparse.Namespace, config: Config) -> int:
             if (gold / filename).exists():
                 frame = extra_frame(pd.read_csv(gold / filename))
                 log.info("%s: wrote %d rows", table.name, warehouse.replace(table, frame))
+        # Read back what the database now holds, so the health check can tell a failed load
+        # (this step never blocks the forecast) from a good one.
+        newest = warehouse.newest_runs()
+        record = {"loaded_at": _generated_at(), "newest_as_of": newest}
+        (gold / SQL_LOAD_FILENAME).write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+        log.info("Azure SQL newest runs: %s", newest)
     finally:
         connection.close()
     return 0
@@ -702,7 +719,15 @@ def main(argv: list[str] | None = None) -> int:
     commands.add_parser("monitor", help="score published forecasts against measurements").set_defaults(
         handler=_monitor
     )
-    commands.add_parser("hourly-update", help="repeat the hourly forecast with this morning's data").set_defaults(
+    update = commands.add_parser("hourly-update", help="repeat the hourly forecast with the newest measurements")
+    update.add_argument(
+        "--known-hour",
+        type=int,
+        choices=UPDATE_KNOWN_HOURS,
+        default=AFTERNOON_KNOWN_HOUR,
+        help="last local hour the update may use: 9 for the afternoon run, 16 for the evening run",
+    )
+    update.set_defaults(
         handler=_hourly_update
     )
     commands.add_parser("tmd-refresh", help="add TMD values the morning run could not get").set_defaults(

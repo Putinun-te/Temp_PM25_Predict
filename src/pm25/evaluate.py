@@ -68,8 +68,98 @@ def seasonal_q80(actual: pd.Series, predicted: pd.Series, horizon: int) -> dict[
     return result
 
 
-def range_for(entry: Mapping[str, object], target_date: pd.Timestamp) -> float | None:
-    """Return the range half-width for a forecast of `target_date`."""
+LEVEL_BINS = 4
+RANGE_HOLDOUT_DAYS = 365
+RANGE_ALPHA = 0.2  # The range is meant to hold 80 % of outcomes
+
+
+def level_q80(actual: pd.Series, predicted: pd.Series, bins: int = LEVEL_BINS) -> dict[str, list[float]] | None:
+    """Return the 80 % error size for each band of forecast level.
+
+    A forecast of 60 µg/m³ misses by far more than one of 15, in any season, so
+    the range widens with the forecast itself. The bands split past forecasts
+    into equal counts; None when a band would have too few rows.
+    """
+    paired = pd.DataFrame({"actual": actual, "predicted": predicted}).dropna()
+    if len(paired) < bins * MIN_SEASON_ROWS:
+        return None
+    edges = np.unique(np.quantile(paired["predicted"], np.linspace(0, 1, bins + 1)[1:-1]))
+    band = np.searchsorted(edges, paired["predicted"].to_numpy(), side="right")
+    error = (paired["actual"] - paired["predicted"]).abs().to_numpy()
+    q80 = [float(np.quantile(error[band == index], 0.8)) for index in range(len(edges) + 1)]
+    return {"edges": [float(edge) for edge in edges], "q80": q80}
+
+
+def _level_width(spec: Mapping[str, list[float]], value: float) -> float:
+    return spec["q80"][int(np.searchsorted(spec["edges"], value, side="right"))]
+
+
+def interval_score(actual: pd.Series, low: pd.Series, high: pd.Series, alpha: float = RANGE_ALPHA) -> float:
+    """Mean width plus a penalty for each miss, scaled by how far outside it fell. Lower is better."""
+    below = (low - actual).clip(lower=0)
+    above = (actual - high).clip(lower=0)
+    return float(((high - low) + (2 / alpha) * (below + above)).mean())
+
+
+def compare_ranges(actual: pd.Series, predicted: pd.Series, horizon: int) -> dict[str, object]:
+    """Calibrate both range methods on older forecasts and score them on the newest year.
+
+    Returns the coverage, mean width and interval score of each, and the method
+    with the lower score. Both are then refitted on all forecasts for publishing.
+    """
+    paired = pd.DataFrame({"actual": actual, "predicted": predicted}).dropna()
+    if paired.empty:
+        return {"chosen": "season"}
+    split = paired.index.max() - pd.Timedelta(days=RANGE_HOLDOUT_DAYS)
+    older, newer = paired[paired.index <= split], paired[paired.index > split]
+    level = level_q80(older["actual"], older["predicted"])
+    if level is None or newer.empty:
+        return {"chosen": "season"}
+    season_entry = {
+        "residual_q80": residual_q80(older["actual"], older["predicted"]),
+        "residual_q80_by_season": seasonal_q80(older["actual"], older["predicted"], horizon),
+    }
+    targets = newer.index + pd.Timedelta(days=horizon)
+    widths = {
+        "season": pd.Series([range_for(season_entry, day) for day in targets], index=newer.index, dtype=float),
+        "level": newer["predicted"].map(lambda value: _level_width(level, value)),
+    }
+    result: dict[str, object] = {"holdout_days": int(len(newer))}
+    for name, width in widths.items():
+        low = (newer["predicted"] - width).clip(lower=0)
+        high = newer["predicted"] + width
+        inside = (newer["actual"] >= low) & (newer["actual"] <= high)
+        result[name] = {
+            "coverage": float(inside.mean()),
+            "mean_width": float((high - low).mean()),
+            "interval_score": interval_score(newer["actual"], low, high),
+        }
+    result["chosen"] = min(("season", "level"), key=lambda name: result[name]["interval_score"])  # type: ignore[index]
+    return result
+
+
+def range_entry(actual: pd.Series, predicted: pd.Series, horizon: int) -> tuple[dict[str, object], dict[str, object]]:
+    """Return the registry fields for the published range and the comparison behind them."""
+    comparison = compare_ranges(actual, predicted, horizon)
+    fields: dict[str, object] = {
+        "residual_q80": residual_q80(actual, predicted),
+        "residual_q80_by_season": seasonal_q80(actual, predicted, horizon),
+        "range_method": comparison["chosen"],
+    }
+    if comparison["chosen"] == "level":
+        fields["residual_q80_by_level"] = level_q80(actual, predicted)
+    return fields, comparison
+
+
+def range_for(entry: Mapping[str, object], target_date: pd.Timestamp, value: float | None = None) -> float | None:
+    """Return the range half-width for a forecast of `target_date` with value `value`.
+
+    Slots whose newest year scored better with level bands use them; the rest,
+    and entries trained before bands existed, use the season of the target date.
+    """
+    by_level = entry.get("residual_q80_by_level")
+    if entry.get("range_method") == "level" and by_level and value is not None and not pd.isna(value):
+        return _level_width(by_level, float(value))  # type: ignore[arg-type]
     by_season = entry.get("residual_q80_by_season") or {}
     return by_season.get(season_of(target_date.month), entry.get("residual_q80"))  # type: ignore[union-attr, return-value]
 
