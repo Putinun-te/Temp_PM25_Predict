@@ -232,3 +232,11 @@ def test_chance_above_the_standard_follows_past_errors():
     assert fields["exceedance"]["threshold"] == 37.5 and report["exceedance"]["published"]
     assert entry_chance_above(fields, 75.0) == 1.0
     assert entry_chance_above({}, 75.0) is None
+
+
+def test_no_chance_is_published_when_the_newest_year_never_went_above():
+    from pm25.evaluate import compare_exceedance
+
+    actual, predicted = _heteroscedastic(days=1200)
+    check = compare_exceedance(actual, predicted, 500.0)
+    assert check["events"] == 0 and not check["published"]

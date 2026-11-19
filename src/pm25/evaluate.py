@@ -81,6 +81,8 @@ RANGE_WINDOWS: tuple[int | None, ...] = (None, 730, 365)
 # Thai 24-hour standards in µg/m³; the chance of going above them is published.
 STANDARDS = {"pm25": 37.5, "pm10": 120.0}
 EXCEEDANCE_QUANTILES = tuple(float(q) for q in np.linspace(0.01, 0.99, 50))
+# A chance is only checked, and so only published, when the newest year went above the standard this often.
+MIN_EXCEEDANCE_EVENTS = 10
 
 
 def level_q80(actual: pd.Series, predicted: pd.Series, bins: int = LEVEL_BINS) -> dict[str, list[float]] | None:
@@ -219,8 +221,9 @@ def chance_above(spec: Mapping[str, object] | None, value: float | None, thresho
 def compare_exceedance(actual: pd.Series, predicted: pd.Series, threshold: float) -> dict[str, object]:
     """Score the chance of going above `threshold` on the newest year, calibrated on older forecasts.
 
-    It is published only when its Brier score beats always saying the
-    historical rate, the climatological chance.
+    It is published only when the newest year went above the threshold at
+    least MIN_EXCEEDANCE_EVENTS times and its Brier score beats always saying
+    the historical rate, the climatological chance.
     """
     paired = pd.DataFrame({"actual": actual, "predicted": predicted}).dropna()
     split = paired.index.max() - pd.Timedelta(days=RANGE_HOLDOUT_DAYS) if not paired.empty else None
@@ -240,7 +243,7 @@ def compare_exceedance(actual: pd.Series, predicted: pd.Series, threshold: float
         "events": int(outcome.sum()),
         "brier": brier,
         "climatology_brier": climatology,
-        "published": brier < climatology,
+        "published": bool(outcome.sum() >= MIN_EXCEEDANCE_EVENTS and brier < climatology),
     }
 
 

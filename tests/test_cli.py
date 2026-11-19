@@ -159,3 +159,14 @@ def test_tmd_refresh_fills_tomorrow_and_records_it(calls, monkeypatch, tmp_path)
     history = pd.read_csv(tmp_path / "gold" / "forecast_history.csv")
     assert set(history["period"]) == {"2026-11-19"}
     assert set(history["target"]) == {"tmd_temp_c", "tmd_temp_c_min", "tmd_temp_c_max", "tmd_rh_pct"}
+
+
+def test_a_later_hourly_update_is_not_replaced_by_the_morning_forecast():
+    from pm25.__main__ import _newer_hourly
+
+    morning = {"as_of": "2026-11-19", "inputs_through": "2026-11-19T03:00"}
+    evening = {"as_of": "2026-11-19", "inputs_through": "2026-11-19T16:00"}
+    assert _newer_hourly(evening, morning)
+    assert not _newer_hourly(morning, evening)
+    assert not _newer_hourly({"as_of": "2026-11-18", "inputs_through": "2026-11-18T16:00"}, morning)
+    assert not _newer_hourly(None, morning)

@@ -465,10 +465,11 @@ def _report(args: argparse.Namespace, config: Config) -> int:
     hourly_path = config.models_dir / HOURLY_FILENAME
     if hourly_path.exists() and json.loads(hourly_path.read_text(encoding="utf-8"))["as_of"] == forecast["as_of"]:
         # Only today's hourly forecast is published; a stale one would mislead.
-        (gold / HOURLY_FILENAME).write_text(hourly_path.read_text(encoding="utf-8"), encoding="utf-8")
-        append_rows(
-            gold / HOURLY_HISTORY_FILENAME, hourly_rows(json.loads(hourly_path.read_text(encoding="utf-8"))), HOURLY_KEYS
-        )
+        hourly = json.loads(hourly_path.read_text(encoding="utf-8"))
+        published = _read_json(gold / HOURLY_FILENAME)
+        if not _newer_hourly(published, hourly):
+            (gold / HOURLY_FILENAME).write_text(hourly_path.read_text(encoding="utf-8"), encoding="utf-8")
+        append_rows(gold / HOURLY_HISTORY_FILENAME, hourly_rows(hourly), HOURLY_KEYS)
     else:
         (gold / HOURLY_FILENAME).unlink(missing_ok=True)
     append_rows(gold / STATION_HISTORY_FILENAME, station_rows(forecast), STATION_KEYS)
@@ -553,6 +554,19 @@ def _hourly_update(args: argparse.Namespace, config: Config) -> int:
     append_rows(gold / HOURLY_HISTORY_FILENAME, hourly_rows(hourly), HOURLY_KEYS)
     log.info("Updated the hourly forecast with measurements through %s", hourly["inputs_through"])
     return 0
+
+
+def _newer_hourly(published: dict | None, candidate: dict) -> bool:
+    """True when the published hourly forecast is for the same day and uses later hours.
+
+    A daily run started by hand in the afternoon or evening must not replace the
+    afternoon or evening update with the morning forecast.
+    """
+    return bool(
+        published
+        and published.get("as_of") == candidate["as_of"]
+        and published.get("inputs_through", "") > candidate["inputs_through"]
+    )
 
 
 def _read_json(path: Path) -> dict | None:
