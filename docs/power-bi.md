@@ -70,6 +70,6 @@ To switch an existing report, open Transform data and change each query's source
 
 ## Keeping it free
 
-The database is serverless and pauses after an hour without use. The free allowance is 100,000 vCore seconds a month, and the database is set to pause, not bill, when the allowance runs out. Each refresh wakes it, so schedule at most one refresh a day. The published model refreshes daily at 09:00 Bangkok time. The daily workflow starts around 07:17 but GitHub often delays it, and on weekly retrain days it finishes after 08:00, so 09:00 leaves margin. The afternoon hourly update does not load SQL, so a second refresh would add nothing.
+The database is serverless and pauses after an hour without use. The free allowance is 100,000 vCore seconds a month, and the database is set to pause, not bill, when the allowance runs out. Each refresh wakes it, so schedule at most one refresh a day. The published model refreshes daily at 10:00 Bangkok time. The daily workflow is scheduled for 07:17 but GitHub often starts it later, and on weekly retrain days it can finish after 09:00, so 10:00 leaves margin. The afternoon hourly update does not load SQL, so a second refresh would add nothing.
 
 The model has no relationships: every page reads one view, and each view already joins what it needs. Power BI autodetected a one-to-one link between `model_metrics` and `v_skill_by_horizon` on `slot`, which was removed because its two-way filter would let one table filter the other.
