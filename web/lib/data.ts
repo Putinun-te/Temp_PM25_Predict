@@ -1,6 +1,7 @@
 import type { HourlyForecast } from "./types";
 import type {
   AccuracySummary,
+  ChanceAbove,
   DailyRow,
   Forecast,
   HistoryRow,
@@ -192,6 +193,16 @@ export function summarizeStation(rows: ScoredStationForecast[], id: number, targ
 export function forecastDates(asOf: string): string[] {
   const start = new Date(`${asOf}T00:00:00Z`);
   return Array.from({ length: 7 }, (_, i) => new Date(start.getTime() + i * 86_400_000).toISOString().slice(0, 10));
+}
+
+/** Chances to show: every tested edge when published, else the standard alone (older forecasts). */
+export function chanceList(
+  list: ChanceAbove[] | null | undefined,
+  standardP: number | null | undefined,
+  standard: number,
+): ChanceAbove[] {
+  if (list && list.length > 0) return [...list].sort((a, b) => a.threshold - b.threshold);
+  return standardP === null || standardP === undefined ? [] : [{ threshold: standard, p: standardP }];
 }
 
 /** "23%" for 0.23; "<1%" and ">99%" at the ends, so a small chance never reads as none. */

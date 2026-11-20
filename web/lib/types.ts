@@ -1,3 +1,9 @@
+/** Chance (0 to 1) that a daily mean goes above `threshold` µg/m³. */
+export interface ChanceAbove {
+  threshold: number;
+  p: number;
+}
+
 // Mirrors the forecast document written by the Python pipeline (schema_version 2).
 // If the pipeline changes a field name, the type check fails at build time.
 
@@ -18,6 +24,9 @@ export interface DailyForecast {
   /** Chance (0 to 1) that the daily mean goes above the Thai 24-hour standard. */
   pm25_p_above_standard?: number | null;
   pm10_p_above_standard?: number | null;
+  /** Chance above each tested colour-band edge, lowest edge first. */
+  pm25_p_above?: ChanceAbove[] | null;
+  pm10_p_above?: ChanceAbove[] | null;
   temp_c?: number | null;
   temp_c_low?: number | null;
   temp_c_high?: number | null;
@@ -72,8 +81,16 @@ export interface StationValue {
   method: string;
   /** Chance (0 to 1) that the station's daily mean goes above the Thai standard. */
   p_above_standard?: number | null;
+  p_above?: ChanceAbove[] | null;
   /** Only the stations that measure PM10 have this. */
-  pm10?: { pm10: number | null; low: number | null; high: number | null; method: string; p_above_standard?: number | null };
+  pm10?: {
+    pm10: number | null;
+    low: number | null;
+    high: number | null;
+    method: string;
+    p_above_standard?: number | null;
+    p_above?: ChanceAbove[] | null;
+  };
 }
 
 /** Daily labels in order: today, tomorrow, then days after today. */

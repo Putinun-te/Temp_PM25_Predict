@@ -80,6 +80,10 @@ RANGE_COVERAGE_TOLERANCE = 0.07
 RANGE_WINDOWS: tuple[int | None, ...] = (None, 730, 365)
 # Thai 24-hour standards in µg/m³; the chance of going above them is published.
 STANDARDS = {"pm25": 37.5, "pm10": 120.0}
+# Edges of the Pollution Control Department colour bands, standard included. A
+# chance is published for each edge that passes the same test as the standard:
+# "moderate or worse", "starting to affect health or worse" and "affects health".
+THRESHOLDS = {"pm25": (25.0, 37.5, 75.0), "pm10": (80.0, 120.0)}
 EXCEEDANCE_QUANTILES = tuple(float(q) for q in np.linspace(0.01, 0.99, 50))
 # A chance is only checked, and so only published, when the newest year went above the standard this often.
 MIN_EXCEEDANCE_EVENTS = 10
@@ -278,12 +282,22 @@ def range_entry(
         "residual_q80_by_season": seasonal_q80(actual, predicted, horizon),
         **fitted,
     }
-    if target in STANDARDS:
-        check = compare_exceedance(actual, predicted, STANDARDS[target])
-        comparison["exceedance"] = check
-        if check["published"]:
-            fields["exceedance"] = {"threshold": STANDARDS[target], **(exceedance_quantiles(actual, predicted) or {})}
+    if target in THRESHOLDS:
+        checks = {threshold_key(t): compare_exceedance(actual, predicted, t) for t in THRESHOLDS[target]}
+        comparison["exceedance"] = checks[threshold_key(STANDARDS[target])]
+        comparison["exceedance_by_threshold"] = checks
+        published = [t for t in THRESHOLDS[target] if checks[threshold_key(t)]["published"]]
+        if published:
+            spec: dict[str, object] = {"thresholds": published, **(exceedance_quantiles(actual, predicted) or {})}
+            if STANDARDS[target] in published:
+                spec["threshold"] = STANDARDS[target]
+            fields["exceedance"] = spec
     return fields, comparison
+
+
+def threshold_key(threshold: float) -> str:
+    """37.5 reads "37.5" and 80.0 reads "80", the keys of the training report."""
+    return f"{threshold:g}"
 
 
 def range_for(entry: Mapping[str, object], target_date: pd.Timestamp, value: float | None = None) -> float | None:
@@ -302,10 +316,28 @@ def range_for(entry: Mapping[str, object], target_date: pd.Timestamp, value: flo
 def entry_chance_above(entry: Mapping[str, object], value: float | None) -> float | None:
     """The published chance of going above the standard, or None when the slot has none."""
     spec = entry.get("exceedance")
-    if not spec:
+    if not spec or spec.get("threshold") is None:  # type: ignore[union-attr]
         return None
     chance = chance_above(spec, value, float(spec["threshold"]))  # type: ignore[index, arg-type]
     return None if chance is None else round(chance, 2)
+
+
+def entry_chances_above(entry: Mapping[str, object], value: float | None) -> list[dict[str, float]] | None:
+    """The published chance above each tested band edge, lowest edge first, or None.
+
+    A list rather than a mapping, because Firebase keys cannot hold "37.5".
+    """
+    spec = entry.get("exceedance")
+    if not spec or value is None or pd.isna(value):
+        return None
+    # Entries trained before several edges existed hold only the standard.
+    thresholds = spec.get("thresholds") or [spec["threshold"]]  # type: ignore[union-attr, index]
+    result = []
+    for threshold in sorted(float(t) for t in thresholds):  # type: ignore[union-attr]
+        chance = chance_above(spec, value, threshold)
+        if chance is not None:
+            result.append({"threshold": threshold, "p": round(chance, 2)})
+    return result or None
 
 
 def walk_forward_predict(

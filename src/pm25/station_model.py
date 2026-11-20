@@ -24,7 +24,7 @@ import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.pipeline import make_pipeline
 
-from pm25.evaluate import entry_chance_above, metrics, promotion_gate, range_entry, range_for, walk_forward_predict
+from pm25.evaluate import entry_chance_above, entry_chances_above, metrics, promotion_gate, range_entry, range_for, walk_forward_predict
 from pm25.features import MIN_HOURS_PER_DAY, TIMEZONE, build_features
 from pm25.transform import DropEmptyColumns
 from pm25.ingest import OPENAQ_SENSORS, PARAMETER, SENSOR, TIME, VALUE, OpenAQSensor
@@ -189,6 +189,7 @@ def forecast_stations(
                 "high": None if missing or q80 is None else round(value + q80, 1),
                 "method": entry["method"],
                 "p_above_standard": None if missing else entry_chance_above(entry, value),
+                "p_above": None if missing else entry_chances_above(entry, value),
             }
     return list(result.values())
 

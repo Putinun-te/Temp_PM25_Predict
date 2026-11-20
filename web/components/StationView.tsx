@@ -5,8 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import { AqiBadge } from "./AqiBadge";
 import { useLang } from "./LangProvider";
 import StationChart, { type StationSeries } from "./StationChart";
+import { STANDARDS } from "@/lib/aqi";
+import ChanceLines from "./ChanceLines";
 import {
-  chanceText,
+  chanceList,
   dataBase,
   forecastDates,
   loadForecast,
@@ -30,9 +32,23 @@ function dayValue(loaded: Loaded, id: number, label: (typeof DAY_LABELS)[number]
   if (!entry) return null;
   if (target === "pm10") {
     const pm10 = entry.pm10;
-    return pm10 ? { value: pm10.pm10, low: pm10.low, high: pm10.high, method: pm10.method, p: pm10.p_above_standard } : null;
+    return pm10
+      ? {
+          value: pm10.pm10,
+          low: pm10.low,
+          high: pm10.high,
+          method: pm10.method,
+          chances: chanceList(pm10.p_above, pm10.p_above_standard, STANDARDS.pm10),
+        }
+      : null;
   }
-  return { value: entry.pm25, low: entry.low, high: entry.high, method: entry.method, p: entry.p_above_standard };
+  return {
+    value: entry.pm25,
+    low: entry.low,
+    high: entry.high,
+    method: entry.method,
+    chances: chanceList(entry.p_above, entry.p_above_standard, STANDARDS.pm25),
+  };
 }
 
 export default function StationView() {
@@ -83,7 +99,7 @@ export default function StationView() {
 
   const summary = id === null ? null : summarizeStation(loaded.scores, id, shown);
   // Older forecasts, and slots that did not earn it, have no chance above the standard.
-  const hasChance = id !== null && DAY_LABELS.some((label) => dayValue(loaded, id, label, shown)?.p != null);
+  const hasChance = id !== null && DAY_LABELS.some((label) => (dayValue(loaded, id, label, shown)?.chances.length ?? 0) > 0);
   const choose = (next: number) => {
     setId(next);
     const params = new URLSearchParams(window.location.search);
@@ -170,7 +186,7 @@ export default function StationView() {
                           t("noData")
                         )}
                       </td>
-                      {hasChance && <td>{chanceText(value?.p)}</td>}
+                      {hasChance && <td>{value && <ChanceLines pollutant={shown} chances={value.chances} />}</td>}
                     </tr>
                   );
                 })}

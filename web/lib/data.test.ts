@@ -94,3 +94,15 @@ describe("station page helpers", () => {
     expect(chanceText(null)).toBe("n/a");
   });
 });
+
+describe("chance lists", () => {
+  it("uses every published edge, else the standard alone", async () => {
+    const { chanceList } = await import("./data");
+    const { bandAbove } = await import("./aqi");
+    expect(chanceList([{ threshold: 75, p: 0.01 }, { threshold: 25, p: 0.6 }], 0.1, 37.5).map((c) => c.threshold)).toEqual([25, 75]);
+    expect(chanceList(null, 0.1, 37.5)).toEqual([{ threshold: 37.5, p: 0.1 }]);
+    expect(chanceList(undefined, null, 120)).toEqual([]);
+    expect(bandAbove("pm25", 37.5)?.upTo).toBe(75);
+    expect(bandAbove("pm10", 80)?.upTo).toBe(120);
+  });
+});

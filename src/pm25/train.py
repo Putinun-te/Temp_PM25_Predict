@@ -110,26 +110,32 @@ def train_slot(
 
     methods = [*CANDIDATES, *baselines]
     overall = {name: metrics(frame["actual"], frame[name]) for name in methods}
-    candidate = min(CANDIDATES, key=lambda name: overall[name]["mae"])
     latest = frame[frame.index > frame.index.max() - pd.Timedelta(days=LATEST_WINDOW_DAYS)]
-
-    known = labels.notna().to_numpy()
-    final_model = CANDIDATES[candidate]()
-    final_model.fit(features[known], labels[known])
-    train_end = (features.index[known].max() + pd.Timedelta(days=horizon)).date().isoformat()
-
-    entry, promote = _decide(
-        slot, candidate, latest, list(baselines), previous, features, models_dir, horizon
-    )
+    # The best candidate over all folds goes first. When it fails the gate and
+    # there is no model to keep, the next one is tried before falling back to a
+    # rule: a candidate that beats every rule on both windows is still a model
+    # that beats every rule.
+    ranked = sorted(CANDIDATES, key=lambda name: overall[name]["mae"])
+    candidate = ranked[0]
+    for name in ranked:
+        entry, promote = _decide(slot, name, latest, list(baselines), previous, features, models_dir, horizon)
+        if promote:
+            # A short recent window can favour a model by luck, so the full history must agree.
+            overall_ok, overall_reason = promotion_gate(
+                overall[name]["mae"], {base: overall[base]["mae"] for base in baselines}
+            )
+            if not overall_ok:
+                promote = False
+                entry = _fallback(previous, overall, list(baselines), f"over all folds it {overall_reason}")
+        if promote or entry.get("method") in CANDIDATES:
+            # Promoted, or the previous model is kept: either way no other candidate is tried.
+            candidate = name
+            break
     if promote:
-        # A short recent window can favour a model by luck, so the full history must agree.
-        overall_ok, overall_reason = promotion_gate(
-            overall[candidate]["mae"], {name: overall[name]["mae"] for name in baselines}
-        )
-        if not overall_ok:
-            promote = False
-            entry = _fallback(previous, overall, list(baselines), f"over all folds it {overall_reason}")
-    if promote:
+        known = labels.notna().to_numpy()
+        final_model = CANDIDATES[candidate]()
+        final_model.fit(features[known], labels[known])
+        train_end = (features.index[known].max() + pd.Timedelta(days=horizon)).date().isoformat()
         models_dir.mkdir(parents=True, exist_ok=True)
         joblib.dump(final_model, model_path(models_dir, slot))
         entry.update(
@@ -140,6 +146,8 @@ def train_slot(
                 "features": list(features.columns),
             }
         )
+        if candidate != ranked[0]:
+            entry["reason"] += f" ({ranked[0]} had the lower MAE over all folds but failed the gate)"
 
     for stale in ("residual_q80_by_level", "exceedance"):
         entry.pop(stale, None)

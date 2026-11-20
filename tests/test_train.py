@@ -161,3 +161,25 @@ def test_monthly_without_enough_history_uses_climatology():
     assert entry["method"] == "climatology"
     assert entry["residual_q80"] is None
     assert report["n"] == 0
+
+
+class GoodLongAgoModel(PerfectModel):
+    """Best over all folds, but off by six in the newest 90 days."""
+
+    def predict(self, features):
+        late = features.index >= INDEX[-90]
+        return features["answer"].to_numpy() + np.where(late, 6.0, 0.0)
+
+
+class SteadyModel(PerfectModel):
+    def predict(self, features):
+        return features["answer"].to_numpy() + 2.0
+
+
+def test_next_candidate_is_tried_when_the_best_overall_fails_the_recent_gate(monkeypatch, tmp_path):
+    monkeypatch.setattr(train_module, "CANDIDATES", {"good_long_ago": GoodLongAgoModel, "steady": SteadyModel})
+    entry, report, _ = run(tmp_path)
+    assert entry["method"] == "steady"
+    assert "good_long_ago had the lower MAE" in entry["reason"]
+    assert report["best_candidate"] == "steady"
+    assert model_path(tmp_path, "pm25_h1").exists()

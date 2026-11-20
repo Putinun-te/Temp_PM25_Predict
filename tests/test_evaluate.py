@@ -240,3 +240,29 @@ def test_no_chance_is_published_when_the_newest_year_never_went_above():
     actual, predicted = _heteroscedastic(days=1200)
     check = compare_exceedance(actual, predicted, 500.0)
     assert check["events"] == 0 and not check["published"]
+
+
+def test_chances_are_published_for_each_band_edge_that_passes():
+    from pm25.evaluate import entry_chance_above, entry_chances_above, range_entry
+
+    actual, predicted = _heteroscedastic(days=1200)
+    fields, report = range_entry(actual, predicted, 1, "pm25")
+    checks = report["exceedance_by_threshold"]
+    assert set(checks) == {"25", "37.5", "75"}
+    published = [t for t in (25.0, 37.5, 75.0) if checks[f"{t:g}"]["published"]]
+    assert fields["exceedance"]["thresholds"] == published and 37.5 in published
+    chances = entry_chances_above(fields, 30.0)
+    assert [c["threshold"] for c in chances] == published
+    # A higher edge is never more likely than a lower one.
+    assert all(a["p"] >= b["p"] for a, b in zip(chances, chances[1:]))
+    # Entries from before several edges keep working.
+    old = {"exceedance": {k: v for k, v in fields["exceedance"].items() if k != "thresholds"}}
+    assert entry_chances_above(old, 30.0) == [{"threshold": 37.5, "p": entry_chance_above(old, 30.0)}]
+
+
+def test_standard_chance_is_absent_when_only_a_lower_edge_passes():
+    from pm25.evaluate import entry_chance_above, entry_chances_above
+
+    entry = {"exceedance": {"thresholds": [80.0], "edges": [], "quantiles": [[-5.0, 0.0, 5.0]]}}
+    assert entry_chance_above(entry, 78.0) is None
+    assert entry_chances_above(entry, 78.0) == [{"threshold": 80.0, "p": 0.33}]

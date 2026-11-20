@@ -159,10 +159,10 @@ const STRINGS = {
     th: "ค่าเฉลี่ยรายวัน เส้นคือค่าที่สถานีวัดได้ แถบสีคือช่วงที่ 80% ของการพยากรณ์ที่ผ่านมาอยู่ในนั้น จุดคือค่าที่ทายไว้ล่วงหน้าหนึ่งวันสำหรับวันที่วัดค่าได้แล้ว",
   },
   chanceAbove: { en: "Chance above standard", th: "โอกาสเกินมาตรฐาน" },
-  chanceAboveShort: { en: "Above standard:", th: "โอกาสเกินมาตรฐาน:" },
+  chanceAboveEdge: { en: "Above", th: "โอกาสเกิน" },
   chanceAboveNote: {
-    en: "Chance that the daily mean goes above the Thai 24-hour standard (PM2.5 37.5 µg/m³, PM10 120 µg/m³), from how far past forecasts at the same level missed.",
-    th: "โอกาสที่ค่าเฉลี่ยรายวันจะเกินมาตรฐาน 24 ชั่วโมงของไทย (PM2.5 37.5 µg/m³, PM10 120 µg/m³) คำนวณจากความคลาดเคลื่อนของการพยากรณ์ที่ผ่านมาที่ระดับใกล้เคียงกัน",
+    en: "Chance that the daily mean goes above each edge of the Pollution Control Department colour bands (µg/m³; the Thai 24-hour standard is PM2.5 37.5 and PM10 120), from how far past forecasts at the same level missed. The dot is the colour above the edge. An edge is shown only where its chance beat quoting the historical rate on the newest year.",
+    th: "โอกาสที่ค่าเฉลี่ยรายวันจะเกินขอบของแถบสีกรมควบคุมมลพิษแต่ละขั้น (µg/m³ มาตรฐาน 24 ชั่วโมงของไทยคือ PM2.5 37.5 และ PM10 120) คำนวณจากความคลาดเคลื่อนของการพยากรณ์ที่ผ่านมาที่ระดับใกล้เคียงกัน จุดคือสีของขั้นที่สูงกว่าขอบนั้น แสดงเฉพาะขอบที่ทายได้ดีกว่าการบอกอัตราในอดีต เมื่อทดสอบกับปีล่าสุด",
   },
   scoredDays: { en: "Scored days", th: "จำนวนวันที่เทียบแล้ว" },
   withinRange: { en: "Within range", th: "อยู่ในช่วง" },

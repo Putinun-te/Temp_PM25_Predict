@@ -172,3 +172,5 @@ def test_chance_above_the_standard_is_published_only_for_slots_that_earned_it():
     today, tomorrow = result["daily"][0], result["daily"][1]
     assert today["pm25_p_above_standard"] == 0.0
     assert "pm25_p_above_standard" not in tomorrow and "pm10_p_above_standard" not in today
+    assert today["pm25_p_above"] == [{"threshold": 37.5, "p": 0.0}]
+    assert "pm25_p_above" not in tomorrow

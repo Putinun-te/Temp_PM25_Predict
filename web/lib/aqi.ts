@@ -69,3 +69,11 @@ export function bandFor(pollutant: Pollutant, value: number | null | undefined):
   const rounded = Math.round(value * 10) / 10;
   return BANDS[pollutant].find((band) => rounded <= band.upTo) ?? null;
 }
+
+/** The band just above a band edge, whose colour marks the chance of going above it. */
+export function bandAbove(pollutant: Pollutant, threshold: number): Band | null {
+  return BANDS[pollutant].find((band) => band.upTo > threshold) ?? null;
+}
+
+/** Thai 24-hour standards in µg/m³. */
+export const STANDARDS: Record<Pollutant, number> = { pm25: 37.5, pm10: 120 };
