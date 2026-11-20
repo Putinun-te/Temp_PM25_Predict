@@ -17,7 +17,7 @@ flowchart LR
     subgraph GA["GitHub Actions"]
         D["Daily forecast, 07:17<br/>backfill, quality check, train weekly,<br/>predict, report, score, load SQL"]
         H["Hourly update, 13:03 and 19:03<br/>newer station hours"]
-        HC["Health check, 10:37"]
+        HC["Health check, 10:37, 14:37, 20:37"]
     end
     SRC --> D
     OA --> H
@@ -40,7 +40,9 @@ Every job reads the `data` branch, adds to it and writes it back as a single com
 | 10:00 | Power BI refresh | Imports the views from Azure SQL |
 | 10:37 | Health check | Opens a GitHub issue if any output is missing or stale |
 | 13:03 | Hourly update | Repeats the hourly forecast with station hours up to 09:00, adds TMD values the morning missed |
+| 14:37 | Health check | Also checks that the afternoon hourly update used hours up to 09:00 |
 | 19:03 | Hourly update | Repeats it again with hours up to 16:00 |
+| 20:37 | Health check | Also checks that the evening hourly update used hours up to 16:00 |
 
 | Module | Responsibility |
 |---|---|
@@ -231,7 +233,7 @@ Repository secrets: `OPENAQ_API_KEY`, `TMD_API_TOKEN` (optional), `FIRMS_MAP_KEY
 
 The hourly forecast and the per-station forecasts are scored the same way. Each run appends them to `gold/hourly_forecast_history.csv` and `gold/station_forecast_history.csv`; `monitor` writes `gold/live_accuracy_hourly.csv` and `gold/live_accuracy_stations.csv` and adds `hourly` and `stations` sections to the summary. The hourly baseline is the same hour of the previous day as known at 03:00; the station baseline is the station's own last measured day. The afternoon hourly update, hourly PM10 and the PM10 station forecasts are scored separately, as `hourly_afternoon`, `hourly_pm10`, `hourly_pm10_afternoon` and `stations_pm10`.
 
-`.github/workflows/health-check.yml` runs at 10:37 Bangkok time on the `data` branch. It raises an alert when no forecast was published today, the newest complete station day is more than two days old, the data quality gate failed, the live accuracy summary carries an alert, today's hourly forecast (with PM10) is missing, or no station has a forecast for one of the seven days. An alert opens a GitHub issue labelled `pipeline-health` (or comments on the open one), which emails the repository owner; the next healthy run closes it. GitHub also emails the owner when a scheduled run fails.
+`.github/workflows/health-check.yml` runs at 10:37, 14:37 and 20:37 Bangkok time on the `data` branch. It raises an alert when no forecast was published today, the newest complete station day is more than two days old, the data quality gate failed, the live accuracy summary carries an alert, today's hourly forecast (with PM10) is missing or uses older hours than the run due by then (03:00 in the morning, 09:00 after 14:30, 16:00 after 20:30), or no station has a forecast for one of the seven days. The live accuracy summary alerts when a published forecast is worse than persistence over 30 days, and when an 80 % range (city, station or hourly) held fewer than 65 % of outcomes over the last 30 days with at least 14 days scored. An alert opens a GitHub issue labelled `pipeline-health` (or comments on the open one), which emails the repository owner; the next healthy run closes it. GitHub also emails the owner when a scheduled run fails.
 
 `python -m pm25 alert` is a scaffold for public alerts when tomorrow's PM2.5 is above the Thai standard. See [docs/alerts.md](docs/alerts.md).
 
@@ -362,7 +364,7 @@ Air quality ranges were too wide and humidity ranges too narrow; both are now cl
 
 ### Chance above the standard
 
-City and station daily PM2.5 forecasts carry `pm25_p_above_standard` (stations: `p_above_standard`), the chance that the daily mean goes above the Thai 24-hour standard of 37.5 µg/m³. It comes from the signed errors of past walk-forward forecasts in the same band of forecast level: the share of them that, added to today's forecast, would land above the standard. It is published for a slot only when, on the newest year, the standard was crossed at least ten times and the chance beat always quoting the historical rate (Brier score). City PM2.5: Brier 0.027 against 0.054 for today and 0.050 against 0.054 for tomorrow, on 18 days above the standard. Stations: 0.032 against 0.087 for today, about 590 station-days above. PM10 never went above its standard of 120 µg/m³ in the newest year, so no PM10 chance is published. With 18 city events the chance is coarse: in testing, days given 60 to 80 % went above about half the time.
+City and station daily PM2.5 forecasts carry `pm25_p_above_standard` (stations: `p_above_standard`), the chance that the daily mean goes above the Thai 24-hour standard of 37.5 µg/m³. It comes from the signed errors of past walk-forward forecasts in the same band of forecast level: the share of them that, added to today's forecast, would land above the standard. It is published for a slot only when, on the newest year, the standard was crossed at least ten times and the chance beat always quoting the historical rate (Brier score). City PM2.5: Brier 0.027 against 0.054 for today and 0.050 against 0.054 for tomorrow, on 18 days above the standard. Stations: 0.032 against 0.087 for today, about 590 station-days above. PM10 never went above its standard of 120 µg/m³ in the newest year, so no PM10 chance is published. With 18 city events the chance is coarse: in testing, days given 60 to 80 % went above about half the time. Each published chance is kept in the forecast history and scored once the day is measured: the accuracy page shows its live Brier score next to always quoting the share of days that went above in the same window.
 
 ### Seven-day forecast
 

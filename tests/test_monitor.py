@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from pm25.monitor import score_history, summarize
+from pm25.monitor import coverage_alerts, score_history, score_stations, summarize, summarize_extra
 
 
 def history_row(as_of, period, label, target, value, low=None, high=None, method="random_forest"):
@@ -92,8 +92,10 @@ def test_summary_flags_a_model_worse_than_persistence():
     assert week["mape_pct"] == 100.0
     assert week["skill_vs_persistence"] == -9.0
     assert week["coverage"] == 0.0
-    assert len(summary["alerts"]) == 1
-    assert "pm25 tomorrow" in summary["alerts"][0]
+    assert len(summary["alerts"]) == 2
+    assert any("worse than persistence" in alert for alert in summary["alerts"])
+    # No forecast fell inside its range, so the range alert fires too.
+    assert any("pm25 tomorrow: the 80 % range held only 0%" in alert for alert in summary["alerts"])
 
 
 def test_summary_of_nothing_scored_is_empty():
@@ -237,3 +239,57 @@ def test_later_station_days_and_hourly_pm10_become_history_rows():
     rows = hourly_rows(hourly).set_index("target")
     assert list(rows.index) == ["pm25", "pm10"]
     assert rows.loc["pm10", "forecast"] == 40.0 and rows.loc["pm10", "method"] == "same_hour"
+
+
+def test_published_chances_get_a_live_brier_score():
+    history = pd.DataFrame(
+        [
+            {**history_row("2026-11-11", "2026-11-11", "today", "pm25", 40.0), "p_above_standard": 0.8},
+            {**history_row("2026-11-12", "2026-11-12", "today", "pm25", 20.0), "p_above_standard": 0.1},
+            # Older rows have no chance and are left out of the score.
+            history_row("2026-11-10", "2026-11-10", "today", "pm25", 20.0),
+        ]
+    )
+    measured = daily({"2026-11-09": 20.0, "2026-11-10": 21.0, "2026-11-11": 45.0, "2026-11-12": 18.0})
+    scored = score_history(history, measured)
+    assert list(scored["above_standard"].fillna(-1)) == [-1.0, 1.0, 0.0]
+
+    row = next(r for r in summarize(scored, "now")["rows"] if r["window_days"] == 7)
+    assert row["chance_n"] == 2
+    assert row["chance_events"] == 1
+    assert row["brier"] == pytest.approx((0.2**2 + 0.1**2) / 2)
+    assert row["base_rate_brier"] == pytest.approx(0.25)
+
+
+def test_station_chances_are_scored_per_target_standard():
+    history = pd.DataFrame(
+        {
+            "as_of": ["2026-11-12", "2026-11-12"],
+            "period": ["2026-11-12", "2026-11-12"],
+            "label": ["today", "today"],
+            "location_id": ["1", "2"],
+            "target": ["pm25", "pm25"],
+            "forecast": [30.0, 30.0],
+            "low": [20.0, 20.0],
+            "high": [40.0, 40.0],
+            "method": ["gradient_boosting"] * 2,
+            "p_above_standard": [0.3, None],
+        }
+    )
+    stations = pd.DataFrame({1: [25.0, 38.0], 2: [25.0, 38.0]}, index=pd.to_datetime(["2026-11-11", "2026-11-12"]))
+    scored = score_stations(history, stations)
+    assert list(scored["above_standard"].fillna(-1)) == [1.0, -1.0]
+    row = next(r for r in summarize_extra(scored) if r["window_days"] == 7)
+    assert row["chance_n"] == 1
+    assert row["brier"] == pytest.approx(0.49)
+
+
+def test_coverage_alert_needs_enough_days_and_low_coverage():
+    rows = [
+        {"label": "today", "window_days": 30, "n": 300, "days": 20, "coverage": 0.6},
+        {"label": "tomorrow", "window_days": 30, "n": 300, "days": 20, "coverage": 0.7},
+        {"label": "day2", "window_days": 30, "n": 100, "days": 10, "coverage": 0.3},
+        {"label": "today", "window_days": 7, "n": 70, "days": 7, "coverage": 0.1},
+    ]
+    alerts = coverage_alerts("stations", rows)
+    assert alerts == ["stations today: the 80 % range held only 60% of outcomes over the last 30 days (20 days scored)"]

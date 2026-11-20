@@ -68,6 +68,7 @@ from pm25.monitor import (
     STATION_KEYS,
     SUMMARY_FILENAME,
     append_rows,
+    coverage_alerts,
     hourly_rows,
     read_history,
     score_history,
@@ -495,7 +496,10 @@ def _monitor(args: argparse.Namespace, config: Config) -> int:
     openaq = load_series(layer(config.data_dir, BRONZE) / OPENAQ_FILENAME)
     try:
         # These scores are additions; a failure must not hide the main accuracy file.
-        summary.update(_score_extras(gold, openaq))
+        extras = _score_extras(gold, openaq)
+        summary.update(extras)
+        for name, rows in extras.items():
+            summary["alerts"].extend(coverage_alerts(name, rows))
     except Exception:
         log.exception("Scoring the hourly and station forecasts failed")
     (gold / SUMMARY_FILENAME).write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
@@ -583,6 +587,7 @@ def _health(args: argparse.Namespace, config: Config) -> int:
         _as_of().date(),
         _read_json(gold / HOURLY_FILENAME),
         _read_json(gold / SQL_LOAD_FILENAME),
+        pd.Timestamp.now(tz=TIMEZONE).tz_localize(None).to_pydatetime(),
     )
     text = render(problems, _as_of().date())
     if args.output:

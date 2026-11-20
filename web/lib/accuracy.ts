@@ -1,4 +1,4 @@
-import type { AccuracyRow, AccuracySummary, ScoredForecast } from "./types";
+import type { AccuracyRow, AccuracySummary, ChanceScore, ScoredForecast } from "./types";
 
 const TARGET_ORDER = ["pm25", "pm10", "temp_c", "rh_pct"];
 const LABEL_ORDER = ["today", "tomorrow", "day2", "day3", "day4", "day5", "day6"];
@@ -13,6 +13,36 @@ export function accuracyTable(summary: AccuracySummary, windowDays: number): Acc
         LABEL_ORDER.indexOf(a.label) - LABEL_ORDER.indexOf(b.label) ||
         (a.source === b.source ? 0 : a.source === "forecast" ? -1 : 1),
     );
+}
+
+export type ChanceKind = "city_pm25" | "city_pm10" | "stations" | "stations_pm10";
+
+export interface ChanceRow extends ChanceScore {
+  kind: ChanceKind;
+  label: string;
+  chance_n: number;
+}
+
+/** Live scores of the chance above the standard for one window: city first, then stations, by horizon. */
+export function chanceTable(summary: AccuracySummary, windowDays: number): ChanceRow[] {
+  const city = summary.rows
+    .filter((row) => row.source === "forecast" && (row.target === "pm25" || row.target === "pm10"))
+    .map((row) => ({ ...row, kind: `city_${row.target}` as ChanceKind }));
+  const stations = (["stations", "stations_pm10"] as const).flatMap((kind) =>
+    (summary[kind] ?? []).map((row) => ({ ...row, kind })),
+  );
+  const kinds: ChanceKind[] = ["city_pm25", "city_pm10", "stations", "stations_pm10"];
+  return [...city, ...stations]
+    .filter((row) => row.window_days === windowDays && (row.chance_n ?? 0) > 0)
+    .map((row) => ({
+      kind: row.kind,
+      label: row.label,
+      chance_n: row.chance_n ?? 0,
+      chance_events: row.chance_events,
+      brier: row.brier,
+      base_rate_brier: row.base_rate_brier,
+    }))
+    .sort((a, b) => kinds.indexOf(a.kind) - kinds.indexOf(b.kind) || LABEL_ORDER.indexOf(a.label) - LABEL_ORDER.indexOf(b.label));
 }
 
 /** Newest scored forecasts for one target and horizon from our own model, newest first. */

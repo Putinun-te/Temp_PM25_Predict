@@ -14,6 +14,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from pm25.evaluate import STANDARDS
 from pm25.features import ALL_TARGETS
 from pm25.station_model import LABELS as STATION_HORIZON_LABELS
 
@@ -34,6 +35,8 @@ TMD_TARGETS = {"tmd_temp_c": "temp_c", "tmd_rh_pct": "rh_pct"}
 # A model is flagged only after enough scored days, so one bad week does not alert.
 DEGRADATION_WINDOW = 30
 DEGRADATION_MIN_DAYS = 14
+# Ranges aim to hold 80 % of outcomes; below this over 30 days they have drifted.
+MIN_LIVE_COVERAGE = 0.65
 ACCURACY_COLUMNS = [
     "as_of",
     "period",
@@ -49,7 +52,60 @@ ACCURACY_COLUMNS = [
     "abs_error",
     "persistence_abs_error",
     "in_range",
+    "p_above_standard",
+    "above_standard",
 ]
+
+
+def _add_events(scored: pd.DataFrame) -> pd.DataFrame:
+    """Mark whether the measured value went above the standard, where a chance was published."""
+    if "p_above_standard" not in scored:
+        scored["p_above_standard"] = np.nan
+    scored["p_above_standard"] = pd.to_numeric(scored["p_above_standard"], errors="coerce")
+    threshold = scored["target"].map(STANDARDS)
+    above = (scored["actual"] > threshold).astype(float)
+    scored["above_standard"] = above.where(scored["p_above_standard"].notna() & threshold.notna())
+    return scored
+
+
+def chance_scores(rows: pd.DataFrame) -> dict[str, Any]:
+    """Brier score of the published chances, next to always saying the rate seen in the same rows.
+
+    The reference uses the rows' own rate, which it could not have known in
+    advance, so it is a hard comparison while there are few events.
+    """
+    if "p_above_standard" not in rows:
+        return {}
+    paired = rows.dropna(subset=["p_above_standard", "above_standard"])
+    if paired.empty:
+        return {}
+    chance = paired["p_above_standard"].astype(float)
+    outcome = paired["above_standard"].astype(float)
+    return {
+        "chance_n": int(len(paired)),
+        "chance_events": int(outcome.sum()),
+        "brier": _round(((chance - outcome) ** 2).mean()),
+        "base_rate_brier": _round(((outcome.mean() - outcome) ** 2).mean()),
+    }
+
+
+def coverage_alerts(name: str, rows: list[dict[str, Any]]) -> list[str]:
+    """Alerts for ranges that held too few outcomes over the last 30 days."""
+    alerts = []
+    for row in rows:
+        days = row.get("days", row["n"])
+        coverage = row.get("coverage")
+        if (
+            row["window_days"] == DEGRADATION_WINDOW
+            and days >= DEGRADATION_MIN_DAYS
+            and coverage is not None
+            and coverage < MIN_LIVE_COVERAGE
+        ):
+            alerts.append(
+                f"{name} {row['label']}: the 80 % range held only {coverage:.0%} of outcomes "
+                f"over the last {DEGRADATION_WINDOW} days ({days} days scored)"
+            )
+    return alerts
 
 
 def score_history(history: pd.DataFrame, daily: pd.DataFrame) -> pd.DataFrame:
@@ -82,7 +138,7 @@ def score_history(history: pd.DataFrame, daily: pd.DataFrame) -> pd.DataFrame:
     has_range = scored["low"].notna() & scored["high"].notna()
     inside = (scored["actual"] >= scored["low"]) & (scored["actual"] <= scored["high"])
     scored["in_range"] = inside.where(has_range)
-    scored = scored.dropna(subset=["forecast"])
+    scored = _add_events(scored.dropna(subset=["forecast"]))
     for column in ("actual", "persistence", "abs_error", "persistence_abs_error"):
         scored[column] = scored[column].round(3)
     scored = scored.sort_values(["period", "target", "label", "source"])
@@ -136,8 +192,11 @@ def summarize(scored: pd.DataFrame, generated_at: str) -> dict[str, Any]:
                 "persistence_mae": _round(persistence_mae),
                 "skill_vs_persistence": _round(skill),
                 "coverage": _round(recent["in_range"].astype(float).mean()),
+                **chance_scores(recent),
             }
             summary["rows"].append(row)
+            if source == "forecast":
+                summary["alerts"].extend(coverage_alerts(target, [row]))
             if (
                 source == "forecast"
                 and window == DEGRADATION_WINDOW
@@ -182,10 +241,12 @@ def station_rows(forecast: dict[str, Any]) -> pd.DataFrame:
                         {"as_of": forecast["as_of"], "period": (as_of + pd.Timedelta(days=offset)).date().isoformat(),
                          "label": label, "location_id": station["location_id"], "target": target,
                          "forecast": value[target], "low": value["low"], "high": value["high"],
-                         "method": value["method"]}
+                         "method": value["method"], "p_above_standard": value.get("p_above_standard")}
                     )
     return pd.DataFrame(
-        rows, columns=["as_of", "period", "label", "location_id", "target", "forecast", "low", "high", "method"]
+        rows,
+        columns=["as_of", "period", "label", "location_id", "target", "forecast", "low", "high", "method",
+                 "p_above_standard"],
     )
 
 
@@ -222,6 +283,8 @@ def _finish(scored: pd.DataFrame) -> pd.DataFrame:
     has_range = scored["low"].notna() & scored["high"].notna()
     inside = (scored["actual"] >= scored["low"]) & (scored["actual"] <= scored["high"])
     scored["in_range"] = inside.where(has_range)
+    if "p_above_standard" in scored:
+        scored = _add_events(scored)
     return scored.reset_index(drop=True)
 
 
@@ -286,6 +349,7 @@ def summarize_extra(scored: pd.DataFrame) -> list[dict[str, Any]]:
                     "paired_mae": _round(paired["abs_error"].mean()),
                     "persistence_mae": _round(paired["persistence_abs_error"].mean()),
                     "coverage": _round(recent["in_range"].astype(float).mean()),
+                    **chance_scores(recent),
                 }
             )
     return result

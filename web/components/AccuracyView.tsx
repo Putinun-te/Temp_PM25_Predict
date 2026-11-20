@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { accuracyTable, matchPercent, recentScored } from "@/lib/accuracy";
+import { accuracyTable, chanceTable, matchPercent, recentScored } from "@/lib/accuracy";
 import { dataBase, loadAccuracy } from "@/lib/data";
 import { dayLabel, fmt } from "@/lib/format";
 import type { AccuracySummary, ScoredForecast } from "@/lib/types";
@@ -21,6 +21,13 @@ const EXTRA_KINDS = {
   hourly_pm10: "kindHourlyPm10",
   hourly_pm10_afternoon: "kindHourlyPm10Afternoon",
   hourly_pm10_evening: "kindHourlyPm10Evening",
+  stations: "kindStations",
+  stations_pm10: "kindStationsPm10",
+} as const;
+
+const CHANCE_KINDS = {
+  city_pm25: "kindCityPm25",
+  city_pm10: "kindCityPm10",
   stations: "kindStations",
   stations_pm10: "kindStationsPm10",
 } as const;
@@ -51,6 +58,7 @@ export default function AccuracyView() {
       .sort((a, b) => a.label.localeCompare(b.label))
       .map((row) => ({ kind, ...row })),
   );
+  const chances = summary ? chanceTable(summary, windowDays) : [];
   const recent = recentScored(scored, "pm25", "tomorrow", 14);
 
   return (
@@ -153,6 +161,47 @@ export default function AccuracyView() {
                       <td>{fmt(row.persistence_mae, 2)}</td>
                       <td className={skill === null ? "" : skill > 0 ? "good" : "bad"}>{percent(skill)}</td>
                       <td>{percent(row.coverage)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {chances.length > 0 && (
+        <>
+          <h2>{t("chanceTitle")}</h2>
+          <p className="note">{t("chanceIntro")}</p>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>{t("kind")}</th>
+                  <th>{t("horizon")}</th>
+                  <th>{t("scored")}</th>
+                  <th>{t("chanceEvents")}</th>
+                  <th>{t("brier")}</th>
+                  <th>{t("baseRateBrier")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {chances.map((row) => {
+                  const better =
+                    row.brier === null || row.brier === undefined || row.base_rate_brier === null || row.base_rate_brier === undefined
+                      ? ""
+                      : row.brier < row.base_rate_brier
+                        ? "good"
+                        : "bad";
+                  return (
+                    <tr key={`${row.kind}-${row.label}`}>
+                      <td>{t(CHANCE_KINDS[row.kind])}</td>
+                      <td>{dayLabel(row.label, t)}</td>
+                      <td>{row.chance_n}</td>
+                      <td>{row.chance_events ?? 0}</td>
+                      <td className={better}>{fmt(row.brier ?? null, 3)}</td>
+                      <td>{fmt(row.base_rate_brier ?? null, 3)}</td>
                     </tr>
                   );
                 })}

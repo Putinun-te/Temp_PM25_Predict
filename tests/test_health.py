@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from pm25.health import check_health, render
 
@@ -10,7 +10,7 @@ FORECAST = {
     "station_forecasts": [{"location_id": 1, **{day: {"pm25": 20.0} for day in DAYS}}],
 }
 QUALITY = {"passed": True, "checks": []}
-HOURLY = {"as_of": "2026-11-13", "hours": [{"time": "2026-11-13T10:00", "pm25": 18.0, "pm10": 30.0}]}
+HOURLY = {"as_of": "2026-11-13", "inputs_through": "2026-11-13T03:00", "hours": [{"time": "2026-11-13T10:00", "pm25": 18.0, "pm10": 30.0}]}
 
 
 def test_fresh_outputs_are_healthy():
@@ -81,3 +81,17 @@ def test_azure_sql_load_must_hold_today_runs():
     assert check_health(FORECAST, QUALITY, None, TODAY, HOURLY, missing) == [
         "Azure SQL does not have today's run in gold.hourly_forecast_history (empty)."
     ]
+
+
+def test_each_hourly_run_must_publish_by_its_deadline():
+    morning = check_health(FORECAST, QUALITY, None, TODAY, HOURLY, now=datetime(2026, 11, 13, 10, 37))
+    assert morning == []
+    afternoon = check_health(FORECAST, QUALITY, None, TODAY, HOURLY, now=datetime(2026, 11, 13, 14, 37))
+    assert afternoon == [
+        "The hourly forecast uses measurements through 2026-11-13T03:00, but the afternoon run "
+        "should have used them through 09:00. Check the hourly update run."
+    ]
+    evening = {**HOURLY, "inputs_through": "2026-11-13T16:00"}
+    assert check_health(FORECAST, QUALITY, None, TODAY, evening, now=datetime(2026, 11, 13, 20, 37)) == []
+    late = {**HOURLY, "inputs_through": "2026-11-13T09:00"}
+    assert "evening run" in check_health(FORECAST, QUALITY, None, TODAY, late, now=datetime(2026, 11, 13, 20, 37))[0]

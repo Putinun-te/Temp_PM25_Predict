@@ -3,13 +3,16 @@ name: Health check
 # Runs after the daily forecast should have finished. When the forecast was not
 # published today, station data is more than two days old, the quality gate
 # failed, the model has fallen behind persistence, or the hourly or station
-# forecasts are missing, it opens (or updates) a
+# forecasts are missing, an hourly run did not publish, or the live ranges hold
+# too few outcomes, it opens (or updates) a
 # GitHub issue labelled pipeline-health, which emails the repository owner.
 # The issue is closed automatically on the next healthy run.
 on:
   workflow_dispatch:
   schedule:
-    - cron: "37 3 * * *" # 10:37 in Bangkok
+    - cron: "37 3 * * *" # 10:37 in Bangkok, after the daily forecast
+    - cron: "37 7 * * *" # 14:37, after the afternoon hourly update
+    - cron: "37 13 * * *" # 20:37, after the evening hourly update
 
 permissions:
   contents: read

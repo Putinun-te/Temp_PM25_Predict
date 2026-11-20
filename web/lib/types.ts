@@ -140,7 +140,7 @@ export interface StationsFile {
   stations: Station[];
 }
 
-export interface AccuracyRow {
+export interface AccuracyRow extends ChanceScore {
   target: string;
   label: string;
   source: "forecast" | "tmd";
@@ -151,6 +151,16 @@ export interface AccuracyRow {
   persistence_mae: number | null;
   skill_vs_persistence: number | null;
   coverage: number | null;
+}
+
+/** Live score of the published chance above the standard; absent until a chance is scored. */
+export interface ChanceScore {
+  chance_n?: number;
+  chance_events?: number;
+  /** Mean squared error of the chance against what happened (0 is perfect). */
+  brier?: number | null;
+  /** The same for always saying the rate seen in the same days. */
+  base_rate_brier?: number | null;
 }
 
 export interface AccuracySummary {
@@ -170,7 +180,7 @@ export interface AccuracySummary {
   stations_pm10?: ExtraAccuracyRow[];
 }
 
-export interface ExtraAccuracyRow {
+export interface ExtraAccuracyRow extends ChanceScore {
   label: string;
   window_days: number;
   /** Scored forecasts: hours for the hourly rows, station-days for the station rows. */

@@ -36,6 +36,7 @@ CSV_COLUMNS = [
     "low",
     "high",
     "method",
+    "p_above_standard",
 ]
 HISTORY_KEYS = ["as_of", "kind", "period", "target"]
 _TARGET_NAMES = {"pm25": "PM2.5", "pm10": "PM10", "temp_c": "Temperature", "rh_pct": "Humidity"}
@@ -194,6 +195,7 @@ def forecast_table(forecast: dict[str, Any]) -> pd.DataFrame:
                         "low": item[f"{target}_low"],
                         "high": item[f"{target}_high"],
                         "method": item[f"{target}_method"],
+                        "p_above_standard": item.get(f"{target}_p_above_standard"),
                     }
                 )
             for field in TMD_FIELDS:

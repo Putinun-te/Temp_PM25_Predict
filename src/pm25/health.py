@@ -9,10 +9,15 @@ issue, which emails the repository owner.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, time
 from typing import Any
 
 MAX_DATA_AGE_DAYS = 2
+# Each hourly run should have published by these Bangkok times, with the last
+# measured hour it uses. GitHub can start a run 40 minutes late and station
+# hours can arrive late, so the deadlines leave about an hour and a half.
+HOURLY_DEADLINES = ((time(20, 30), 16, "evening"), (time(14, 30), 9, "afternoon"))
+MORNING_KNOWN_HOUR = 3
 STATION_DAYS = ("today", "tomorrow", "day2", "day3", "day4", "day5", "day6")
 
 
@@ -23,8 +28,13 @@ def check_health(
     today: date,
     hourly: dict[str, Any] | None = None,
     sql_load: dict[str, Any] | None = None,
+    now: datetime | None = None,
 ) -> list[str]:
-    """Return a list of problems in plain English. An empty list means healthy."""
+    """Return a list of problems in plain English. An empty list means healthy.
+
+    `now` is the Bangkok time of the check, which sets the hourly run that
+    should have published by then. Without it only the morning run is expected.
+    """
     problems: list[str] = []
     if forecast is None:
         problems.append("No forecast has been published (gold/forecast.json is missing).")
@@ -44,7 +54,7 @@ def check_health(
                 "OpenAQ or Air4Thai may be delayed."
             )
         problems.extend(_station_problems(forecast.get("station_forecasts") or []))
-        problems.extend(_hourly_problems(hourly, today))
+        problems.extend(_hourly_problems(hourly, today, now))
     problems.extend(_sql_problems(sql_load, today))
     if quality is None:
         problems.append("No data quality report found (silver/quality_report.json is missing).")
@@ -65,7 +75,16 @@ def _station_problems(stations: list[dict[str, Any]]) -> list[str]:
     return []
 
 
-def _hourly_problems(hourly: dict[str, Any] | None, today: date) -> list[str]:
+def expected_hourly_run(now: datetime | None) -> tuple[int, str]:
+    """Return the last measured hour and name of the newest hourly run due by `now`."""
+    if now is not None:
+        for deadline, known_hour, name in HOURLY_DEADLINES:
+            if now.time() >= deadline:
+                return known_hour, name
+    return MORNING_KNOWN_HOUR, "morning"
+
+
+def _hourly_problems(hourly: dict[str, Any] | None, today: date, now: datetime | None = None) -> list[str]:
     if hourly is None:
         return ["No hourly forecast has been published today (gold/hourly_forecast.json is missing)."]
     issued = date.fromisoformat(hourly["as_of"])
@@ -76,6 +95,13 @@ def _hourly_problems(hourly: dict[str, Any] | None, today: date) -> list[str]:
         return ["The hourly forecast has no hours."]
     if not any(hour.get("pm10") is not None for hour in hours):
         return ["The hourly forecast has no PM10 values."]
+    known_hour, name = expected_hourly_run(now)
+    through = datetime.fromisoformat(hourly["inputs_through"])
+    if through.date() < today or through.hour < known_hour:
+        return [
+            f"The hourly forecast uses measurements through {hourly['inputs_through']}, but the {name} run "
+            f"should have used them through {known_hour:02d}:00. Check the hourly update run."
+        ]
     return []
 
 
