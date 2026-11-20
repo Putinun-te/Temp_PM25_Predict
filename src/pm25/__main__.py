@@ -588,6 +588,7 @@ def _health(args: argparse.Namespace, config: Config) -> int:
         _read_json(gold / HOURLY_FILENAME),
         _read_json(gold / SQL_LOAD_FILENAME),
         pd.Timestamp.now(tz=TIMEZONE).tz_localize(None).to_pydatetime(),
+        _read_json(config.models_dir / REGISTRY_FILENAME),
     )
     text = render(problems, _as_of().date())
     if args.output:

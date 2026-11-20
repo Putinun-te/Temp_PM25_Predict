@@ -29,6 +29,7 @@ def check_health(
     hourly: dict[str, Any] | None = None,
     sql_load: dict[str, Any] | None = None,
     now: datetime | None = None,
+    registry: dict[str, Any] | None = None,
 ) -> list[str]:
     """Return a list of problems in plain English. An empty list means healthy.
 
@@ -56,6 +57,7 @@ def check_health(
         problems.extend(_station_problems(forecast.get("station_forecasts") or []))
         problems.extend(_hourly_problems(hourly, today, now))
     problems.extend(_sql_problems(sql_load, today))
+    problems.extend(_model_problems(registry))
     if quality is None:
         problems.append("No data quality report found (silver/quality_report.json is missing).")
     elif not quality.get("passed", False):
@@ -103,6 +105,26 @@ def _hourly_problems(hourly: dict[str, Any] | None, today: date, now: datetime |
             f"should have used them through {known_hour:02d}:00. Check the hourly update run."
         ]
     return []
+
+
+def _model_problems(registry: dict[str, Any] | None) -> list[str]:
+    """Daily models whose inputs differ from the newest promoted model's.
+
+    Every daily slot is built from the same feature list, so a model on another
+    list was saved before a feature was added or removed and is still serving.
+    """
+    models = {slot: entry for slot, entry in (registry or {}).get("daily", {}).items() if "train_end" in entry}
+    if not models:
+        return []
+    newest = max(models.values(), key=lambda entry: entry.get("promoted_at") or "")
+    reference = newest.get("features")
+    stale = sorted(slot for slot, entry in models.items() if entry.get("features") != reference)
+    if not stale:
+        return []
+    return [
+        "These daily models were trained on a different feature list from the newest one and are still "
+        "published: " + ", ".join(stale) + ". Retrain them (run the daily forecast with retrain)."
+    ]
 
 
 def _sql_problems(sql_load: dict[str, Any] | None, today: date) -> list[str]:

@@ -95,3 +95,19 @@ def test_each_hourly_run_must_publish_by_its_deadline():
     assert check_health(FORECAST, QUALITY, None, TODAY, evening, now=datetime(2026, 11, 13, 20, 37)) == []
     late = {**HOURLY, "inputs_through": "2026-11-13T09:00"}
     assert "evening run" in check_health(FORECAST, QUALITY, None, TODAY, late, now=datetime(2026, 11, 13, 20, 37))[0]
+
+
+def test_models_on_an_older_feature_list_are_reported():
+    new = {"method": "random_forest", "train_end": "2026-11-19", "promoted_at": "2026-11-20T17:00", "features": ["a", "nwp"]}
+    registry = {
+        "daily": {
+            "pm25_h1": new,
+            "pm25_h2": {**new, "promoted_at": "2026-11-11T06:00", "features": None},
+            "temp_c_h1": {**new, "promoted_at": "2026-11-13T06:00", "features": ["a"]},
+            "pm10_h5": {"method": "mean7", "reason": "baseline used"},
+        }
+    }
+    problems = check_health(FORECAST, QUALITY, None, TODAY, HOURLY, registry=registry)
+    assert len(problems) == 1 and "pm25_h2, temp_c_h1." in problems[0]
+    registry["daily"] = {"pm25_h1": new, "pm25_h2": {**new, "promoted_at": "2026-11-12T06:00"}}
+    assert check_health(FORECAST, QUALITY, None, TODAY, HOURLY, registry=registry) == []

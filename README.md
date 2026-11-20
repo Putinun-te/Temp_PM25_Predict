@@ -234,7 +234,7 @@ Repository secrets: `OPENAQ_API_KEY`, `TMD_API_TOKEN` (optional), `FIRMS_MAP_KEY
 
 The hourly forecast and the per-station forecasts are scored the same way. Each run appends them to `gold/hourly_forecast_history.csv` and `gold/station_forecast_history.csv`; `monitor` writes `gold/live_accuracy_hourly.csv` and `gold/live_accuracy_stations.csv` and adds `hourly` and `stations` sections to the summary. The hourly baseline is the same hour of the previous day as known at 03:00; the station baseline is the station's own last measured day. The afternoon hourly update, hourly PM10 and the PM10 station forecasts are scored separately, as `hourly_afternoon`, `hourly_pm10`, `hourly_pm10_afternoon` and `stations_pm10`.
 
-`.github/workflows/health-check.yml` runs at 10:37, 14:37 and 20:37 Bangkok time on the `data` branch. It raises an alert when no forecast was published today, the newest complete station day is more than two days old, the data quality gate failed, the live accuracy summary carries an alert, today's hourly forecast (with PM10) is missing or uses older hours than the run due by then (03:00 in the morning, 09:00 after 14:30, 16:00 after 20:30), or no station has a forecast for one of the seven days. The live accuracy summary alerts when a published forecast is worse than persistence over 30 days, and when an 80 % range (city, station or hourly) held fewer than 65 % of outcomes over the last 30 days with at least 14 days scored. An alert opens a GitHub issue labelled `pipeline-health` (or comments on the open one), which emails the repository owner; the next healthy run closes it. GitHub also emails the owner when a scheduled run fails.
+`.github/workflows/health-check.yml` runs at 10:37, 14:37 and 20:37 Bangkok time on the `data` branch. It raises an alert when no forecast was published today, the newest complete station day is more than two days old, the data quality gate failed, the live accuracy summary carries an alert, today's hourly forecast (with PM10) is missing or uses older hours than the run due by then (03:00 in the morning, 09:00 after 14:30, 16:00 after 20:30), no station has a forecast for one of the seven days, or a published daily model was trained on a different feature list from the newest one. The live accuracy summary alerts when a published forecast is worse than persistence over 30 days, and when an 80 % range (city, station or hourly) held fewer than 65 % of outcomes over the last 30 days with at least 14 days scored. An alert opens a GitHub issue labelled `pipeline-health` (or comments on the open one), which emails the repository owner; the next healthy run closes it. GitHub also emails the owner when a scheduled run fails.
 
 `python -m pm25 alert` is a scaffold for public alerts when tomorrow's PM2.5 is above the Thai standard. See [docs/alerts.md](docs/alerts.md).
 
@@ -279,15 +279,16 @@ Recommended Realtime Database rules, which let anyone read forecasts and nobody 
 
 ### What each forecast uses
 
-Each target and horizon is a slot. A slot publishes a fitted model only after the model passes the promotion gate; otherwise it publishes the best baseline. The gate runs daily, so the published method can change. The table shows the run of 2026-11-11.
+Each target and horizon is a slot. A slot publishes a fitted model only after the model passes the promotion gate; otherwise it publishes the best baseline. The gate runs daily, so the published method can change. The table shows the run of 2026-11-20, when every daily slot published a model.
 
 | Slot | Published method |
 |---|---|
 | PM2.5 today | Gradient boosting |
 | PM2.5 tomorrow | Random forest |
-| PM10 today and tomorrow | Random forest |
-| Temperature and humidity today | Persistence (yesterday's value) |
-| Temperature and humidity tomorrow | Random forest |
+| PM10 today and tomorrow | Gradient boosting |
+| Temperature today and tomorrow | Random forest |
+| Humidity today and tomorrow | Random forest |
+| Days 3 to 7 | Random forest or gradient boosting, by slot |
 | Monthly PM2.5 and PM10, 1 to 3 months ahead | Climatology (mean of the same calendar month) |
 | Monthly temperature and humidity | Climatology or damped anomaly, whichever passes the gate |
 
@@ -300,7 +301,7 @@ The Thai Meteorological Department (TMD) forecast for today and tomorrow is publ
 - Walk-forward, expanding window, never shuffled. The first test block starts one year after the data begins. Each 30-day block is predicted by a model trained only on rows whose outcome was known before the block started.
 - Every method is scored on the same rows, so a method cannot look better by skipping hard days.
 - Baselines: persistence (yesterday), seven-day seasonal naive (same weekday last week), and for monthly forecasts, climatology.
-- Promotion gate: a candidate must cut MAE by at least 1 % against every baseline over the latest 90 days and over all folds. The candidate with the lower MAE over all folds is tried first; if it fails and no model is published yet, the other candidate is tried before the slot falls back to a baseline. If a model is already published, the candidate must also beat it on days that model never trained on, and at least 14 such days must exist. A published model trained on a different feature list (saved before a feature was added) is not protected this way: the candidate replaces it if it passes the gate against the baselines.
+- Promotion gate: a candidate must cut MAE by at least 1 % against every baseline over the latest 90 days and over all folds. The candidate with the lower MAE over all folds is tried first; if it fails and no model is published yet, the other candidate is tried before the slot falls back to a baseline. If a model is already published, the candidate must also beat it on days that model never trained on, and at least 14 such days must exist. A published model trained on a different feature list (saved before a feature was added) is not protected this way: the candidate replaces it if it passes the gate against the baselines. Until 20 November 2026 this exception did not exist, so from 13 to 20 November seven slots (PM2.5, PM10 and temperature today and tomorrow, humidity tomorrow) published models without the weather forecast features while the walk-forward numbers here describe models with them. Live scores for those days reflect the older models. On the days the older models never saw, the newer ones missed temperature tomorrow by 0.95 °C instead of 1.42 and humidity tomorrow by 6.1 % instead of 8.0; for PM the nine days were too few to tell. The health check now reports any daily model on an older feature list.
 - Tests check that no feature uses data after its forecast origin and that walk-forward training never sees a test-period outcome.
 - Training takes about half an hour, so the daily job runs `train --max-age-days 7`: it refits only when the saved models are a week old or a forecast slot is missing from the registry. Predictions still use each day's newest data. Running the workflow by hand with `retrain` ticked trains at once. The 14-day rule above means a refit model rarely replaced the published one more often than this anyway.
 
