@@ -83,7 +83,7 @@ def test_recent_luck_is_not_enough_to_promote(monkeypatch, tmp_path):
 
 def saved_previous(tmp_path, model, train_end):
     joblib.dump(model, model_path(tmp_path, "pm25_h1"))
-    return {"method": "candidate", "train_end": train_end, "promoted_at": NOW}
+    return {"method": "candidate", "train_end": train_end, "promoted_at": NOW, "features": ["answer"]}
 
 
 def test_model_is_kept_when_too_few_days_are_unseen(monkeypatch, tmp_path):
@@ -183,3 +183,21 @@ def test_next_candidate_is_tried_when_the_best_overall_fails_the_recent_gate(mon
     assert "good_long_ago had the lower MAE" in entry["reason"]
     assert report["best_candidate"] == "steady"
     assert model_path(tmp_path, "pm25_h1").exists()
+
+
+def test_model_on_other_features_is_replaced_without_waiting_for_unseen_days(monkeypatch, tmp_path):
+    use(monkeypatch, PerfectModel)
+    # Saved before a feature was added: no feature list, and only two unseen days.
+    previous = {**saved_previous(tmp_path, OffByFiveModel(), str(INDEX[-3].date())), "features": None}
+    entry, _, _ = run(tmp_path, previous)
+    assert entry["method"] == "candidate"
+    assert entry["features"] == ["answer"]
+    assert "replaces a model trained on other features" in entry["reason"]
+
+
+def test_model_on_other_features_is_kept_when_the_candidate_fails(monkeypatch, tmp_path):
+    use(monkeypatch, OffByTenModel)
+    previous = {**saved_previous(tmp_path, OffByFiveModel(), str(INDEX[-3].date())), "features": ["old"]}
+    entry, _, _ = run(tmp_path, previous)
+    assert entry["method"] == "candidate" and entry["features"] == ["old"]
+    assert entry["reason"].startswith("kept: candidate")

@@ -201,6 +201,13 @@ def _decide(
     previous_mae = None
     has_previous_model = bool(previous) and previous["method"] in CANDIDATES
 
+    stale_previous = has_previous_model and previous.get("features") != list(features.columns)
+    if stale_previous:
+        # The candidate sees inputs the previous model never had (a feature was
+        # added or removed). Waiting for unseen days would keep the older model
+        # for weeks, so the candidate is judged like a first model: against
+        # every baseline here and over all folds.
+        has_previous_model = False
     if has_previous_model:
         # The previous model trained on data up to train_end. Only later rows are a fair test.
         cutoff = pd.Timestamp(previous["train_end"])
@@ -219,8 +226,9 @@ def _decide(
     }
     promote, reason = promotion_gate(candidate_mae, baseline_maes, previous_mae)
     if promote:
-        return {"reason": f"promoted: {reason}"}, True
-    if has_previous_model:
+        replaced = " (replaces a model trained on other features)" if stale_previous else ""
+        return {"reason": f"promoted: {reason}{replaced}"}, True
+    if has_previous_model or stale_previous:
         kept = dict(previous)
         kept["reason"] = f"kept: candidate {reason}"
         return kept, False
