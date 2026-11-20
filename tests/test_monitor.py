@@ -293,3 +293,25 @@ def test_coverage_alert_needs_enough_days_and_low_coverage():
     ]
     alerts = coverage_alerts("stations", rows)
     assert alerts == ["stations today: the 80 % range held only 60% of outcomes over the last 30 days (20 days scored)"]
+
+
+def test_every_band_edge_gets_its_own_live_score():
+    import json
+
+    chances = [{"threshold": 25.0, "p": 0.9}, {"threshold": 37.5, "p": 0.4}, {"threshold": 75.0, "p": 0.0}]
+    history = pd.DataFrame(
+        [
+            {**history_row("2026-11-11", "2026-11-11", "today", "pm25", 40.0),
+             "p_above_standard": 0.4, "p_above": json.dumps(chances)},
+            # Older row: only the standard, scored at 37.5.
+            {**history_row("2026-11-12", "2026-11-12", "today", "pm25", 20.0), "p_above_standard": 0.1},
+        ]
+    )
+    measured = daily({"2026-11-10": 20.0, "2026-11-11": 30.0, "2026-11-12": 18.0})
+    row = next(r for r in summarize(score_history(history, measured), "now")["rows"] if r["window_days"] == 7)
+    by_edge = {c["threshold"]: c for c in row["chances"]}
+    assert set(by_edge) == {25.0, 37.5, 75.0}
+    assert by_edge[25.0]["chance_events"] == 1 and by_edge[25.0]["brier"] == pytest.approx(0.01)
+    assert by_edge[37.5]["chance_n"] == 2 and by_edge[37.5]["brier"] == pytest.approx((0.16 + 0.01) / 2)
+    # The top level keeps scoring the standard.
+    assert row["chance_n"] == 2

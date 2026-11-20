@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -37,6 +38,7 @@ CSV_COLUMNS = [
     "high",
     "method",
     "p_above_standard",
+    "p_above",
 ]
 HISTORY_KEYS = ["as_of", "kind", "period", "target"]
 _TARGET_NAMES = {"pm25": "PM2.5", "pm10": "PM10", "temp_c": "Temperature", "rh_pct": "Humidity"}
@@ -196,6 +198,8 @@ def forecast_table(forecast: dict[str, Any]) -> pd.DataFrame:
                         "high": item[f"{target}_high"],
                         "method": item[f"{target}_method"],
                         "p_above_standard": item.get(f"{target}_p_above_standard"),
+                        # Kept as JSON text so the history stays one row per value.
+                        "p_above": json.dumps(item[f"{target}_p_above"]) if item.get(f"{target}_p_above") else None,
                     }
                 )
             for field in TMD_FIELDS:

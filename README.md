@@ -43,6 +43,7 @@ Every job reads the `data` branch, adds to it and writes it back as a single com
 | 14:37 | Health check | Also checks that the afternoon hourly update used hours up to 09:00 |
 | 19:03 | Hourly update | Repeats it again with hours up to 16:00 |
 | 20:37 | Health check | Also checks that the evening hourly update used hours up to 16:00 |
+| Mon 09:07 | Weekly summary | Posts a GitHub issue: the week's measurements, live scores, chances, alerts, failed runs and the coming week |
 
 | Module | Responsibility |
 |---|---|
@@ -364,7 +365,7 @@ Air quality ranges were too wide and humidity ranges too narrow; both are now cl
 
 ### Chance above the standard
 
-City and station daily PM2.5 forecasts carry `pm25_p_above_standard` (stations: `p_above_standard`), the chance that the daily mean goes above the Thai 24-hour standard of 37.5 µg/m³. It comes from the signed errors of past walk-forward forecasts in the same band of forecast level: the share of them that, added to today's forecast, would land above the standard. It is published for a slot only when, on the newest year, the standard was crossed at least ten times and the chance beat always quoting the historical rate (Brier score). City PM2.5: Brier 0.027 against 0.054 for today and 0.050 against 0.054 for tomorrow, on 18 days above the standard. Stations: 0.032 against 0.087 for today, about 590 station-days above. PM10 never went above its standard of 120 µg/m³ in the newest year, so no PM10 chance is published. With 18 city events the chance is coarse: in testing, days given 60 to 80 % went above about half the time. Each published chance is kept in the forecast history and scored once the day is measured: the accuracy page shows its live Brier score next to always quoting the share of days that went above in the same window.
+City and station daily forecasts carry `pm25_p_above` and `pm10_p_above` (stations: `p_above`), a list of `{threshold, p}`: the chance that the daily mean goes above each edge of the Pollution Control Department colour bands, PM2.5 25, 37.5 and 75 µg/m³ and PM10 80 and 120 µg/m³. `pm25_p_above_standard` (stations: `p_above_standard`) repeats the chance above the Thai 24-hour standard. A chance comes from the signed errors of past walk-forward forecasts in the same band of forecast level: the share of them that, added to today's forecast, would land above the edge. Each edge is published for a slot only when, on the newest year, it was crossed at least ten times and the chance beat always quoting the historical rate (Brier score). Run of 2026-11-20, city PM2.5 today: above 25 Brier 0.070 against 0.209 (94 days above), above 37.5 0.027 against 0.054 (18 days). The city never went above 75 µg/m³ in the newest year, nor PM10 above 80, so those are not published; single stations did go above 75, so stations carry it. With 18 city days above the standard the chance is coarse: in testing, days given 60 to 80 % went above about half the time. Each published chance is kept in the forecast history (`p_above`, JSON) and scored once the day is measured: the accuracy page shows the live Brier score of each edge next to always quoting the share of days that went above it in the same window.
 
 ### Seven-day forecast
 

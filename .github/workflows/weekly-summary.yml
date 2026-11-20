@@ -1,0 +1,65 @@
+name: Weekly summary
+
+# Every Monday morning, after the daily forecast and its scores: what was
+# measured in the last seven days, how the published forecasts scored, which
+# workflow runs failed and the coming week. Posted as a GitHub issue labelled
+# weekly-summary (which emails the repository owner); last week's is closed.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "7 2 * * 1" # 09:07 on Mondays in Bangkok
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+jobs:
+  summary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PM25_DATA_DIR: state/data
+      PM25_MODELS_DIR: state/models
+      GH_TOKEN: ${{ github.token }}
+      LABEL: weekly-summary
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install
+        run: pip install -e .
+
+      - name: Restore data
+        run: |
+          mkdir -p state
+          if git ls-remote --exit-code --heads origin data; then
+            git fetch --depth 1 origin data
+            git worktree add --detach state FETCH_HEAD
+          fi
+
+      - name: Write the summary
+        run: |
+          python -m pm25 weekly --output weekly.md > /dev/null
+          since=$(date -u -d '7 days ago' +%Y-%m-%d)
+          {
+            echo "## Failed workflow runs"
+            echo
+            gh run list --repo "$GITHUB_REPOSITORY" --status failure --created ">=$since" --limit 50 \
+              --json name,createdAt,url --jq '.[] | "- \(.name), \(.createdAt): \(.url)"' > failed.txt
+            if [ -s failed.txt ]; then cat failed.txt; else echo "None."; fi
+          } >> weekly.md
+          cat weekly.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post the issue
+        run: |
+          gh label create "$LABEL" --color 0E8A16 --description "Weekly forecast summary" --force
+          for number in $(gh issue list --label "$LABEL" --state open --json number --jq '.[].number'); do
+            gh issue close "$number" --comment "Superseded by this week's summary."
+          done
+          gh issue create --title "Weekly summary $(TZ=Asia/Bangkok date +%Y-%m-%d)" --label "$LABEL" --body-file weekly.md

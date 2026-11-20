@@ -178,6 +178,8 @@ export interface ChanceScore {
   brier?: number | null;
   /** The same for always saying the rate seen in the same days. */
   base_rate_brier?: number | null;
+  /** The same scores for each band edge. */
+  chances?: (ChanceScore & { threshold: number })[];
 }
 
 export interface AccuracySummary {

@@ -597,6 +597,22 @@ def _health(args: argparse.Namespace, config: Config) -> int:
     return 1 if problems else 0
 
 
+def _weekly(args: argparse.Namespace, config: Config) -> int:
+    """Write the weekly summary of measurements, live scores and the coming week."""
+    from pm25.weekly import build_weekly
+
+    silver_path = layer(config.data_dir, SILVER) / DAILY_FILENAME
+    daily = pd.read_csv(silver_path) if silver_path.exists() else pd.DataFrame(columns=["date", *ALL_TARGETS])
+    gold = layer(config.data_dir, GOLD)
+    text = build_weekly(
+        daily, _read_json(gold / SUMMARY_FILENAME), _read_json(gold / FORECAST_FILENAME), _as_of().date()
+    )
+    if args.output:
+        Path(args.output).write_text(text, encoding="utf-8")
+    print(text)
+    return 0
+
+
 def _alert(args: argparse.Namespace, config: Config) -> int:
     """Send a public alert when tomorrow's PM2.5 is above the Thai standard (scaffold)."""
     path = config.models_dir / FORECAST_FILENAME
@@ -755,6 +771,9 @@ def main(argv: list[str] | None = None) -> int:
     health = commands.add_parser("health", help="check that today's outputs are fresh")
     health.add_argument("--output", help="also write the result as Markdown to this file")
     health.set_defaults(handler=_health)
+    weekly = commands.add_parser("weekly", help="summarise the last seven days as Markdown")
+    weekly.add_argument("--output", help="also write the summary to this file")
+    weekly.set_defaults(handler=_weekly)
     alert = commands.add_parser("alert", help="alert when tomorrow's PM2.5 is high (scaffold)")
     alert.add_argument("--channel", choices=sorted(CHANNELS), default="console")
     alert.set_defaults(handler=_alert)

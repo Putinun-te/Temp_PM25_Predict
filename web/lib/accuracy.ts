@@ -20,8 +20,11 @@ export type ChanceKind = "city_pm25" | "city_pm10" | "stations" | "stations_pm10
 export interface ChanceRow extends ChanceScore {
   kind: ChanceKind;
   label: string;
+  threshold: number;
   chance_n: number;
 }
+
+const STANDARD: Record<ChanceKind, number> = { city_pm25: 37.5, stations: 37.5, city_pm10: 120, stations_pm10: 120 };
 
 /** Live scores of the chance above the standard for one window: city first, then stations, by horizon. */
 export function chanceTable(summary: AccuracySummary, windowDays: number): ChanceRow[] {
@@ -33,16 +36,27 @@ export function chanceTable(summary: AccuracySummary, windowDays: number): Chanc
   );
   const kinds: ChanceKind[] = ["city_pm25", "city_pm10", "stations", "stations_pm10"];
   return [...city, ...stations]
-    .filter((row) => row.window_days === windowDays && (row.chance_n ?? 0) > 0)
-    .map((row) => ({
-      kind: row.kind,
-      label: row.label,
-      chance_n: row.chance_n ?? 0,
-      chance_events: row.chance_events,
-      brier: row.brier,
-      base_rate_brier: row.base_rate_brier,
-    }))
-    .sort((a, b) => kinds.indexOf(a.kind) - kinds.indexOf(b.kind) || LABEL_ORDER.indexOf(a.label) - LABEL_ORDER.indexOf(b.label));
+    .filter((row) => row.window_days === windowDays)
+    .flatMap((row) => {
+      // Summaries from before band edges were scored hold only the standard.
+      const scores = row.chances ?? [{ threshold: STANDARD[row.kind], ...row }];
+      return scores.map((score) => ({
+        kind: row.kind,
+        label: row.label,
+        threshold: score.threshold,
+        chance_n: score.chance_n ?? 0,
+        chance_events: score.chance_events,
+        brier: score.brier,
+        base_rate_brier: score.base_rate_brier,
+      }));
+    })
+    .filter((row) => row.chance_n > 0)
+    .sort(
+      (a, b) =>
+        kinds.indexOf(a.kind) - kinds.indexOf(b.kind) ||
+        LABEL_ORDER.indexOf(a.label) - LABEL_ORDER.indexOf(b.label) ||
+        a.threshold - b.threshold,
+    );
 }
 
 /** Newest scored forecasts for one target and horizon from our own model, newest first. */

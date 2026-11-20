@@ -180,6 +180,7 @@ export default function AccuracyView() {
                 <tr>
                   <th>{t("kind")}</th>
                   <th>{t("horizon")}</th>
+                  <th>{t("threshold")}</th>
                   <th>{t("scored")}</th>
                   <th>{t("chanceEvents")}</th>
                   <th>{t("brier")}</th>
@@ -195,9 +196,10 @@ export default function AccuracyView() {
                         ? "good"
                         : "bad";
                   return (
-                    <tr key={`${row.kind}-${row.label}`}>
+                    <tr key={`${row.kind}-${row.label}-${row.threshold}`}>
                       <td>{t(CHANCE_KINDS[row.kind])}</td>
                       <td>{dayLabel(row.label, t)}</td>
+                      <td>&gt; {row.threshold}</td>
                       <td>{row.chance_n}</td>
                       <td>{row.chance_events ?? 0}</td>
                       <td className={better}>{fmt(row.brier ?? null, 3)}</td>

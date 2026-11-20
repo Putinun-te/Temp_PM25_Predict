@@ -23,7 +23,34 @@ describe("chanceTable", () => {
       stations_pm10: [{ ...extra, label: "today", window_days: 30 }],
     };
     const table = chanceTable(summary, 30);
-    expect(table.map((r) => `${r.kind}:${r.label}`)).toEqual(["city_pm25:today", "city_pm25:tomorrow", "stations:today"]);
+    expect(table.map((r) => `${r.kind}:${r.label}:${r.threshold}`)).toEqual([
+      "city_pm25:today:37.5",
+      "city_pm25:tomorrow:37.5",
+      "stations:today:37.5",
+    ]);
     expect(table[2]?.chance_events).toBe(12);
+  });
+
+  it("lists every scored band edge", () => {
+    const summary: AccuracySummary = {
+      generated_at: "now",
+      latest_scored: "2026-11-21",
+      windows: [7],
+      alerts: [],
+      rows: [
+        {
+          ...row,
+          target: "pm25",
+          label: "today",
+          window_days: 7,
+          chance_n: 1,
+          chances: [
+            { threshold: 75, chance_n: 1, chance_events: 0, brier: 0, base_rate_brier: 0 },
+            { threshold: 25, chance_n: 1, chance_events: 1, brier: 0.01, base_rate_brier: 0 },
+          ],
+        },
+      ],
+    };
+    expect(chanceTable(summary, 7).map((r) => r.threshold)).toEqual([25, 75]);
   });
 });

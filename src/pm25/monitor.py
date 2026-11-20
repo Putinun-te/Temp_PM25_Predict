@@ -8,6 +8,7 @@ the day the forecast was issued: the newest measured day before `as_of`.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -54,11 +55,14 @@ ACCURACY_COLUMNS = [
     "in_range",
     "p_above_standard",
     "above_standard",
+    "p_above",
 ]
 
 
 def _add_events(scored: pd.DataFrame) -> pd.DataFrame:
     """Mark whether the measured value went above the standard, where a chance was published."""
+    if "p_above" not in scored:
+        scored["p_above"] = None
     if "p_above_standard" not in scored:
         scored["p_above_standard"] = np.nan
     scored["p_above_standard"] = pd.to_numeric(scored["p_above_standard"], errors="coerce")
@@ -68,25 +72,68 @@ def _add_events(scored: pd.DataFrame) -> pd.DataFrame:
     return scored
 
 
+def _parse_chances(text: Any) -> list[dict[str, float]]:
+    """The chances kept as JSON in a history row, or none."""
+    if not isinstance(text, str) or not text.strip():
+        return []
+    try:
+        return [item for item in json.loads(text) if item.get("p") is not None]
+    except (ValueError, AttributeError, TypeError):
+        return []
+
+
+def chance_outcomes(rows: pd.DataFrame) -> pd.DataFrame:
+    """One row per published chance and band edge: the edge, the chance and whether it was crossed.
+
+    Rows from before several edges were kept carry only the chance above the standard.
+    """
+    records = []
+    for row in rows.itertuples(index=False):
+        actual = getattr(row, "actual", np.nan)
+        if pd.isna(actual):
+            continue
+        chances = _parse_chances(getattr(row, "p_above", None))
+        standard = getattr(row, "p_above_standard", np.nan)
+        if not chances and not pd.isna(standard) and row.target in STANDARDS:
+            chances = [{"threshold": STANDARDS[row.target], "p": float(standard)}]
+        for item in chances:
+            threshold = float(item["threshold"])
+            records.append({"threshold": threshold, "p": float(item["p"]), "event": float(actual > threshold)})
+    return pd.DataFrame(records, columns=["threshold", "p", "event"])
+
+
+def _brier(outcomes: pd.DataFrame) -> dict[str, Any]:
+    outcome = outcomes["event"]
+    return {
+        "chance_n": int(len(outcomes)),
+        "chance_events": int(outcome.sum()),
+        "brier": _round(((outcomes["p"] - outcome) ** 2).mean()),
+        "base_rate_brier": _round(((outcome.mean() - outcome) ** 2).mean()),
+    }
+
+
 def chance_scores(rows: pd.DataFrame) -> dict[str, Any]:
     """Brier score of the published chances, next to always saying the rate seen in the same rows.
 
     The reference uses the rows' own rate, which it could not have known in
-    advance, so it is a hard comparison while there are few events.
+    advance, so it is a hard comparison while there are few events. The top
+    level fields score the standard; `chances` scores every band edge.
     """
-    if "p_above_standard" not in rows:
+    if rows.empty or "target" not in rows or ("p_above" not in rows and "p_above_standard" not in rows):
         return {}
-    paired = rows.dropna(subset=["p_above_standard", "above_standard"])
-    if paired.empty:
+    has_chance = rows[[c for c in ("p_above", "p_above_standard") if c in rows]].notna().any(axis=1)
+    outcomes = chance_outcomes(rows[has_chance])
+    if outcomes.empty:
         return {}
-    chance = paired["p_above_standard"].astype(float)
-    outcome = paired["above_standard"].astype(float)
-    return {
-        "chance_n": int(len(paired)),
-        "chance_events": int(outcome.sum()),
-        "brier": _round(((chance - outcome) ** 2).mean()),
-        "base_rate_brier": _round(((outcome.mean() - outcome) ** 2).mean()),
-    }
+    result: dict[str, Any] = {}
+    standards = {STANDARDS[t] for t in rows["target"].unique() if t in STANDARDS}
+    at_standard = outcomes[outcomes["threshold"].isin(standards)]
+    if not at_standard.empty:
+        result.update(_brier(at_standard))
+    result["chances"] = [
+        {"threshold": float(threshold), **_brier(group)} for threshold, group in outcomes.groupby("threshold")
+    ]
+    return result
 
 
 def coverage_alerts(name: str, rows: list[dict[str, Any]]) -> list[str]:
@@ -241,12 +288,13 @@ def station_rows(forecast: dict[str, Any]) -> pd.DataFrame:
                         {"as_of": forecast["as_of"], "period": (as_of + pd.Timedelta(days=offset)).date().isoformat(),
                          "label": label, "location_id": station["location_id"], "target": target,
                          "forecast": value[target], "low": value["low"], "high": value["high"],
-                         "method": value["method"], "p_above_standard": value.get("p_above_standard")}
+                         "method": value["method"], "p_above_standard": value.get("p_above_standard"),
+                         "p_above": json.dumps(value["p_above"]) if value.get("p_above") else None}
                     )
     return pd.DataFrame(
         rows,
         columns=["as_of", "period", "label", "location_id", "target", "forecast", "low", "high", "method",
-                 "p_above_standard"],
+                 "p_above_standard", "p_above"],
     )
 
 

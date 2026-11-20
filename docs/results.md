@@ -51,7 +51,7 @@ Each forecast has a range meant to hold 80 % of outcomes. Six ways of sizing it 
 | Humidity today | 69 % | 84 % |
 | Humidity tomorrow | 70 % | 82 % |
 
-The PM2.5 forecast also says how likely the day is to go above the Thai standard of 37.5 µg/m³, from how past forecasts at the same level missed. It is published only where it beat quoting the historical rate on the newest year: Brier 0.027 against 0.054 for today and 0.050 against 0.054 for tomorrow. With only 18 days above the standard in that year, it is a rough guide.
+The PM2.5 forecast also says how likely the day is to go above the colour-band edges of 25 and 37.5 µg/m³ (the Thai standard), from how past forecasts at the same level missed. Each edge is published only where it beat quoting the historical rate on the newest year: above the standard, Brier 0.027 against 0.054 for today and 0.049 against 0.054 for tomorrow; above 25, 0.070 against 0.209 for today. With only 18 days above the standard in that year, that chance is a rough guide. Published chances are scored every day against what was measured.
 
 ## What was learned
 
@@ -60,7 +60,8 @@ The PM2.5 forecast also says how likely the day is to go above the Thai standard
 - **Plausible features can hurt.** Regional fire power weighted by wind direction made every slot slightly worse, including the haze season it was meant to help. It is not in the code.
 - **One range for the year is wrong half the year.** A single 80 % range held only 63 % of outcomes in the haze season and 94 % in the rainy season. Calibrating on all history also hid drift: humidity ranges held 70 % until they were calibrated on the newest year.
 - **Small operational details decide whether it works.** The TMD forecast publishes after the morning job starts, station hours arrive two to three hours late, and GitHub starts scheduled jobs up to 40 minutes late. Each needed its own fix (an afternoon TMD refresh, a known-hour per hourly model, a later Power BI refresh).
-- **Watch the outputs, not just the jobs.** A job can succeed and still publish nothing new. The health check reads the published files and the database back and opens a GitHub issue when anything is stale.
+- **Watch the outputs, not just the jobs.** A job can succeed and still publish nothing new. The health check reads the published files and the database back, three times a day, and opens a GitHub issue when anything is stale or a live range holds under 65 % of outcomes. A weekly issue summarises the week's scores.
+- **A gate needs a second candidate.** PM10 in four and six days fell back to the weekly mean because the candidate with the lower all-fold error lost the newest 90 days, while the other candidate beat every rule on both. Trying it before falling back put a model back on both days.
 
 ## Architecture in one paragraph
 
