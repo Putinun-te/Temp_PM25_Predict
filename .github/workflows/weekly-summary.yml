@@ -48,6 +48,7 @@ jobs:
           python -m pm25 weekly --output weekly.md > /dev/null
           since=$(date -u -d '7 days ago' +%Y-%m-%d)
           {
+            echo
             echo "## Failed workflow runs"
             echo
             gh run list --repo "$GITHUB_REPOSITORY" --status failure --created ">=$since" --limit 50 \
