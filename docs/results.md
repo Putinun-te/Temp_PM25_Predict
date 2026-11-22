@@ -42,14 +42,16 @@ The model removes 10 to 30 % of the error of the best rule. The gain is smallest
 
 ## Ranges and chances
 
-Each forecast has a range meant to hold 80 % of outcomes. Six ways of sizing it compete in every slot: by season or by forecast level, calibrated on all history, the newest two years or the newest year. Each is checked on the newest year; among those within 7 points of 80 %, the sharpest is published.
+Each forecast has a range meant to hold 80 % of outcomes. Six ways of sizing it compete in every slot: by season or by forecast level, calibrated on all history, the newest two years or the newest year. Each is checked on the newest year; among those within 7 points of 80 %, the sharpest is published. Because the newest year also scores the winner, the same choice is repeated without it, and that method's newest-year coverage is the honest figure:
 
-| Slot | Old method | Now |
-|---|---|---|
-| PM2.5 today | 90 % held | 81 %, 8.7 µg/m³ wide |
-| PM2.5 tomorrow | 86 % | 83 %, 14.1 µg/m³ |
-| Humidity today | 69 % | 84 % |
-| Humidity tomorrow | 70 % | 82 % |
+| Slot | Old method | Published (chosen on the newest year) | Chosen a year earlier |
+|---|---|---|---|
+| PM2.5 today | 90 % held | 81 %, 8.7 µg/m³ wide | 90 % |
+| PM2.5 tomorrow | 86 % | 83 %, 14.1 µg/m³ | 83 % |
+| Humidity today | 69 % | 84 % | 69 % |
+| Humidity tomorrow | 70 % | 81 % | 72 % |
+
+PM ranges hold up. Humidity ranges do not: chosen a year ago, they would have held about 70 %. Humidity errors grew in the newest year, so the published figure is optimistic until live coverage confirms it.
 
 The PM2.5 forecast also says how likely the day is to go above the colour-band edges of 25 and 37.5 µg/m³ (the Thai standard), from how past forecasts at the same level missed. Each edge is published only where it beat quoting the historical rate on the newest year: above the standard, Brier 0.027 against 0.054 for today and 0.049 against 0.054 for tomorrow; above 25, 0.070 against 0.209 for today. With only 18 days above the standard in that year, that chance is a rough guide. Published chances are scored every day against what was measured.
 
@@ -58,6 +60,7 @@ The PM2.5 forecast also says how likely the day is to go above the colour-band e
 - **Beat the baseline or say so.** A promotion gate per forecast slot keeps a model off the page unless it beats persistence, the weekly mean and the same weekday by 1 %. Several slots failed it at times (temperature today, humidity today, PM10 in five days), and the published forecast fell back to the rule without anyone noticing a problem.
 - **The weather forecast for the target day matters most.** Adding the JMA forecast as it was issued before each target day (Open-Meteo Previous Runs) cut PM2.5 tomorrow from 4.55 to 4.28 and temperature tomorrow from 0.83 to 0.64 °C. Using the observed weather instead would have looked better in testing and failed in production.
 - **Plausible features can hurt.** Regional fire power weighted by wind direction made every slot slightly worse, including the haze season it was meant to help. It is not in the code.
+- **Score the selection, not only the winner.** Picking the best of six range methods on one year and reporting its coverage on that year made humidity look fixed (84 %). Making the same choice a year earlier showed about 70 %.
 - **One range for the year is wrong half the year.** A single 80 % range held only 63 % of outcomes in the haze season and 94 % in the rainy season. Calibrating on all history also hid drift: humidity ranges held 70 % until they were calibrated on the newest year.
 - **Small operational details decide whether it works.** The TMD forecast publishes after the morning job starts, station hours arrive two to three hours late, and GitHub starts scheduled jobs up to 40 minutes late. Each needed its own fix (an afternoon TMD refresh, a known-hour per hourly model, a later Power BI refresh).
 - **Watch the outputs, not just the jobs.** A job can succeed and still publish nothing new. The health check reads the published files and the database back, three times a day, and opens a GitHub issue when anything is stale or a live range holds under 65 % of outcomes. A weekly issue summarises the week's scores.

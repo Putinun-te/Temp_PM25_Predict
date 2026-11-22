@@ -352,20 +352,22 @@ The range is the forecast plus or minus the error that 80 % of past walk-forward
 | PM10 today | 63 % | 87 % | 89 % | 84 % |
 | PM10 tomorrow | 62 % | 80 % | 93 % | 82 % |
 
-**How each range is chosen.** Errors also grow with the forecast itself (a forecast of 60 µg/m³ misses by more than one of 15), and humidity errors have grown in recent years, so one fixed recipe is not right for every slot. Training tries two shapes, by season of the target date and by four bands of forecast level, each calibrated on all past walk-forward forecasts, on the newest two years only and on the newest year only. Each of the six is calibrated on all but the newest year and checked on that year. Those whose coverage there is within 7 points of 80 % are eligible, and the one with the lowest interval score (width plus a penalty for each miss, scaled by how far outside it fell) is published, refitted on the same window up to the newest forecast. The comparison is kept in `metrics.json` under `range`. Hourly ranges do the same per part of the forecast (rest of today, tomorrow), with one value or level bands.
+**How each range is chosen.** Errors also grow with the forecast itself (a forecast of 60 µg/m³ misses by more than one of 15), and humidity errors have grown in recent years, so one fixed recipe is not right for every slot. Training tries two shapes, by season of the target date and by four bands of forecast level, each calibrated on all past walk-forward forecasts, on the newest two years only and on the newest year only. Each of the six is calibrated on all but the newest year and checked on that year. Those whose coverage there is within 7 points of 80 % are eligible, and the one with the lowest interval score (width plus a penalty for each miss, scaled by how far outside it fell) is published, refitted on the same window up to the newest forecast. The comparison is kept in `metrics.json` under `range`. Because the newest year both picks the method and scores it, its coverage there is slightly optimistic. `range.honest` repeats the whole choice without the newest year and scores that method on the newest year: what the selection delivers when it has not seen the year it is judged on. Hourly ranges do the same per part of the forecast (rest of today, tomorrow), with one value or level bands.
 
-Coverage on the newest year, run of 19 November 2026: old method (seasons, all history) against the published one, with its mean width:
+Coverage on the newest year, run of 22 November 2026: the old method (seasons, all history), the published method (chosen on that year, so slightly optimistic) and the method the same choice made a year earlier (honest):
 
-| Slot | Seasons, all history | Published | Width |
+| Slot | Seasons, all history | Published | Chosen a year earlier |
 |---|---|---|---|
-| PM2.5 today | 90 % | 81 %, seasons, newest year | 8.7 µg/m³ |
-| PM2.5 tomorrow | 86 % | 83 %, level bands, two years | 14.1 µg/m³ |
-| PM10 in 6 days | 92 % | 85 %, level bands, two years | 27.2 µg/m³ |
-| Humidity today | 69 % | 84 %, level bands, newest year | 12.4 % |
-| Humidity tomorrow | 70 % | 82 %, level bands, newest year | 15.6 % |
-| Hourly PM2.5 today, evening run | 94 % | 86 %, one value, newest year | 4.8 µg/m³ |
+| PM2.5 today | 90 % | 81 %, seasons, newest year | 90 %, level bands, 11.1 µg/m³ wide |
+| PM2.5 tomorrow | 86 % | 83 %, level bands, two years | 83 %, same method, 14.1 µg/m³ |
+| PM10 in 6 days | 92 % | 84 %, level bands, two years | 87 %, level bands, 25.9 µg/m³ |
+| Temperature tomorrow | – | 82 %, level bands, two years | 79 %, seasons, 2.1 °C |
+| Humidity today | 69 % | 84 %, level bands, newest year | 69 %, seasons, 9.2 % |
+| Humidity tomorrow | 70 % | 81 %, level bands, newest year | 72 %, seasons, two years, 12.4 % |
+| Humidity in 4 to 6 days | – | 76 to 82 % | 71 to 73 % |
+| Hourly PM2.5 today, evening run | 94 % | 85 %, one value, newest year | 94 %, one value |
 
-Air quality ranges were too wide and humidity ranges too narrow; both are now closer to 80 %. Coverage is measured on the same year that picked the method, so it flatters the chosen one a little. Humidity 4 to 6 days ahead still covers only 73 to 78 %.
+For PM and temperature the honest figure is close to 80 % or above it, so the published ranges are about right or slightly wide. Humidity is the exception: a year ago the choice would have kept seasonal ranges, which held only 69 to 73 % of outcomes in the newest year. Humidity errors grew in the newest year, and only a choice that has already seen that year adapts to it, so the published 81 to 84 % is likely to be optimistic for the coming months; live coverage on the accuracy page is the check, and the health check alerts below 65 %.
 
 ### Chance above the standard
 
