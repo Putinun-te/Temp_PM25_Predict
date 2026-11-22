@@ -155,7 +155,11 @@ def _widths(kind: str, spec: Mapping[str, object], frame: pd.DataFrame, horizon:
 
 
 def compare_ranges(
-    actual: pd.Series, predicted: pd.Series, horizon: int | None, kinds: tuple[str, ...] = ("season", "level")
+    actual: pd.Series,
+    predicted: pd.Series,
+    horizon: int | None,
+    kinds: tuple[str, ...] = ("season", "level"),
+    nested: bool = True,
 ) -> dict[str, object]:
     """Calibrate each range method on older forecasts and score it on the newest year.
 
@@ -164,6 +168,11 @@ def compare_ranges(
     with the lowest interval score among them is chosen; when none is eligible,
     the one with coverage closest to 80 %. The chosen method is then refitted on
     the same window ending at the newest forecast, for publishing.
+
+    The chosen method's newest-year score is slightly optimistic, because the
+    same year picked it. `honest` repeats the whole choice one year earlier,
+    without the newest year, and gives that method's newest-year score: what
+    the selection would have delivered had it been run a year ago.
     """
     paired = pd.DataFrame({"actual": actual, "predicted": predicted}).dropna()
     fallback = kinds[0]
@@ -197,6 +206,11 @@ def compare_ranges(
         result["chosen"] = min(eligible, key=lambda name: scores[name]["interval_score"])
     else:
         result["chosen"] = min(scores, key=lambda name: abs(scores[name]["coverage"] - RANGE_TARGET_COVERAGE))
+    if nested:
+        earlier = compare_ranges(older["actual"], older["predicted"], horizon, kinds, nested=False)
+        before = earlier.get("chosen")
+        if "holdout_days" in earlier and before in scores:
+            result["honest"] = {"chosen_a_year_earlier": before, **scores[before]}
     return result
 
 

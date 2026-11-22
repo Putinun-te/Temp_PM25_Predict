@@ -337,6 +337,7 @@ Each addition was tested on the same walk-forward folds, with and without it. MA
 | Target-day weather forecast (JMA previous runs) | 3.19 → 3.08 | 4.55 → 4.28 | 4.80 → 4.63 | 6.75 → 6.40 | Kept. Temperature tomorrow 0.83 → 0.64 °C, humidity tomorrow 4.78 → 3.69 % |
 | Fire count and radiative power in the region (NASA FIRMS) | no clear change | no clear change | no clear change | no clear change | Kept as inputs; the gate decides |
 | Fire power weighted by wind direction (fires upwind of Bangkok, eight compass sectors) | 3.08 → 3.11 | 4.28 → 4.31 | 4.63 → 4.64 | 6.41 → 6.48 | Rejected: slightly worse in every slot, and no better in the haze season (PM2.5 tomorrow 6.29 → 6.30). Not in the code |
+| Change in the forecast weather from the last known day (wind speed, wind components, humidity, rain), tested 2026-11-22 after strong winds cleared the air on 20 and 21 November while both the old and new models forecast a rise | 3.09 → 3.13 | 4.29 → 4.29 | 4.63 → 4.63 | 6.41 → 6.34 | Rejected: no consistent change, overall, on the newest 90 days or on days at least 25 % cleaner than the last known day (PM2.5 tomorrow 6.30 → 6.41 for gradient boosting, 6.39 → 6.41 for random forest). Not in the code |
 
 The fire rows are a caution against assuming a plausible feature helps. A daily mean wind and eight sectors may be too coarse; trajectories would be the next thing to try.
 

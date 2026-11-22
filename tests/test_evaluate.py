@@ -266,3 +266,17 @@ def test_standard_chance_is_absent_when_only_a_lower_edge_passes():
     entry = {"exceedance": {"thresholds": [80.0], "edges": [], "quantiles": [[-5.0, 0.0, 5.0]]}}
     assert entry_chance_above(entry, 78.0) is None
     assert entry_chances_above(entry, 78.0) == [{"threshold": 80.0, "p": 0.33}]
+
+
+def test_range_choice_is_also_scored_as_if_made_a_year_earlier():
+    from pm25.evaluate import compare_ranges
+
+    actual, predicted = _heteroscedastic(days=1200)
+    comparison = compare_ranges(actual, predicted, 1)
+    honest = comparison["honest"]
+    # The method chosen without the newest year, scored on the newest year.
+    assert honest["chosen_a_year_earlier"] in comparison
+    assert honest["coverage"] == comparison[honest["chosen_a_year_earlier"]]["coverage"]
+    # Too little history for a choice a year earlier: no honest score.
+    short = compare_ranges(actual.iloc[-500:], predicted.iloc[-500:], 1)
+    assert "honest" not in short
