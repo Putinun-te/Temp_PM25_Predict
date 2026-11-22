@@ -78,6 +78,8 @@ from pm25.monitor import (
     summarize,
     summarize_extra,
 )
+from pm25.served import CHECK_FILENAME as SERVED_CHECK_FILENAME
+from pm25.served import SERVED_FILENAME, append_served, compare_served, differing, served_rows
 from pm25.predict import FORECAST_FILENAME, build_forecast, fill_missing_tmd, write_forecast
 from pm25.publish import publish_forecast, service_account_token
 from pm25.report import (
@@ -398,6 +400,11 @@ def _predict(args: argparse.Namespace, config: Config) -> int:
     tmd = _fetch_tmd(config, as_of)
     forecast = build_forecast(*inputs, registry, config.models_dir, as_of, _generated_at(), tmd)
     try:
+        # Kept so a forecast can be explained later; see pm25.served.
+        append_served(layer(config.data_dir, GOLD) / SERVED_FILENAME, served_rows(*inputs, as_of))
+    except Exception:
+        log.exception("Saving the forecast inputs failed")
+    try:
         gistda = fetch_gistda_bangkok()
     except (requests.RequestException, ValueError) as error:
         # The GISTDA reference is optional, so its outage must not stop the forecast.
@@ -503,10 +510,29 @@ def _monitor(args: argparse.Namespace, config: Config) -> int:
     except Exception:
         log.exception("Scoring the hourly and station forecasts failed")
     (gold / SUMMARY_FILENAME).write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    _check_served(config, gold)
     log.info("Scored %d published forecasts, latest date %s", len(scored), summary["latest_scored"])
     for alert in summary["alerts"]:
         log.warning("%s", alert)
     return 0
+
+
+def _check_served(config: Config, gold: Path) -> None:
+    """Compare the inputs of recent forecasts with the same inputs rebuilt from today's data."""
+    path = gold / SERVED_FILENAME
+    if not path.exists():
+        return
+    try:
+        inputs = _load_inputs(config, _as_of())
+        if inputs is None:
+            return
+        check = compare_served(pd.read_csv(path, dtype={"as_of": str}), *inputs, _as_of())
+        check["generated_at"] = _generated_at()
+        (gold / SERVED_CHECK_FILENAME).write_text(json.dumps(check, indent=1) + "\n", encoding="utf-8")
+        for feature in differing(check)[:5]:
+            log.info("Forecast input differs from stored data: %s", feature)
+    except Exception:
+        log.exception("Comparing the forecast inputs failed")
 
 
 def _score_extras(gold: Path, openaq: pd.DataFrame) -> dict[str, list[dict]]:
@@ -606,7 +632,11 @@ def _weekly(args: argparse.Namespace, config: Config) -> int:
     daily = pd.read_csv(silver_path) if silver_path.exists() else pd.DataFrame(columns=["date", *ALL_TARGETS])
     gold = layer(config.data_dir, GOLD)
     text = build_weekly(
-        daily, _read_json(gold / SUMMARY_FILENAME), _read_json(gold / FORECAST_FILENAME), _as_of().date()
+        daily,
+        _read_json(gold / SUMMARY_FILENAME),
+        _read_json(gold / FORECAST_FILENAME),
+        _as_of().date(),
+        _read_json(gold / SERVED_CHECK_FILENAME),
     )
     if args.output:
         Path(args.output).write_text(text, encoding="utf-8")

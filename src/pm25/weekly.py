@@ -150,8 +150,36 @@ def _outlook(forecast: dict[str, Any] | None) -> list[str]:
     return lines + [""]
 
 
+def _inputs(check: dict[str, Any] | None) -> list[str]:
+    lines = ["## Forecast inputs against the stored data", ""]
+    if not check or not check.get("forecasts"):
+        return lines + ["No saved forecast inputs yet.", ""]
+    rows = [f for f in check["features"] if f["missing_at_forecast"] or f["missing_now"] or f["changed"]]
+    lines += [
+        f"{check['forecasts']} forecasts in the last {check['days']} days. Weather forecast inputs (`nwp_`) are "
+        "expected to change: a past day's forecast is later replaced by the run issued the right number of days "
+        "before it. Any other input that differs means training and forecasting saw different data.",
+        "",
+    ]
+    if not rows:
+        return lines + ["Every input matched.", ""]
+    lines += ["| Input | Compared | Missing at forecast | Missing now | Changed | Mean difference |", "|---|---|---|---|---|---|"]
+    for f in rows[:12]:
+        lines.append(
+            f"| {f['feature']} | {f['compared']} | {f['missing_at_forecast']} | {f['missing_now']} "
+            f"| {f['changed']} | {_number(f['mean_abs_diff'], 3)} |"
+        )
+    if len(rows) > 12:
+        lines.append(f"\n{len(rows) - 12} more inputs differ; see gold/served_feature_check.json.")
+    return lines + [""]
+
+
 def build_weekly(
-    daily: pd.DataFrame, summary: dict[str, Any] | None, forecast: dict[str, Any] | None, today: date
+    daily: pd.DataFrame,
+    summary: dict[str, Any] | None,
+    forecast: dict[str, Any] | None,
+    today: date,
+    served_check: dict[str, Any] | None = None,
 ) -> str:
     """Return the weekly summary as Markdown for the seven days before `today`."""
     start, end = today - timedelta(days=WEEK_DAYS), today - timedelta(days=1)
@@ -163,5 +191,6 @@ def build_weekly(
     lines += _chance_scores(summary)
     alerts = summary.get("alerts") or []
     lines += ["## Alerts", ""] + ([f"- {alert}" for alert in alerts] or ["None."]) + [""]
+    lines += _inputs(served_check)
     lines += _outlook(forecast)
     return "\n".join(lines)
