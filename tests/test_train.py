@@ -83,7 +83,13 @@ def test_recent_luck_is_not_enough_to_promote(monkeypatch, tmp_path):
 
 def saved_previous(tmp_path, model, train_end):
     joblib.dump(model, model_path(tmp_path, "pm25_h1"))
-    return {"method": "candidate", "train_end": train_end, "promoted_at": NOW, "features": ["answer"]}
+    return {
+        "method": "candidate",
+        "train_end": train_end,
+        "promoted_at": NOW,
+        "features": ["answer"],
+        "candidates": ["candidate"],
+    }
 
 
 def test_model_is_kept_when_too_few_days_are_unseen(monkeypatch, tmp_path):
@@ -201,3 +207,40 @@ def test_model_on_other_features_is_kept_when_the_candidate_fails(monkeypatch, t
     entry, _, _ = run(tmp_path, previous)
     assert entry["method"] == "candidate" and entry["features"] == ["old"]
     assert entry["reason"].startswith("kept: candidate")
+
+
+def test_model_chosen_among_other_methods_is_replaced_without_waiting(monkeypatch, tmp_path):
+    use(monkeypatch, PerfectModel)
+    # Saved before a new candidate was added: no candidate list, two unseen days.
+    previous = saved_previous(tmp_path, OffByFiveModel(), str(INDEX[-3].date()))
+    del previous["candidates"]
+    entry, _, _ = run(tmp_path, previous)
+    assert entry["method"] == "candidate" and entry["candidates"] == ["candidate"]
+    assert "replaces a model chosen among other methods" in entry["reason"]
+
+
+def test_change_candidates_are_tried_only_for_the_first_days():
+    assert "random_forest_change" in train_module.candidates_for(1)
+    assert "gradient_boosting_change" in train_module.candidates_for(3)
+    assert train_module.candidates_for(4) == ["gradient_boosting", "random_forest"]
+
+
+@pytest.mark.parametrize("name", ["gradient_boosting_change", "random_forest_change"])
+def test_change_candidate_starts_from_the_last_value(name):
+    rng = np.random.default_rng(3)
+    # The next value is the last one plus a step the model can learn from x.
+    level = rng.uniform(5, 80, 400)
+    x = rng.normal(size=400)
+    features = pd.DataFrame({"pm25_lag0": level, "pm25_mean3": level, "x": x})
+    labels = pd.Series(level + 2 * x)
+    model = train_module.make_candidate(name, "pm25").fit(features.iloc[:300], labels.iloc[:300])
+    # Levels far outside training still come out near the last value.
+    later = features.iloc[300:].assign(pm25_lag0=200.0, pm25_mean3=200.0)
+    assert np.abs(model.predict(later) - (200 + 2 * later["x"])).mean() < 2.0
+
+
+def test_change_candidate_uses_the_recent_mean_when_the_last_day_is_missing():
+    features = pd.DataFrame({"pm25_lag0": [10.0, np.nan] * 50, "pm25_mean3": [12.0] * 100, "x": 0.0})
+    labels = pd.Series([11.0] * 100)
+    model = train_module.make_candidate("random_forest_change", "pm25").fit(features, labels)
+    assert np.isfinite(model.predict(features)).all()

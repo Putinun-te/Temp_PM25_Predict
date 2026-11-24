@@ -8,6 +8,7 @@ naive baseline, which is an honest answer when the model adds nothing.
 from __future__ import annotations
 
 import json
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -29,7 +30,7 @@ from pm25.evaluate import (
     skill,
     walk_forward_predict,
 )
-from pm25.transform import DropEmptyColumns  # noqa: F401  (saved models refer to pm25.train.DropEmptyColumns)
+from pm25.transform import ChangeFromLast, DropEmptyColumns  # noqa: F401  (saved models refer to pm25.train.DropEmptyColumns)
 from pm25.features import (
     ALL_TARGETS,
     build_features,
@@ -73,7 +74,38 @@ def _random_forest() -> Any:
     )
 
 
-CANDIDATES = {"gradient_boosting": _gradient_boosting, "random_forest": _random_forest}
+def _gradient_boosting_change(target: str) -> Any:
+    return ChangeFromLast(_gradient_boosting(), target)
+
+
+def _random_forest_change(target: str) -> Any:
+    return ChangeFromLast(_random_forest(), target)
+
+
+CHANGE_SUFFIX = "_change"
+# Models of the change from the last value help today and the next two days. Further
+# ahead they lost to models of the level in the walk-forward test, and every extra
+# candidate adds training time, so they are only tried where they can win.
+CHANGE_HORIZONS = (1, 2, 3)
+CANDIDATES = {
+    "gradient_boosting": _gradient_boosting,
+    "random_forest": _random_forest,
+    "gradient_boosting_change": _gradient_boosting_change,
+    "random_forest_change": _random_forest_change,
+}
+
+
+def candidates_for(horizon: int) -> list[str]:
+    """The candidate names tried for a horizon."""
+    return [
+        name for name in CANDIDATES if not name.endswith(CHANGE_SUFFIX) or horizon in CHANGE_HORIZONS
+    ]
+
+
+def make_candidate(name: str, target: str) -> Any:
+    """A new unfitted model; a model of the change needs to know its target."""
+    factory = CANDIDATES[name]
+    return factory(target) if name.endswith(CHANGE_SUFFIX) else factory()
 
 
 def model_path(models_dir: Path, slot: str) -> Path:
@@ -100,25 +132,26 @@ def train_slot(
 ) -> tuple[dict[str, Any], dict[str, Any], pd.DataFrame]:
     """Evaluate one slot and return its registry entry, report and out-of-sample frame."""
     slot = f"{target}_h{horizon}"
+    names = candidates_for(horizon)
     predictions = {
-        name: walk_forward_predict(features, labels, factory, horizon)
-        for name, factory in CANDIDATES.items()
+        name: walk_forward_predict(features, labels, partial(make_candidate, name, target), horizon)
+        for name in names
     }
     frame = pd.DataFrame({"actual": labels, **predictions, **baselines}).dropna()
     if frame.empty:
         raise ValueError(f"{slot}: no rows to evaluate")
 
-    methods = [*CANDIDATES, *baselines]
+    methods = [*names, *baselines]
     overall = {name: metrics(frame["actual"], frame[name]) for name in methods}
     latest = frame[frame.index > frame.index.max() - pd.Timedelta(days=LATEST_WINDOW_DAYS)]
     # The best candidate over all folds goes first. When it fails the gate and
     # there is no model to keep, the next one is tried before falling back to a
     # rule: a candidate that beats every rule on both windows is still a model
     # that beats every rule.
-    ranked = sorted(CANDIDATES, key=lambda name: overall[name]["mae"])
+    ranked = sorted(names, key=lambda name: overall[name]["mae"])
     candidate = ranked[0]
     for name in ranked:
-        entry, promote = _decide(slot, name, latest, list(baselines), previous, features, models_dir, horizon)
+        entry, promote = _decide(slot, name, latest, list(baselines), previous, features, models_dir, horizon, names)
         if promote:
             # A short recent window can favour a model by luck, so the full history must agree.
             overall_ok, overall_reason = promotion_gate(
@@ -133,7 +166,7 @@ def train_slot(
             break
     if promote:
         known = labels.notna().to_numpy()
-        final_model = CANDIDATES[candidate]()
+        final_model = make_candidate(candidate, target)
         final_model.fit(features[known], labels[known])
         train_end = (features.index[known].max() + pd.Timedelta(days=horizon)).date().isoformat()
         models_dir.mkdir(parents=True, exist_ok=True)
@@ -149,6 +182,7 @@ def train_slot(
         if candidate != ranked[0]:
             entry["reason"] += f" ({ranked[0]} had the lower MAE over all folds but failed the gate)"
 
+    entry["candidates"] = names
     for stale in ("residual_q80_by_level", "exceedance"):
         entry.pop(stale, None)
     range_fields, range_report = range_entry(frame["actual"], frame[entry["method"]], horizon, target)
@@ -195,18 +229,22 @@ def _decide(
     features: pd.DataFrame,
     models_dir: Path,
     horizon: int,
+    names: list[str] | None = None,
 ) -> tuple[dict[str, Any], bool]:
     """Apply the promotion gate on the latest walk-forward window."""
     window = latest
     previous_mae = None
     has_previous_model = bool(previous) and previous["method"] in CANDIDATES
 
-    stale_previous = has_previous_model and previous.get("features") != list(features.columns)
+    other_features = previous.get("features") != list(features.columns) if has_previous_model else False
+    other_candidates = has_previous_model and names is not None and previous.get("candidates") != names
+    stale_previous = other_features or other_candidates
     if stale_previous:
         # The candidate sees inputs the previous model never had (a feature was
-        # added or removed). Waiting for unseen days would keep the older model
-        # for weeks, so the candidate is judged like a first model: against
-        # every baseline here and over all folds.
+        # added or removed), or was chosen among methods the previous model never
+        # competed with. Waiting for unseen days would keep the older model for
+        # weeks, so the candidate is judged like a first model: against every
+        # baseline here and over all folds.
         has_previous_model = False
     if has_previous_model:
         # The previous model trained on data up to train_end. Only later rows are a fair test.
@@ -226,7 +264,11 @@ def _decide(
     }
     promote, reason = promotion_gate(candidate_mae, baseline_maes, previous_mae)
     if promote:
-        replaced = " (replaces a model trained on other features)" if stale_previous else ""
+        replaced = ""
+        if other_features:
+            replaced = " (replaces a model trained on other features)"
+        elif other_candidates:
+            replaced = " (replaces a model chosen among other methods)"
         return {"reason": f"promoted: {reason}{replaced}"}, True
     if has_previous_model or stale_previous:
         kept = dict(previous)
