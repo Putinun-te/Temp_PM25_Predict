@@ -373,7 +373,7 @@ Without the weather forecasts for the target day, PM2.5 in 6 days would be 5.85,
 
 ### Hourly forecast
 
-`gold/hourly_forecast.json` holds PM2.5 for each hour from 04:00 today to 23:00 tomorrow, Bangkok time. It is made once a day in the same run, so it adds no scheduled jobs. Station hours reach OpenAQ two to three hours late and the run starts between 07:17 and 08:00, so the model only uses hours up to 03:00. One gradient boosting model covers all 44 lead times, with the hour of day, the lead and the weather forecast for each target hour as features.
+`gold/hourly_forecast.json` holds PM2.5 for each hour from 04:00 today to 23:00 tomorrow, Bangkok time. It is made once a day in the same run, so it adds no scheduled jobs. Station hours reach OpenAQ two to three hours late and the run starts between 07:17 and 08:00, so the model only uses hours up to 03:00. One gradient boosting model covers all 44 lead times, with the hour of day, the lead and the weather forecast for each target hour as features. Since 25 November 2026 it forecasts the change from the newest measured hour rather than the level: over all folds this cut PM2.5 from 3.85 to 3.68 µg/m³ for the morning run, 3.48 to 3.31 for the afternoon run and 3.30 to 3.18 for the evening run, and PM10 from 5.73 to 5.48, 5.23 to 5.16 and 5.01 to 5.00. Starting from the same hour of the previous day was tried too and was worse.
 
 Walk-forward over 53,633 hours: MAE 3.66 µg/m³ against 4.91 for the same hour yesterday and 4.80 for yesterday's mean. Hours of today 2.79 against 3.95; hours of tomorrow 4.40 against 5.52. It is published only while it beats both baselines by 1 %.
 
@@ -393,7 +393,7 @@ The dashboard also colours each forecast hour by the PCD band of its value. The 
 
 ### Station forecasts
 
-`station_forecasts` in the forecast document gives PM2.5 for each of 20 stations for the same seven days as the city forecast (`today`, `tomorrow`, `day2` to `day6`). One pooled model per horizon covers all stations, trained in the same GitHub Actions run: a row is a station on an origin day, with that station's recent values, its usual offset from the city, and all city features. Seven models instead of 140 keeps training short and lets stations with gaps borrow from the others. Each horizon passes the promotion gate on its own; a horizon that fails publishes the better of persistence and the city forecast.
+`station_forecasts` in the forecast document gives PM2.5 for each of 20 stations for the same seven days as the city forecast (`today`, `tomorrow`, `day2` to `day6`). One pooled model per horizon covers all stations, trained in the same GitHub Actions run: a row is a station on an origin day, with that station's recent values, its usual offset from the city, and all city features. Seven models instead of 140 keeps training short and lets stations with gaps borrow from the others. Each horizon passes the promotion gate on its own; a horizon that fails publishes the better of persistence and the city forecast. Today to three days after today, a model of the change from the station's own last value is also tried, and the one with the lower error over all folds goes to the gate. It was better there (PM2.5 today 3.44 → 3.31, PM10 today 4.97 → 4.76) and worse further ahead (PM2.5 in six days 5.83 → 6.14).
 
 The eight stations that measure PM10 also get a PM10 forecast, under `pm10` of each day's entry, from the same code with its own models, one per horizon.
 

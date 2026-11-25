@@ -30,7 +30,7 @@ from sklearn.pipeline import make_pipeline
 
 from pm25.evaluate import fitted_range, metrics, promotion_gate, walk_forward_predict, width_for
 from pm25.features import MIN_STATIONS, TIMEZONE
-from pm25.transform import DropEmptyColumns
+from pm25.transform import ChangeFromLast, DropEmptyColumns
 from pm25.ingest import PARAMETER, TIME, VALUE, city_panel
 
 HOURLY_FILENAME = "hourly_forecast.json"
@@ -69,7 +69,11 @@ def model_filename(known_hour: int, target: str = "pm25") -> str:
 LEADS = leads_for(LAST_KNOWN_HOUR)
 NWP_HOURLY = ("temp_c", "rh_pct", "precip_mm", "wind_kmh", "wind_u", "wind_v", "pressure_hpa", "cloud_pct")
 BASELINES = ("same_hour", "yesterday_mean")
-MODEL = "gradient_boosting"
+# A model of the change from the newest measured hour, which beat the level
+# model for every run and both targets (PM2.5 morning 3.85 -> 3.68 over all folds).
+MODEL = "gradient_boosting_change"
+# Saved before 25 November 2026: a model of the level. Still served until the next training.
+MODELS = (MODEL, "gradient_boosting")
 MEASURED_HOURS_SHOWN = 28
 
 
@@ -78,6 +82,11 @@ def make_model() -> Any:
     return make_pipeline(DropEmptyColumns(), HistGradientBoostingRegressor(
         max_iter=300, learning_rate=0.06, max_leaf_nodes=31, min_samples_leaf=40, l2_regularization=1.0, random_state=0
     ))
+
+
+def make_change_model(known_hour: int) -> Any:
+    """Forecast the change from the newest measured hour, or a recent mean when that hour is missing."""
+    return ChangeFromLast(make_model(), "hourly", (f"obs_{known_hour:+d}", "last6_mean", "yesterday_mean"))
 
 
 def hourly_city(openaq: pd.DataFrame, target: str = "pm25") -> pd.Series:
@@ -164,7 +173,7 @@ def train_hourly(
     first = city.index.min().normalize() + pd.Timedelta(days=1)
     days = pd.date_range(first, as_of - pd.Timedelta(days=1), freq="D")
     features, labels, baselines = build_hourly(city, nwp_hourly, days, known_hour)
-    predicted = walk_forward_predict(features, labels, make_model, horizon=2)
+    predicted = walk_forward_predict(features, labels, lambda: make_change_model(known_hour), horizon=2)
     frame = pd.DataFrame({"actual": labels, MODEL: predicted, **{name: baselines[name] for name in BASELINES}})
     frame["lead"] = features["lead"].to_numpy()
     frame = frame.dropna()
@@ -193,7 +202,7 @@ def train_hourly(
     entry["range"] = ranges
     if promote:
         known = labels.notna().to_numpy()
-        model = make_model().fit(features[known], labels[known])
+        model = make_change_model(known_hour).fit(features[known], labels[known])
         models_dir.mkdir(parents=True, exist_ok=True)
         joblib.dump(model, models_dir / model_filename(known_hour, target))
         entry.update({"features": list(features.columns), "promoted_at": now})
@@ -221,7 +230,7 @@ def forecast_hourly(
     """Return the hourly forecast document for `as_of` and the following day; values sit under the target's name."""
     days = pd.DatetimeIndex([as_of])
     features, _, baselines = build_hourly(city, nwp_hourly, days, known_hour)
-    if entry["method"] == MODEL:
+    if entry["method"] in MODELS:
         model = joblib.load(models_dir / model_filename(known_hour, target))
         values = model.predict(features.reindex(columns=entry["features"]))
     else:

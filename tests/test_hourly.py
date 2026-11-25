@@ -44,8 +44,8 @@ def test_training_promotes_a_model_that_beats_the_baselines_and_forecasts(tmp_pa
     as_of = pd.Timestamp("2026-03-06")
     entry, report = train_hourly(city, pd.DataFrame(), as_of, tmp_path, "now")
 
-    assert entry["method"] == "gradient_boosting"
-    assert report["overall"]["gradient_boosting"]["mae"] < report["overall"]["same_hour"]["mae"]
+    assert entry["method"] == "gradient_boosting_change"
+    assert report["overall"]["gradient_boosting_change"]["mae"] < report["overall"]["same_hour"]["mae"]
     assert set(entry["residual_q80"]) == {"today", "tomorrow"}
 
     document = forecast_hourly(city, pd.DataFrame(), entry, tmp_path, as_of, "now")
@@ -138,3 +138,13 @@ def test_hourly_width_uses_the_fitted_range_per_part():
     assert hourly_width(entry, "today", None) == 3.0  # No value: the flat fallback
     assert hourly_width(entry, "tomorrow", 40.0) == 5.0  # No fitted range for this part
     assert hourly_width({"residual_q80": {"today": 3.0}}, "today", 40.0) == 3.0  # Older models
+
+
+def test_a_model_saved_under_the_old_name_is_still_served(tmp_path):
+    city = city_series()
+    as_of = city.index.max().normalize()
+    entry, _ = train_hourly(city, pd.DataFrame(), as_of, tmp_path, "now")
+    # Registries written before 25 November 2026 name the hourly model gradient_boosting.
+    old = {**entry, "method": "gradient_boosting"}
+    document = forecast_hourly(city, pd.DataFrame(), old, tmp_path, as_of, "now")
+    assert all(hour["pm25"] is not None for hour in document["hours"])

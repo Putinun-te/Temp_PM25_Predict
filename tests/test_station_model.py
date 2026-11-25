@@ -91,3 +91,11 @@ def test_later_horizons_use_the_city_labels():
     origin = as_of - pd.Timedelta(days=1)
     assert rows[0]["day4"]["pm25"] == round(stations.loc[origin, 101], 1)
     assert "today" not in rows[0]
+
+
+def test_change_model_is_only_tried_today_to_three_days_ahead():
+    from pm25.station_model import candidates
+
+    assert set(candidates(1)) == {"gradient_boosting", "gradient_boosting_change"}
+    assert set(candidates(4)) == {"gradient_boosting", "gradient_boosting_change"}
+    assert set(candidates(5)) == {"gradient_boosting"}

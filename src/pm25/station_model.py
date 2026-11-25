@@ -26,10 +26,15 @@ from sklearn.pipeline import make_pipeline
 
 from pm25.evaluate import entry_chance_above, entry_chances_above, metrics, promotion_gate, range_entry, range_for, walk_forward_predict
 from pm25.features import MIN_HOURS_PER_DAY, TIMEZONE, build_features
-from pm25.transform import DropEmptyColumns
+from pm25.transform import ChangeFromLast, DropEmptyColumns
 from pm25.ingest import OPENAQ_SENSORS, PARAMETER, SENSOR, TIME, VALUE, OpenAQSensor
 
 MODEL = "gradient_boosting"
+# A model of the change from the station's own last value. It beat the level model
+# today to three days after today and lost further ahead, so it is only tried there.
+CHANGE_MODEL = "gradient_boosting_change"
+CHANGE_HORIZONS = (1, 2, 3, 4)
+MODELS = (MODEL, CHANGE_MODEL)
 BASELINES = ("persistence", "city_forecast")
 HORIZONS = tuple(range(1, 8))
 # Same labels as the city forecast: today, tomorrow, then day2 to day6 (days after today).
@@ -47,6 +52,18 @@ def make_model() -> Any:
     return make_pipeline(DropEmptyColumns(), HistGradientBoostingRegressor(
         max_iter=250, learning_rate=0.05, max_leaf_nodes=15, min_samples_leaf=30, l2_regularization=1.0, random_state=0
     ))
+
+
+def make_change_model() -> Any:
+    return ChangeFromLast(make_model(), "station")
+
+
+def candidates(horizon: int) -> dict[str, Any]:
+    """The models tried for a horizon, by name."""
+    found = {MODEL: make_model}
+    if horizon in CHANGE_HORIZONS:
+        found[CHANGE_MODEL] = make_change_model
+    return found
 
 
 def station_daily(
@@ -109,11 +126,12 @@ def train_stations(
     day, so the comparison shows whether per-station modelling adds anything.
     """
     features, labels, ids, persistence = build_station_rows(stations, targets, exogenous, horizon, target)
-    predicted = walk_forward_predict(features, labels, make_model, horizon)
+    tried = candidates(horizon)
+    predicted = {name: walk_forward_predict(features, labels, make, horizon) for name, make in tried.items()}
     frame = pd.DataFrame(
         {
             "actual": labels,
-            MODEL: predicted,
+            **predicted,
             "persistence": persistence,
             "city_forecast": city_forecast.reindex(features.index).to_numpy(),
             "station": ids,
@@ -121,9 +139,11 @@ def train_stations(
     ).dropna()
     if frame.empty:
         raise ValueError(f"stations {target} h{horizon}: no rows to evaluate")
-    overall = {name: metrics(frame["actual"], frame[name]) for name in (MODEL, *BASELINES)}
-    promote, reason = promotion_gate(overall[MODEL]["mae"], {name: overall[name]["mae"] for name in BASELINES})
-    method = MODEL if promote else min(BASELINES, key=lambda name: overall[name]["mae"])
+    overall = {name: metrics(frame["actual"], frame[name]) for name in (*tried, *BASELINES)}
+    # The model with the lower error over all folds is the one put to the gate.
+    best = min(tried, key=lambda name: overall[name]["mae"])
+    promote, reason = promotion_gate(overall[best]["mae"], {name: overall[name]["mae"] for name in BASELINES})
+    method = best if promote else min(BASELINES, key=lambda name: overall[name]["mae"])
     entry: dict[str, Any] = {
         "method": method,
         "reason": f"promoted: {reason}" if promote else f"baseline used: model {reason}",
@@ -133,10 +153,10 @@ def train_stations(
     if promote:
         known = labels.notna().to_numpy()
         models_dir.mkdir(parents=True, exist_ok=True)
-        joblib.dump(make_model().fit(features[known], labels[known]), models_dir / model_filename(horizon, target))
+        joblib.dump(tried[best]().fit(features[known], labels[known]), models_dir / model_filename(horizon, target))
         entry.update({"features": list(features.columns), "promoted_at": now})
     by_station = {
-        str(location): {name: float((rows["actual"] - rows[name]).abs().mean()) for name in (MODEL, *BASELINES)}
+        str(location): {name: float((rows["actual"] - rows[name]).abs().mean()) for name in (*tried, *BASELINES)}
         for location, rows in frame.groupby("station")
     }
     report = {
@@ -172,7 +192,7 @@ def forecast_stations(
             continue
         features, _, ids, persistence = build_station_rows(stations, targets, exogenous, horizon, target)
         at_origin = features.index == origin
-        if entry["method"] == MODEL:
+        if entry["method"] in MODELS:
             model = joblib.load(models_dir / model_filename(horizon, target))
             values = model.predict(features[at_origin].reindex(columns=entry["features"]))
         elif entry["method"] == "persistence":
