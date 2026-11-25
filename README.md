@@ -6,31 +6,9 @@ It forecasts the next seven days as daily means (city-wide and for 20 reference 
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    subgraph SRC["Public sources"]
-        OA["OpenAQ<br/>Air4Thai stations, hourly"]
-        OM["Open-Meteo<br/>weather, past forecasts, CAMS"]
-        FI["NASA FIRMS<br/>fires"]
-        TM["TMD and GISTDA<br/>reference forecasts"]
-    end
-    subgraph GA["GitHub Actions"]
-        D["Daily forecast, 07:17<br/>backfill, quality check, train weekly,<br/>predict, report, score, load SQL"]
-        H["Hourly update, 13:03 and 19:03<br/>newer station hours"]
-        HC["Health check, 10:37, 14:37, 20:37"]
-    end
-    SRC --> D
-    OA --> H
-    D <--> DB[("data branch<br/>bronze, silver, gold CSV and JSON,<br/>models, metrics")]
-    H <--> DB
-    DB --> HC
-    HC -->|"problem"| IS["GitHub issue<br/>emails the owner"]
-    D --> SQL[("Azure SQL<br/>bronze, silver, gold, views")]
-    SQL -->|"refresh 10:00"| PBI["Power BI report"]
-    DB --> WEB["Dashboard<br/>Next.js static, App Service and Blob"]
-    DB --> API["JSON API<br/>Azure Functions"]
-    D --> FB[("Firebase<br/>/predictions")]
-```
+<p align="center"><img src="docs/architecture.svg" width="100%" alt="Architecture: OpenAQ, Open-Meteo, NASA FIRMS, TMD and GISTDA feed the GitHub Actions jobs (daily forecast at 07:17, hourly updates at 13:03 and 19:03, health checks at 10:37, 14:37 and 20:37). The jobs read and write the data branch, load Azure SQL and Firebase, and open a GitHub issue on a problem. The dashboard and the JSON API read the data branch; Power BI refreshes from Azure SQL at 10:00."></p>
+
+The diagram is drawn by `docs/architecture.py`; edit the layout there and run it again.
 
 Every job reads the `data` branch, adds to it and writes it back as a single commit, so the branch is the only state. The dashboard and the API read it directly, so a new forecast appears without a deploy. Azure is optional: without it, the forecast, the dashboard on GitHub Pages and the JSON on the `data` branch keep working.
 
