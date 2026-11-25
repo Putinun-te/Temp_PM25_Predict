@@ -281,16 +281,16 @@ Recommended Realtime Database rules, which let anyone read forecasts and nobody 
 
 ### What each forecast uses
 
-Each target and horizon is a slot. A slot publishes a fitted model only after the model passes the promotion gate; otherwise it publishes the best baseline. The gate runs daily, so the published method can change. The table shows the run of 2026-11-20, when every daily slot published a model.
+Each target and horizon is a slot. A slot publishes a fitted model only after the model passes the promotion gate; otherwise it publishes the best baseline. The gate runs daily, so the published method can change. The table shows the run of 2026-11-25, the first with models of the change from the last known value ("change").
 
 | Slot | Published method |
 |---|---|
-| PM2.5 today | Gradient boosting |
-| PM2.5 tomorrow | Random forest |
-| PM10 today and tomorrow | Gradient boosting |
-| Temperature today and tomorrow | Random forest |
-| Humidity today and tomorrow | Random forest |
-| Days 3 to 7 | Random forest or gradient boosting, by slot |
+| PM2.5 today | Random forest, change |
+| PM2.5 tomorrow | Gradient boosting, change |
+| PM10 today, tomorrow and the day after | Random forest, change |
+| Temperature today to the day after tomorrow | Gradient boosting, change |
+| Humidity today and tomorrow | Gradient boosting, change |
+| Other days 3 to 7 | Random forest or gradient boosting of the level, by slot |
 | Monthly PM2.5 and PM10, 1 to 3 months ahead | Climatology (mean of the same calendar month) |
 | Monthly temperature and humidity | Climatology or damped anomaly, whichever passes the gate |
 
