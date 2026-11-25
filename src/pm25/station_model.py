@@ -25,7 +25,7 @@ from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.pipeline import make_pipeline
 
 from pm25.evaluate import entry_chance_above, entry_chances_above, metrics, promotion_gate, range_entry, range_for, walk_forward_predict
-from pm25.features import MIN_HOURS_PER_DAY, TIMEZONE, build_features
+from pm25.features import MIN_HOURS_PER_DAY, TIMEZONE, build_features, features_for
 from pm25.transform import ChangeFromLast, DropEmptyColumns
 from pm25.ingest import OPENAQ_SENSORS, PARAMETER, SENSOR, TIME, VALUE, OpenAQSensor
 
@@ -88,7 +88,7 @@ def build_station_rows(
     stations: pd.DataFrame, targets: pd.DataFrame, exogenous: pd.DataFrame, horizon: int, target: str = "pm25"
 ) -> tuple[pd.DataFrame, pd.Series, pd.Series, pd.Series]:
     """Return features, labels, the station id and persistence, one row per station and origin day."""
-    city = build_features(targets[["pm25", "pm10"]], exogenous, horizon)
+    city = features_for(build_features(targets[["pm25", "pm10"]], exogenous, horizon), target)
     stations = stations.reindex(city.index)
     order = {location: position for position, location in enumerate(stations.columns)}
     features, labels, ids, persistence = [], [], [], []

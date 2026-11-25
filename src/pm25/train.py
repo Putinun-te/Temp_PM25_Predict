@@ -34,6 +34,7 @@ from pm25.transform import BlendWithWeekMean, ChangeFromLast, DropEmptyColumns, 
 from pm25.features import (
     ALL_TARGETS,
     build_features,
+    features_for,
     build_labels,
     model_inputs,
     daily_baselines,
@@ -407,7 +408,7 @@ def run_training(
     for target in ALL_TARGETS:
         for horizon in DAILY_HORIZONS:
             slot = f"{target}_h{horizon}"
-            features = build_features(targets, exogenous, horizon)
+            features = features_for(build_features(targets, exogenous, horizon), target)
             labels = build_labels(targets, horizon)[target]
             reference = None
             if target == "pm25":

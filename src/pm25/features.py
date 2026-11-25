@@ -48,6 +48,12 @@ LATER_FEATURE_PREFIXES = ("fire_", "nwp_")
 NWP_FEATURES = ("temp_c", "rh_pct", "precip_mm", "wind_kmh", "wind_u", "wind_v", "pressure_hpa", "cloud_pct")
 NWP_HORIZONS = tuple(range(1, 8))  # Today and the six days after it
 NWP_DAILY_COLUMNS = tuple(f"nwp{h}_{name}" for h in NWP_HORIZONS for name in NWP_FEATURES)
+# How far the same-day weather forecast missed over the last days, for the weather
+# targets: the forecast runs warm or cold for weeks at a time, and the models
+# otherwise follow it. Only the weather models get them (see features_for).
+NWP_ERROR_TARGETS = WEATHER_TARGETS
+NWP_ERROR_WINDOWS = (3, 7)
+NWP_ERROR_COLUMNS = tuple(f"nwp_{name}_err{window}" for name in NWP_ERROR_TARGETS for window in NWP_ERROR_WINDOWS)
 
 
 def _local_date(times: pd.Series) -> pd.Series:
@@ -151,6 +157,12 @@ def build_features(
         values = exogenous[source].reindex(target_days).to_numpy() if source in exogenous else np.nan
         columns[f"nwp_{name}"] = pd.Series(values, index=index, dtype=float)
     exogenous = exogenous.reindex(index)
+    for name in NWP_ERROR_TARGETS:
+        # Known at the origin: the forecast issued for that day against the measured day.
+        missing = pd.Series(np.nan, index=index)
+        missed = exogenous.get(f"nwp1_{name}", missing) - exogenous.get(name, missing)
+        for window in NWP_ERROR_WINDOWS:
+            columns[f"nwp_{name}_err{window}"] = missed.rolling(window, min_periods=max(2, window // 2)).mean()
 
     for name in TARGETS:
         series = targets[name]
@@ -173,6 +185,13 @@ def build_features(
     columns["dow_sin"] = pd.Series(np.sin(2 * np.pi * target_dates.day_of_week / 7), index=index)
     columns["dow_cos"] = pd.Series(np.cos(2 * np.pi * target_dates.day_of_week / 7), index=index)
     return pd.DataFrame(columns, index=index)
+
+
+def features_for(features: pd.DataFrame, target: str) -> pd.DataFrame:
+    """Return the feature columns a target's models are trained on."""
+    if target in NWP_ERROR_TARGETS:
+        return features
+    return features.drop(columns=[c for c in NWP_ERROR_COLUMNS if c in features])
 
 
 def model_inputs(features: pd.DataFrame, entry: dict) -> pd.DataFrame:

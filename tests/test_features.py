@@ -6,8 +6,10 @@ from pm25.features import (
     EXOGENOUS_COLUMNS,
     TARGETS,
     build_features,
+    NWP_ERROR_COLUMNS,
     build_labels,
     daily_baselines,
+    features_for,
     daily_targets,
     monthly_forecast,
     monthly_targets,
@@ -136,3 +138,44 @@ def test_weekly_mean_baseline_only_beyond_tomorrow():
     week = daily_baselines(series, 5)
     assert week["mean7"].iloc[10] == series.iloc[4:11].mean()
     assert week["seasonal7"].iloc[10] == series.iloc[8]
+
+
+def with_same_day_forecast(exogenous, offset=1.5):
+    """Add a same-day weather forecast that runs `offset` above what was measured."""
+    exogenous = exogenous.copy()
+    for name in ("temp_c", "rh_pct"):
+        exogenous[f"nwp1_{name}"] = exogenous[name] + offset
+    return exogenous
+
+
+def test_nwp_error_is_how_far_the_same_day_forecast_missed():
+    targets, exogenous = synthetic_inputs()
+    features = build_features(targets, with_same_day_forecast(exogenous), 2)
+    assert features["nwp_temp_c_err7"].iloc[50] == pytest.approx(1.5)
+    assert features["nwp_rh_pct_err3"].iloc[50] == pytest.approx(1.5)
+
+
+def test_nwp_error_uses_no_day_after_its_origin():
+    targets, exogenous = synthetic_inputs()
+    exogenous = with_same_day_forecast(exogenous)
+    baseline = build_features(targets, exogenous, 1)
+    changed = exogenous.copy()
+    changed.loc[changed.index[121]:, ["temp_c", "rh_pct", "nwp1_temp_c", "nwp1_rh_pct"]] = 9999.0
+    changed = build_features(targets, changed, 1)
+    columns = list(NWP_ERROR_COLUMNS)
+    pd.testing.assert_frame_equal(baseline[columns].iloc[:121], changed[columns].iloc[:121])
+
+
+def test_nwp_error_is_missing_without_the_forecast():
+    targets, exogenous = synthetic_inputs()
+    features = build_features(targets, exogenous, 1)
+    assert features[list(NWP_ERROR_COLUMNS)].isna().all().all()
+
+
+def test_only_weather_models_see_the_nwp_error():
+    targets, exogenous = synthetic_inputs()
+    features = build_features(targets, with_same_day_forecast(exogenous), 1)
+    assert set(NWP_ERROR_COLUMNS) <= set(features_for(features, "temp_c"))
+    assert set(NWP_ERROR_COLUMNS) <= set(features_for(features, "rh_pct"))
+    assert not set(NWP_ERROR_COLUMNS) & set(features_for(features, "pm25"))
+    assert not set(NWP_ERROR_COLUMNS) & set(features_for(features, "pm10"))
