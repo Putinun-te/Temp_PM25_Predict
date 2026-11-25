@@ -8,7 +8,7 @@ Run it again after changing the layout or a label:
 
 Logos are in docs/icons. Simple Icons (CC0) for GitHub, Git, NASA, Next.js
 and Firebase; Devicon (MIT) for Azure and Azure SQL; Microsoft's Power BI icon
-set; the OpenAQ, Open-Meteo and GISTDA site icons. Each belongs to its owner and
+set; the OpenAQ, Open-Meteo, TMD and GISTDA site icons. Each belongs to its owner and
 only names the service.
 """
 
@@ -21,6 +21,8 @@ from xml.sax.saxutils import escape
 HERE = Path(__file__).parent
 ICONS = HERE / "icons"
 OUT = HERE / "architecture.svg"
+# The dashboard serves the same file on its "How it works" page.
+WEB_COPY = HERE.parent / "web" / "public" / "architecture.svg"
 WIDTH, HEIGHT = 1200, 620
 ICON = 28
 
@@ -59,11 +61,15 @@ def lines(cx: float, y: float, title: str, rest: list[str]) -> str:
     return "\n".join(out)
 
 
-def box(x: float, y: float, w: float, h: float, logo: str, title: str, rest: list[str]) -> str:
+def box(x: float, y: float, w: float, h: float, logo: str | tuple[str, ...], title: str, rest: list[str]) -> str:
+    """A box with one logo, or several side by side when it names several services."""
     cx = x + w / 2
+    logos = (logo,) if isinstance(logo, str) else logo
+    gap = 8
+    left = cx - (len(logos) * ICON + (len(logos) - 1) * gap) / 2
     return "\n".join([
         f'<rect class="box" x="{x}" y="{y}" width="{w}" height="{h}" rx="6"/>',
-        icon(logo, cx - ICON / 2, y + 10),
+        *(icon(name, left + i * (ICON + gap), y + 10) for i, name in enumerate(logos)),
         lines(cx, y + 58, title, rest),
     ])
 
@@ -110,7 +116,7 @@ def draw() -> str:
         box(40, 55, 200, 120, "openaq", "OpenAQ", ["Air4Thai stations,", "hourly"]),
         box(40, 190, 200, 120, "openmeteo", "Open-Meteo", ["weather, past forecasts,", "CAMS"]),
         box(40, 325, 200, 120, "nasa", "NASA FIRMS", ["fires"]),
-        box(40, 460, 200, 120, "gistda", "TMD and GISTDA", ["reference forecasts"]),
+        box(40, 460, 200, 120, ("tmd", "gistda"), "TMD and GISTDA", ["reference forecasts"]),
         group(310, 20, 290, 580, "GitHub Actions"),
         box(330, 55, 250, 110, "gha", "Health check", ["10:37, 14:37, 20:37"]),
         box(330, 190, 250, 110, "gha", "Hourly update", ["13:03 and 19:03,", "newer station hours"]),
@@ -156,5 +162,8 @@ def draw() -> str:
 
 
 if __name__ == "__main__":
-    OUT.write_text(draw(), encoding="utf-8")
-    print(f"wrote {OUT}")
+    svg = draw()
+    for path in (OUT, WEB_COPY):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(svg, encoding="utf-8")
+        print(f"wrote {path}")

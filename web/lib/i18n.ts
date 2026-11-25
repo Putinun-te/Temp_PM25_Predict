@@ -6,6 +6,36 @@ const STRINGS = {
   title: { en: "Bangkok PM2.5 forecast", th: "พยากรณ์ PM2.5 กรุงเทพฯ" },
   navForecast: { en: "Forecast", th: "พยากรณ์" },
   navAccuracy: { en: "Live accuracy", th: "ความแม่นจริง" },
+  navHow: { en: "How it works", th: "ระบบทำงานอย่างไร" },
+  howTitle: { en: "How it works", th: "ระบบทำงานอย่างไร" },
+  howIntro: {
+    en: "Everything runs on GitHub Actions; nothing runs on a server of its own. Each job reads the data branch, adds to it and writes it back, so this page, the API and Power BI all read the same files.",
+    th: "ทุกขั้นตอนรันบน GitHub Actions ไม่มีเซิร์ฟเวอร์ของตัวเอง แต่ละงานอ่าน data branch เพิ่มข้อมูลแล้วเขียนกลับ หน้าเว็บนี้ API และ Power BI จึงอ่านไฟล์ชุดเดียวกัน",
+  },
+  howDiagramAlt: {
+    en: "Architecture: OpenAQ, Open-Meteo, NASA FIRMS, TMD and GISTDA feed the GitHub Actions jobs, which read and write the data branch, load Azure SQL and Firebase, and open a GitHub issue on a problem. The dashboard and the JSON API read the data branch; Power BI refreshes from Azure SQL.",
+    th: "แผนภาพระบบ: OpenAQ, Open-Meteo, NASA FIRMS, กรมอุตุนิยมวิทยาและ GISTDA ส่งข้อมูลเข้างานบน GitHub Actions ซึ่งอ่านและเขียน data branch โหลดข้อมูลเข้า Azure SQL และ Firebase และเปิด GitHub issue เมื่อมีปัญหา หน้าเว็บและ JSON API อ่านจาก data branch ส่วน Power BI ดึงจาก Azure SQL",
+  },
+  howScroll: { en: "Scroll sideways to see the whole diagram.", th: "เลื่อนซ้ายขวาเพื่อดูแผนภาพทั้งหมด" },
+  howStepsTitle: { en: "Each day, Bangkok time", th: "ในแต่ละวัน (เวลากรุงเทพฯ)" },
+  howDaily: {
+    en: "07:17 Daily forecast: fetches the missing station hours and weather, checks data quality, retrains once a week, forecasts, scores past forecasts and loads Azure SQL.",
+    th: "07:17 พยากรณ์รายวัน: ดึงข้อมูลสถานีและอากาศที่ยังขาด ตรวจคุณภาพข้อมูล ฝึกโมเดลใหม่สัปดาห์ละครั้ง พยากรณ์ ให้คะแนนพยากรณ์ที่ผ่านมา และโหลดเข้า Azure SQL",
+  },
+  howPowerBi: { en: "10:00 Power BI imports the views from Azure SQL.", th: "10:00 Power BI ดึงข้อมูลจาก Azure SQL" },
+  howHourly: {
+    en: "13:03 and 19:03 Hourly update: redoes the hourly forecast with the newest station hours.",
+    th: "13:03 และ 19:03 อัปเดตรายชั่วโมง: พยากรณ์รายชั่วโมงใหม่ด้วยข้อมูลสถานีล่าสุด",
+  },
+  howHealth: {
+    en: "10:37, 14:37 and 20:37 Health check: opens a GitHub issue if an output is missing or stale, or a model is out of date.",
+    th: "10:37, 14:37 และ 20:37 ตรวจสุขภาพระบบ: เปิด GitHub issue ถ้าผลลัพธ์หายหรือเก่า หรือโมเดลล้าสมัย",
+  },
+  howWeekly: {
+    en: "Monday 09:07 Weekly summary: writes the week's measurements and scores as a GitHub issue.",
+    th: "วันจันทร์ 09:07 สรุปรายสัปดาห์: เขียนค่าที่วัดได้และคะแนนของสัปดาห์เป็น GitHub issue",
+  },
+  howSource: { en: "Code, model card and results:", th: "โค้ด รายละเอียดโมเดล และผลลัพธ์:" },
   loading: { en: "Loading…", th: "กำลังโหลด…" },
   forDate: { en: "For", th: "สำหรับวันที่" },
   generated: { en: "generated", th: "สร้างเมื่อ" },
