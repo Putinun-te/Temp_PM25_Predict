@@ -222,7 +222,28 @@ def test_model_chosen_among_other_methods_is_replaced_without_waiting(monkeypatc
 def test_change_candidates_are_tried_only_for_the_first_days():
     assert "random_forest_change" in train_module.candidates_for(1)
     assert "gradient_boosting_change" in train_module.candidates_for(3)
-    assert train_module.candidates_for(4) == ["gradient_boosting", "random_forest"]
+    assert train_module.candidates_for(4, "temp_c") == ["gradient_boosting", "random_forest"]
+
+
+def test_blends_are_tried_for_pm_three_to_six_days_ahead():
+    assert "random_forest_blend" in train_module.candidates_for(4, "pm10")
+    assert "gradient_boosting_blend" in train_module.candidates_for(7, "pm25")
+    assert not any(n.endswith("_blend") for n in train_module.candidates_for(3, "pm25"))
+    assert not any(n.endswith("_blend") for n in train_module.candidates_for(5, "rh_pct"))
+
+
+def test_blend_is_half_model_and_half_weekly_mean():
+    rng = np.random.default_rng(4)
+    x = rng.normal(size=300)
+    features = pd.DataFrame({"x": x, "pm25_mean7": 20.0})
+    features.loc[299, "pm25_mean7"] = np.nan
+    labels = pd.Series(30 + 5 * x)
+    blend = train_module.make_candidate("random_forest_blend", "pm25").fit(features, labels)
+    alone = blend.model_.predict(features)
+    predicted = blend.predict(features)
+    assert np.allclose(predicted[:299], (alone[:299] + 20.0) / 2)
+    # Without a weekly mean the model's forecast is used as it is.
+    assert predicted[299] == alone[299]
 
 
 @pytest.mark.parametrize("name", ["gradient_boosting_change", "random_forest_change"])
@@ -244,3 +265,20 @@ def test_change_candidate_uses_the_recent_mean_when_the_last_day_is_missing():
     labels = pd.Series([11.0] * 100)
     model = train_module.make_candidate("random_forest_change", "pm25").fit(features, labels)
     assert np.isfinite(model.predict(features)).all()
+
+
+def test_next_candidate_replaces_the_previous_model_when_the_best_overall_fails(monkeypatch, tmp_path):
+    monkeypatch.setattr(train_module, "CANDIDATES", {"good_long_ago": GoodLongAgoModel, "steady": SteadyModel})
+    previous = {**saved_previous(tmp_path, OffByFiveModel(), str(INDEX[-60].date())),
+                "candidates": ["good_long_ago", "steady"]}
+    entry, report, _ = run(tmp_path, previous)
+    assert entry["method"] == "steady" and entry["reason"].startswith("promoted")
+    assert report["best_candidate"] == "steady"
+
+
+def test_previous_model_is_kept_when_no_candidate_passes(monkeypatch, tmp_path):
+    monkeypatch.setattr(train_module, "CANDIDATES", {"a": OffByTenModel, "b": OffByTenModel})
+    previous = {**saved_previous(tmp_path, OffByFiveModel(), str(INDEX[-60].date())),
+                "method": "a", "candidates": ["a", "b"]}
+    entry, _, _ = run(tmp_path, previous)
+    assert entry["method"] == "a" and entry["reason"].startswith("kept: candidate")

@@ -30,7 +30,7 @@ from pm25.evaluate import (
     skill,
     walk_forward_predict,
 )
-from pm25.transform import ChangeFromLast, DropEmptyColumns  # noqa: F401  (saved models refer to pm25.train.DropEmptyColumns)
+from pm25.transform import BlendWithWeekMean, ChangeFromLast, DropEmptyColumns, blend_with_week_mean  # noqa: F401  (saved models refer to pm25.train.DropEmptyColumns)
 from pm25.features import (
     ALL_TARGETS,
     build_features,
@@ -45,6 +45,7 @@ DAILY_HORIZONS = tuple(range(1, 8))  # Today and the six days after it
 MONTHLY_HORIZONS = (2, 3, 4)  # From the last complete month to one, two and three months ahead
 LATEST_WINDOW_DAYS = 90
 MIN_UNSEEN_DAYS = 14
+WAITING_REASON = "kept: only"
 REGISTRY_FILENAME = "registry.json"
 METRICS_FILENAME = "metrics.json"
 PLOT_FILENAME = "walk_forward.png"
@@ -87,25 +88,47 @@ CHANGE_SUFFIX = "_change"
 # ahead they lost to models of the level in the walk-forward test, and every extra
 # candidate adds training time, so they are only tried where they can win.
 CHANGE_HORIZONS = (1, 2, 3)
+
+
+def _gradient_boosting_blend(target: str) -> Any:
+    return BlendWithWeekMean(_gradient_boosting(), target)
+
+
+def _random_forest_blend(target: str) -> Any:
+    return BlendWithWeekMean(_random_forest(), target)
+
+
+BLEND_SUFFIX = "_blend"
+# Half the model and half the weekly mean, three to six days ahead, where the
+# weekly mean is the rule to beat. PM2.5 and PM10 only: they have that mean as a feature.
+BLEND_HORIZONS = (4, 5, 6, 7)
+BLEND_TARGETS = ("pm25", "pm10")
 CANDIDATES = {
     "gradient_boosting": _gradient_boosting,
     "random_forest": _random_forest,
     "gradient_boosting_change": _gradient_boosting_change,
     "random_forest_change": _random_forest_change,
+    "gradient_boosting_blend": _gradient_boosting_blend,
+    "random_forest_blend": _random_forest_blend,
 }
 
 
-def candidates_for(horizon: int) -> list[str]:
-    """The candidate names tried for a horizon."""
-    return [
-        name for name in CANDIDATES if not name.endswith(CHANGE_SUFFIX) or horizon in CHANGE_HORIZONS
-    ]
+def candidates_for(horizon: int, target: str = "pm25") -> list[str]:
+    """The candidate names tried for a slot."""
+    names = []
+    for name in CANDIDATES:
+        if name.endswith(CHANGE_SUFFIX) and horizon not in CHANGE_HORIZONS:
+            continue
+        if name.endswith(BLEND_SUFFIX) and (horizon not in BLEND_HORIZONS or target not in BLEND_TARGETS):
+            continue
+        names.append(name)
+    return names
 
 
 def make_candidate(name: str, target: str) -> Any:
-    """A new unfitted model; a model of the change needs to know its target."""
+    """A new unfitted model; models of the change and blends need to know their target."""
     factory = CANDIDATES[name]
-    return factory(target) if name.endswith(CHANGE_SUFFIX) else factory()
+    return factory(target) if name.endswith((CHANGE_SUFFIX, BLEND_SUFFIX)) else factory()
 
 
 def model_path(models_dir: Path, slot: str) -> Path:
@@ -132,11 +155,17 @@ def train_slot(
 ) -> tuple[dict[str, Any], dict[str, Any], pd.DataFrame]:
     """Evaluate one slot and return its registry entry, report and out-of-sample frame."""
     slot = f"{target}_h{horizon}"
-    names = candidates_for(horizon)
-    predictions = {
-        name: walk_forward_predict(features, labels, partial(make_candidate, name, target), horizon)
-        for name in names
-    }
+    names = candidates_for(horizon, target)
+    predictions = {}
+    for name in names:
+        base = name.removesuffix(BLEND_SUFFIX)
+        if name != base and base in predictions:
+            # A blend refits nothing: the same walk-forward forecasts, averaged with the weekly mean.
+            predictions[name] = pd.Series(
+                blend_with_week_mean(predictions[base], features, target), index=features.index
+            ).where(predictions[base].notna())
+        else:
+            predictions[name] = walk_forward_predict(features, labels, partial(make_candidate, name, target), horizon)
     frame = pd.DataFrame({"actual": labels, **predictions, **baselines}).dropna()
     if frame.empty:
         raise ValueError(f"{slot}: no rows to evaluate")
@@ -144,12 +173,14 @@ def train_slot(
     methods = [*names, *baselines]
     overall = {name: metrics(frame["actual"], frame[name]) for name in methods}
     latest = frame[frame.index > frame.index.max() - pd.Timedelta(days=LATEST_WINDOW_DAYS)]
-    # The best candidate over all folds goes first. When it fails the gate and
-    # there is no model to keep, the next one is tried before falling back to a
-    # rule: a candidate that beats every rule on both windows is still a model
-    # that beats every rule.
+    # The best candidate over all folds goes first. When it fails the gate, the
+    # next one is tried: a candidate that beats every rule (and the published
+    # model) on both windows has earned its place, even if another candidate has
+    # the lower error over all folds. Only when none passes is the previous model
+    # kept or a rule published, with the first candidate's reason.
     ranked = sorted(names, key=lambda name: overall[name]["mae"])
     candidate = ranked[0]
+    first: dict[str, Any] | None = None
     for name in ranked:
         entry, promote = _decide(slot, name, latest, list(baselines), previous, features, models_dir, horizon, names)
         if promote:
@@ -160,10 +191,15 @@ def train_slot(
             if not overall_ok:
                 promote = False
                 entry = _fallback(previous, overall, list(baselines), f"over all folds it {overall_reason}")
-        if promote or entry.get("method") in CANDIDATES:
-            # Promoted, or the previous model is kept: either way no other candidate is tried.
+        if promote:
             candidate = name
             break
+        first = first or entry
+        if entry["reason"].startswith(WAITING_REASON):
+            # The published model cannot be judged yet, so no candidate can replace it.
+            break
+    if not promote:
+        entry = first
     if promote:
         known = labels.notna().to_numpy()
         final_model = make_candidate(candidate, target)
@@ -252,7 +288,7 @@ def _decide(
         window = latest[latest.index + pd.Timedelta(days=horizon) > cutoff]
         if len(window) < MIN_UNSEEN_DAYS:
             kept = dict(previous)
-            kept["reason"] = f"kept: only {len(window)} days are unseen by the current model"
+            kept["reason"] = f"{WAITING_REASON} {len(window)} days are unseen by the current model"
             return kept, False
         current_model = joblib.load(model_path(models_dir, slot))
         predicted = current_model.predict(model_inputs(features.loc[window.index], previous))

@@ -33,17 +33,23 @@ class ChangeFromLast(BaseEstimator, RegressorMixin):
     from where the series is now.
 
     The starting value is the target's value on the origin day, or its recent
-    mean when that day is missing. Rows with neither are left out of training
-    and get no forecast.
+    mean when that day is missing. `starts` names other columns to start from,
+    tried in order (the hourly model starts from the newest measured hour). Rows
+    with no starting value are left out of training and get no forecast.
     """
 
-    def __init__(self, estimator: Any, target: str):
+    def __init__(self, estimator: Any, target: str, starts: tuple[str, ...] | None = None):
         self.estimator = estimator
         self.target = target
+        self.starts = starts
 
     def _start(self, features: pd.DataFrame) -> pd.Series:
-        start = features[f"{self.target}_lag0"]
-        for name in (f"{self.target}_mean3", f"{self.target}_mean7"):
+        # Models saved before `starts` existed have no such attribute.
+        names = getattr(self, "starts", None) or (
+            f"{self.target}_lag0", f"{self.target}_mean3", f"{self.target}_mean7"
+        )
+        start = features[names[0]]
+        for name in names[1:]:
             if name in features:
                 start = start.fillna(features[name])
         return start
@@ -51,8 +57,37 @@ class ChangeFromLast(BaseEstimator, RegressorMixin):
     def fit(self, features: pd.DataFrame, labels: pd.Series) -> "ChangeFromLast":
         start = self._start(features)
         known = start.notna().to_numpy()
-        self.model_ = clone(self.estimator).fit(features[known], (labels - start)[known])
+        change = np.asarray(labels, dtype=float) - start.to_numpy()  # positions, since hourly rows repeat a day
+        self.model_ = clone(self.estimator).fit(features[known], change[known])
         return self
 
     def predict(self, features: pd.DataFrame) -> np.ndarray:
         return self.model_.predict(features) + self._start(features).to_numpy()
+
+
+class BlendWithWeekMean(BaseEstimator, RegressorMixin):
+    """Average a model's forecast with the mean of the last seven days.
+
+    Three to six days ahead, the weekly mean is a hard rule to beat in calm
+    weeks while the model catches the turns. Half of each was better than either
+    over the newest 90 days and close to the model over all folds. When the
+    weekly mean is missing, the model's forecast is used alone.
+    """
+
+    def __init__(self, estimator: Any, target: str):
+        self.estimator = estimator
+        self.target = target
+
+    def fit(self, features: pd.DataFrame, labels: pd.Series) -> "BlendWithWeekMean":
+        self.model_ = clone(self.estimator).fit(features, labels)
+        return self
+
+    def predict(self, features: pd.DataFrame) -> np.ndarray:
+        return blend_with_week_mean(self.model_.predict(features), features, self.target)
+
+
+def blend_with_week_mean(predicted: Any, features: pd.DataFrame, target: str) -> np.ndarray:
+    """Half the forecast and half the weekly mean, or the forecast alone where that mean is missing."""
+    predicted = np.asarray(predicted, dtype=float)
+    week = features[f"{target}_mean7"].to_numpy(dtype=float)
+    return np.where(np.isnan(week), predicted, (predicted + week) / 2)
