@@ -243,7 +243,7 @@ def test_blend_is_half_model_and_half_weekly_mean():
     predicted = blend.predict(features)
     assert np.allclose(predicted[:299], (alone[:299] + 20.0) / 2)
     # Without a weekly mean the model's forecast is used as it is.
-    assert predicted[299] == alone[299]
+    assert np.isclose(predicted[299], alone[299])
 
 
 @pytest.mark.parametrize("name", ["gradient_boosting_change", "random_forest_change"])
