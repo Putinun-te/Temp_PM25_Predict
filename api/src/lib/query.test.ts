@@ -12,6 +12,17 @@ const HISTORY = parseCsv(
 );
 const q = (text: string) => new URLSearchParams(text);
 
+describe("parseCsv", () => {
+  it("keeps commas and doubled quotes inside a quoted field, and the columns after it", () => {
+    const rows = parseCsv(
+      'period,p_above,value\n2026-11-20,"[{""threshold"": 25.0, ""p"": 0.1}, {""threshold"": 37.5, ""p"": 0.0}]",20.8\n',
+    );
+    expect(rows).toEqual([
+      { period: "2026-11-20", p_above: '[{"threshold": 25.0, "p": 0.1}, {"threshold": 37.5, "p": 0.0}]', value: "20.8" },
+    ]);
+  });
+});
+
 describe("parameters", () => {
   it("defaults to pm25 and accepts known targets only", () => {
     expect(pickTarget(q(""))).toBe("pm25");

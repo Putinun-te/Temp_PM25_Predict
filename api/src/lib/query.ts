@@ -11,15 +11,47 @@ export class BadRequest extends Error {}
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-/** Parse the pipeline's simple CSV files (no quoted commas). */
+/** Split one CSV line. A field in double quotes may hold commas, and "" inside it is one quote. */
+export function splitCsvLine(line: string): string[] {
+  const values: string[] = [];
+  let value = "";
+  let quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (quoted) {
+      if (char === '"' && line[i + 1] === '"') {
+        value += '"';
+        i++;
+      } else if (char === '"') {
+        quoted = false;
+      } else {
+        value += char;
+      }
+    } else if (char === '"') {
+      quoted = true;
+    } else if (char === ",") {
+      values.push(value);
+      value = "";
+    } else {
+      value += char;
+    }
+  }
+  values.push(value);
+  return values;
+}
+
+/**
+ * Parse the CSV files written by the pipeline. Fields may be quoted: the chance
+ * columns hold JSON lists with commas. No field spans lines.
+ */
 export function parseCsv(text: string): Row[] {
   const [header, ...lines] = text.trim().split(/\r?\n/);
   if (!header) return [];
-  const keys = header.split(",");
+  const keys = splitCsvLine(header);
   return lines
     .filter((line) => line.length > 0)
     .map((line) => {
-      const values = line.split(",");
+      const values = splitCsvLine(line);
       return Object.fromEntries(keys.map((key, i) => [key, values[i] ?? ""]));
     });
 }
