@@ -241,6 +241,32 @@ def test_later_station_days_and_hourly_pm10_become_history_rows():
     assert rows.loc["pm10", "forecast"] == 40.0 and rows.loc["pm10", "method"] == "same_hour"
 
 
+def test_hourly_chances_are_kept_and_scored_live():
+    from pm25.monitor import hourly_rows, score_hourly, summarize_extra
+
+    hourly = {
+        "as_of": "2026-11-16",
+        "method": "gradient_boosting_change",
+        "pm10_method": "same_hour",
+        "inputs_through": "2026-11-16T03:00",
+        "hours": [
+            {"time": "2026-11-16T04:00", "day": "today", "pm25": 30.0, "low": 25.0, "high": 35.0,
+             "p_above": [{"threshold": 25.0, "p": 0.9}], "pm10": 40.0, "pm10_low": 30.0, "pm10_high": 50.0},
+            {"time": "2026-11-16T05:00", "day": "today", "pm25": 20.0, "low": 15.0, "high": 25.0, "p_above": None},
+        ],
+    }
+    rows = hourly_rows(hourly)
+    assert rows["p_above"].iloc[0] == '[{"threshold": 25.0, "p": 0.9}]'
+    assert rows["p_above"].iloc[1:].isna().all()  # No chance published, and PM10 had none
+
+    city = pd.Series({pd.Timestamp("2026-11-16T04:00"): 28.0, pd.Timestamp("2026-11-16T05:00"): 18.0})
+    scored = score_hourly(rows[rows["target"] == "pm25"], city)
+    today = next(row for row in summarize_extra(scored) if row["window_days"] == 7)
+    assert today["chances"] == [
+        {"threshold": 25.0, "chance_n": 1, "chance_events": 1, "brier": 0.01, "base_rate_brier": 0.0}
+    ]
+
+
 def test_published_chances_get_a_live_brier_score():
     history = pd.DataFrame(
         [

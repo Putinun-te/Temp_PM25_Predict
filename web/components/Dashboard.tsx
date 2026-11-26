@@ -110,6 +110,7 @@ export default function Dashboard() {
           <HourlyLevels hours={hourly.hours} target={hourlyTarget} />
           <p className="note">
             {t("hourlyInputs")} {hourly.inputs_through.replace("T", " ")}. {t("hourlyNote")} {t("hourlyLevelsNote")}
+            {hourly.hours.some((point) => (hourlyTarget === "pm10" ? point.pm10_p_above : point.p_above)?.length) && ` ${t("hourlyChanceNote")}`}
           </p>
         </>
       )}

@@ -1,4 +1,4 @@
-import { DAY_LABELS, type DayLabel, type HourlyForecast } from "./types";
+import { DAY_LABELS, type DayLabel, type HourlyForecast, type HourlyPoint, type HourlyTarget } from "./types";
 import type {
   AccuracySummary,
   ChanceAbove,
@@ -268,4 +268,25 @@ export function chanceText(p: number | null | undefined): string {
   if (p < 0.01) return "<1%";
   if (p > 0.99) return ">99%";
   return `${Math.round(p * 100)}%`;
+}
+
+/** The chances of one forecast hour for the chosen target. */
+export function hourChances(point: HourlyPoint, target: HourlyTarget): ChanceAbove[] {
+  return chanceList(target === "pm10" ? point.pm10_p_above : point.p_above, null, 0);
+}
+
+export interface PeakChance extends ChanceAbove {
+  time: string;
+}
+
+/** For each band edge, the hour with the highest chance of going above it, lowest edge first. */
+export function peakChances(points: HourlyPoint[], target: HourlyTarget): PeakChance[] {
+  const peaks = new Map<number, PeakChance>();
+  for (const point of points) {
+    for (const { threshold, p } of hourChances(point, target)) {
+      const best = peaks.get(threshold);
+      if (!best || p > best.p) peaks.set(threshold, { threshold, p, time: point.time });
+    }
+  }
+  return [...peaks.values()].sort((a, b) => a.threshold - b.threshold);
 }

@@ -168,6 +168,12 @@ const STRINGS = {
     en: "Colours apply the PCD bands to each hour's value. The official index uses the 24-hour average, so treat these as a guide to the time of day, not as the official level.",
     th: "สีใช้เกณฑ์ของกรมควบคุมมลพิษกับค่าของแต่ละชั่วโมง ดัชนีทางการใช้ค่าเฉลี่ย 24 ชั่วโมง จึงควรใช้ดูช่วงเวลาของวัน ไม่ใช่ระดับทางการ",
   },
+  hourlyPeakChance: { en: "Highest chance of an hour above", th: "โอกาสสูงสุดที่ชั่วโมงใดจะเกิน" },
+  hourlyPeakAt: { en: "at", th: "เวลา" },
+  hourlyChanceNote: {
+    en: "Chances are for a single hour going above a band edge, from how far past hourly forecasts at the same level missed, and are shown only for edges that beat quoting the historical rate on the newest year. Hover over an hour for its own chances.",
+    th: "โอกาสคือโอกาสที่ค่าของชั่วโมงหนึ่งจะเกินขอบแถบสี คำนวณจากความคลาดเคลื่อนของการพยากรณ์รายชั่วโมงที่ผ่านมาที่ระดับใกล้เคียงกัน แสดงเฉพาะขอบที่ทายได้ดีกว่าการบอกอัตราในอดีตเมื่อทดสอบกับปีล่าสุด ชี้ที่ชั่วโมงเพื่อดูโอกาสของชั่วโมงนั้น",
+  },
   hourlyForecast: { en: "Hourly forecast", th: "พยากรณ์รายชั่วโมง" },
   hourlyRange: { en: "Likely range", th: "ช่วงที่น่าจะเป็น" },
   mapMeasured: { en: "Measured", th: "วัดได้ล่าสุด" },

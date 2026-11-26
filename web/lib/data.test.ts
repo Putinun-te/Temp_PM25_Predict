@@ -131,3 +131,21 @@ describe("chance lists", () => {
     expect(bandAbove("pm10", 80)?.upTo).toBe(120);
   });
 });
+
+describe("hourly chances", () => {
+  it("finds the hour with the highest chance per edge, for the chosen target", async () => {
+    const { hourChances, peakChances } = await import("./data");
+    const hour = (time: string, p25: number, p37: number) => ({
+      time, day: "today" as const, pm25: 30, low: 25, high: 35,
+      p_above: [{ threshold: 37.5, p: p37 }, { threshold: 25, p: p25 }],
+      pm10_p_above: [{ threshold: 80, p: 0.05 }],
+    });
+    const hours = [hour("2026-11-26T08:00", 0.6, 0.1), hour("2026-11-26T19:00", 0.9, 0.3), hour("2026-11-26T22:00", 0.95, 0.2)];
+    expect(peakChances(hours, "pm25")).toEqual([
+      { threshold: 25, p: 0.95, time: "2026-11-26T22:00" },
+      { threshold: 37.5, p: 0.3, time: "2026-11-26T19:00" },
+    ]);
+    expect(peakChances(hours, "pm10")).toEqual([{ threshold: 80, p: 0.05, time: "2026-11-26T08:00" }]);
+    expect(hourChances({ time: "x", day: "today", pm25: 1, low: 0, high: 2 }, "pm25")).toEqual([]);
+  });
+});

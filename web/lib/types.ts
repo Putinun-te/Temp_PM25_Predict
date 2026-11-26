@@ -1,4 +1,4 @@
-/** Chance (0 to 1) that a daily mean goes above `threshold` µg/m³. */
+/** Chance (0 to 1) that a daily mean, or one hour in the hourly forecast, goes above `threshold` µg/m³. */
 export interface ChanceAbove {
   threshold: number;
   p: number;
@@ -109,6 +109,9 @@ export interface HourlyPoint {
   pm10?: number | null;
   pm10_low?: number | null;
   pm10_high?: number | null;
+  /** Chance this hour goes above each colour band edge that passed its test; absent before 26 November 2026. */
+  p_above?: ChanceAbove[] | null;
+  pm10_p_above?: ChanceAbove[] | null;
 }
 
 export type HourlyTarget = "pm25" | "pm10";

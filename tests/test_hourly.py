@@ -148,3 +148,32 @@ def test_a_model_saved_under_the_old_name_is_still_served(tmp_path):
     old = {**entry, "method": "gradient_boosting"}
     document = forecast_hourly(city, pd.DataFrame(), old, tmp_path, as_of, "now")
     assert all(hour["pm25"] is not None for hour in document["hours"])
+
+
+def test_hourly_chances_use_the_edges_that_passed_for_that_part():
+    from pm25.hourly import hourly_chances
+
+    spec = {"thresholds": [25.0, 37.5], "edges": [20.0], "quantiles": [[-2.0, 0.0, 2.0], [-10.0, 0.0, 10.0]]}
+    entry = {"exceedance": {"today": spec}}
+    assert hourly_chances(entry, "today", 30.0) == [{"threshold": 25.0, "p": 0.67}, {"threshold": 37.5, "p": 0.33}]
+    assert hourly_chances(entry, "tomorrow", 30.0) is None  # No edge passed for tomorrow
+    assert hourly_chances(entry, "today", None) is None
+    assert hourly_chances({}, "today", 30.0) is None  # Models trained before hourly chances
+
+
+def test_every_hour_carries_its_chances_and_pm10_keeps_its_own(tmp_path):
+    from pm25.hourly import merge_pm10
+
+    city = city_series()
+    as_of = pd.Timestamp("2026-03-06")
+    entry, report = train_hourly(city, pd.DataFrame(), as_of, tmp_path, "now")
+    assert set(report["exceedance_by_threshold"]) == {"today", "tomorrow"}
+    assert set(report["exceedance_by_threshold"]["today"]) == {"25", "37.5", "75"}
+    document = forecast_hourly(city, pd.DataFrame(), entry, tmp_path, as_of, "now")
+    assert all("p_above" in hour for hour in document["hours"])
+
+    pm10 = {"measured": [], "method": "same_hour", "hours": [
+        {**hour, "pm10": 50.0, "p_above": [{"threshold": 80.0, "p": 0.1}]} for hour in document["hours"]
+    ]}
+    merged = merge_pm10(document, pm10)
+    assert merged["hours"][0]["pm10_p_above"] == [{"threshold": 80.0, "p": 0.1}]

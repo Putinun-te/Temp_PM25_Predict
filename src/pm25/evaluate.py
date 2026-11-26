@@ -330,16 +330,27 @@ def range_entry(
         **fitted,
     }
     if target in THRESHOLDS:
-        checks = {threshold_key(t): compare_exceedance(actual, predicted, t) for t in THRESHOLDS[target]}
+        spec, checks = exceedance_entry(actual, predicted, target)
         comparison["exceedance"] = checks[threshold_key(STANDARDS[target])]
         comparison["exceedance_by_threshold"] = checks
-        published = [t for t in THRESHOLDS[target] if checks[threshold_key(t)]["published"]]
-        if published:
-            spec: dict[str, object] = {"thresholds": published, **(exceedance_quantiles(actual, predicted) or {})}
-            if STANDARDS[target] in published:
-                spec["threshold"] = STANDARDS[target]
+        if spec is not None:
             fields["exceedance"] = spec
     return fields, comparison
+
+
+def exceedance_entry(
+    actual: pd.Series, predicted: pd.Series, target: str
+) -> tuple[dict[str, object] | None, dict[str, dict[str, object]]]:
+    """Test the chance above each band edge of `target`; return the spec of those that passed, and every test."""
+    checks = {threshold_key(t): compare_exceedance(actual, predicted, t) for t in THRESHOLDS[target]}
+    published = [t for t in THRESHOLDS[target] if checks[threshold_key(t)]["published"]]
+    quantiles = exceedance_quantiles(actual, predicted) if published else None
+    if not quantiles:
+        return None, checks
+    spec: dict[str, object] = {"thresholds": published, **quantiles}
+    if STANDARDS[target] in published:
+        spec["threshold"] = STANDARDS[target]
+    return spec, checks
 
 
 def threshold_key(threshold: float) -> str:

@@ -28,7 +28,15 @@ import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.pipeline import make_pipeline
 
-from pm25.evaluate import fitted_range, metrics, promotion_gate, walk_forward_predict, width_for
+from pm25.evaluate import (
+    entry_chances_above,
+    exceedance_entry,
+    fitted_range,
+    metrics,
+    promotion_gate,
+    walk_forward_predict,
+    width_for,
+)
 from pm25.features import MIN_STATIONS, TIMEZONE
 from pm25.transform import ChangeFromLast, DropEmptyColumns
 from pm25.ingest import PARAMETER, TIME, VALUE, city_panel
@@ -200,6 +208,15 @@ def train_hourly(
     for part, rows in parts.items():
         ranges[part], range_report[part] = fitted_range(rows["actual"], rows[method], None, ("flat", "level"))
     entry["range"] = ranges
+    # The chance that an hour is above each colour band edge, tested per part like the range.
+    # The Thai standard is a 24-hour mean, so for one hour these are band edges, not the standard.
+    chances, chance_report = {}, {}
+    for part, rows in parts.items():
+        spec, chance_report[part] = exceedance_entry(rows["actual"], rows[method], target)
+        if spec is not None:
+            chances[part] = spec
+    if chances:
+        entry["exceedance"] = chances
     if promote:
         known = labels.notna().to_numpy()
         model = make_change_model(known_hour).fit(features[known], labels[known])
@@ -213,6 +230,7 @@ def train_hourly(
         "mae_by_day": by_part,
         "evaluated_hours": int(len(frame)),
         "range": range_report,
+        "exceedance_by_threshold": chance_report,
     }
     return entry, report
 
@@ -248,6 +266,7 @@ def forecast_hourly(
                 target: None if missing else round(value, 1),
                 "low": None if missing else round(max(value - q80, 0.0), 1),
                 "high": None if missing else round(value + q80, 1),
+                "p_above": hourly_chances(entry, part, value),
             }
         )
     known_until = as_of + pd.Timedelta(hours=known_hour)
@@ -271,6 +290,12 @@ def hourly_width(entry: dict[str, Any], part: str, value: float | None) -> float
     return entry["residual_q80"][part] if width is None else width
 
 
+def hourly_chances(entry: dict[str, Any], part: str, value: float | None) -> list[dict[str, float]] | None:
+    """Chance of the hour going above each band edge that passed its test for this part, or None."""
+    spec = (entry.get("exceedance") or {}).get(part)
+    return entry_chances_above({"exceedance": spec}, value) if spec else None
+
+
 def has_recent_hours(city: pd.Series, as_of: pd.Timestamp, known_hour: int) -> bool:
     """True when at least one of the newest hours before `known_hour` has been measured."""
     newest = pd.date_range(end=as_of + pd.Timedelta(hours=known_hour), periods=AFTERNOON_REQUIRED_HOURS, freq="h")
@@ -280,14 +305,21 @@ def has_recent_hours(city: pd.Series, as_of: pd.Timestamp, known_hour: int) -> b
 def merge_pm10(hourly: dict[str, Any], pm10: dict[str, Any]) -> dict[str, Any]:
     """Add the PM10 hourly forecast to the PM2.5 document.
 
-    Each hour gains `pm10`, `pm10_low` and `pm10_high`, each measured hour gains
+    Each hour gains `pm10`, `pm10_low`, `pm10_high` and `pm10_p_above`, each measured hour gains
     `pm10`, and `pm10_method` names the PM10 method. PM2.5 fields are unchanged.
     """
     by_time = {hour["time"]: hour for hour in pm10["hours"]}
     for hour in hourly["hours"]:
         extra = by_time.get(hour["time"])
         if extra is not None:
-            hour.update({"pm10": extra["pm10"], "pm10_low": extra["low"], "pm10_high": extra["high"]})
+            hour.update(
+                {
+                    "pm10": extra["pm10"],
+                    "pm10_low": extra["low"],
+                    "pm10_high": extra["high"],
+                    "pm10_p_above": extra.get("p_above"),
+                }
+            )
     measured = {item["time"]: item["pm10"] for item in pm10["measured"]}
     for item in hourly["measured"]:
         if item["time"] in measured:

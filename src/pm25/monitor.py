@@ -264,14 +264,20 @@ def hourly_rows(hourly: dict[str, Any]) -> pd.DataFrame:
     for hour in hourly.get("hours", []):
         base = {"as_of": hourly["as_of"], "time": hour["time"], "known_hour": known_hour, "label": hour["day"]}
         rows.append({**base, "target": "pm25", "forecast": hour["pm25"], "low": hour["low"], "high": hour["high"],
-                     "method": hourly["method"]})
+                     "method": hourly["method"], "p_above": _chance_json(hour.get("p_above"))})
         # PM10 sits next to PM2.5 in the same hour, when its model exists.
         if "pm10" in hour:
             rows.append({**base, "target": "pm10", "forecast": hour["pm10"], "low": hour["pm10_low"],
-                         "high": hour["pm10_high"], "method": hourly.get("pm10_method")})
+                         "high": hour["pm10_high"], "method": hourly.get("pm10_method"),
+                         "p_above": _chance_json(hour.get("pm10_p_above"))})
     return pd.DataFrame(
-        rows, columns=["as_of", "time", "known_hour", "target", "label", "forecast", "low", "high", "method"]
+        rows, columns=["as_of", "time", "known_hour", "target", "label", "forecast", "low", "high", "method", "p_above"]
     )
+
+
+def _chance_json(chances: list[dict[str, float]] | None) -> str | None:
+    """Chances are kept in history files as JSON text, or left empty."""
+    return json.dumps(chances) if chances else None
 
 
 def station_rows(forecast: dict[str, Any]) -> pd.DataFrame:
@@ -289,7 +295,7 @@ def station_rows(forecast: dict[str, Any]) -> pd.DataFrame:
                          "label": label, "location_id": station["location_id"], "target": target,
                          "forecast": value[target], "low": value["low"], "high": value["high"],
                          "method": value["method"], "p_above_standard": value.get("p_above_standard"),
-                         "p_above": json.dumps(value["p_above"]) if value.get("p_above") else None}
+                         "p_above": _chance_json(value.get("p_above"))}
                     )
     return pd.DataFrame(
         rows,
@@ -331,7 +337,7 @@ def _finish(scored: pd.DataFrame) -> pd.DataFrame:
     has_range = scored["low"].notna() & scored["high"].notna()
     inside = (scored["actual"] >= scored["low"]) & (scored["actual"] <= scored["high"])
     scored["in_range"] = inside.where(has_range)
-    if "p_above_standard" in scored:
+    if "p_above_standard" in scored or "p_above" in scored:
         scored = _add_events(scored)
     return scored.reset_index(drop=True)
 
