@@ -390,6 +390,16 @@ Each later run sees more of the day, so its forecast for tomorrow is better too:
 
 **Hourly PM10.** Each hour also carries `pm10`, `pm10_low` and `pm10_high`, from the same code with its own morning and afternoon models (`pm10_method` names the method). The city value is the median of at least two of the three PM10 stations. Walk-forward over 53,506 hours: MAE 5.47 µg/m³ against 6.84 for yesterday's mean and 7.18 for the same hour yesterday; hours of today 4.29, tomorrow 6.48. The afternoon model: 5.18 against 7.00; hours of today 3.74. The evening model: 4.95 against 6.71; hours of today 3.47, tomorrow 5.37. All three passed the promotion gate.
 
+**Hourly chances.** Since 26 November 2026 each hour also carries `p_above` (and `pm10_p_above`): the chance that the hour goes above each PCD band edge, from how far past hourly forecasts at the same level missed. Today's and tomorrow's hours are tested apart, with the same test as the daily chances (newest year, at least 10 hours above the edge, Brier score below always saying the historical rate). The Thai standard is a 24-hour mean, so for one hour these are band edges, not the standard. Test of 26 November 2026, Brier score against the historical rate:
+
+| Run | Today > 25 | Today > 37.5 | Tomorrow > 25 | Tomorrow > 37.5 |
+|---|---|---|---|---|
+| Morning | 0.045 vs 0.201 | 0.024 vs 0.058 | 0.087 vs 0.201 | 0.047 vs 0.058 |
+| Afternoon | 0.035 vs 0.203 | 0.018 vs 0.060 | 0.078 vs 0.200 | 0.041 vs 0.059 |
+| Evening | 0.030 vs 0.199 | 0.008 vs 0.061 | 0.066 vs 0.200 | 0.032 vs 0.059 |
+
+No hour went above 75 in the newest year, and PM10 went above 80 in at most 7 hours, so neither is published. The dashboard shows, for each day, the hour with the highest chance per edge; hovering over an hour shows its own chances.
+
 The dashboard also colours each forecast hour by the PCD band of its value. The official index uses the 24-hour average, so the colours are a guide to the time of day, not the official level.
 
 ### Station forecasts
