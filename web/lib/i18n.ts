@@ -181,8 +181,8 @@ const STRINGS = {
   stationForecastTitle: { en: "Forecast for this station", th: "พยากรณ์ของสถานีนี้" },
   stationAccuracyTitle: { en: "How this station's forecasts have done", th: "ความแม่นของพยากรณ์สถานีนี้" },
   stationAccuracyNote: {
-    en: "Forecasts published since 17 November 2026 and scored once the day was measured. Baseline is the station's own last measured day.",
-    th: "พยากรณ์ที่เผยแพร่ตั้งแต่ 17 พ.ย. 2026 และเทียบเมื่อวัดค่าวันนั้นได้แล้ว วิธีพื้นฐานคือค่าวันล่าสุดที่สถานีนี้วัดได้",
+    en: "Forecasts published since 17 November 2026 and scored once the day was measured. Baseline is the station's own last measured day. Bold MAE beats it. Few scored days say little.",
+    th: "พยากรณ์ที่เผยแพร่ตั้งแต่ 17 พ.ย. 2026 และเทียบเมื่อวัดค่าวันนั้นได้แล้ว วิธีพื้นฐานคือค่าวันล่าสุดที่สถานีนี้วัดได้ MAE ตัวหนาคือดีกว่าวิธีพื้นฐาน จำนวนวันน้อยยังบอกอะไรได้ไม่มาก",
   },
   stationNoScores: { en: "No forecasts for this station have been scored yet.", th: "ยังไม่มีพยากรณ์ของสถานีนี้ที่เทียบกับค่าจริงได้" },
   stationNote: {

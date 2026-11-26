@@ -15,7 +15,7 @@ import {
   loadStations,
   loadStationScores,
   stationIdFrom,
-  summarizeStation,
+  summarizeStationByDay,
 } from "@/lib/data";
 import { dayLabel, fmt, methodName } from "@/lib/format";
 import { DAY_LABELS, type Forecast, type HourlyTarget, type ScoredStationForecast, type StationsFile } from "@/lib/types";
@@ -97,7 +97,7 @@ export default function StationView() {
   if (error) return <p className="error">{t("loadError")}</p>;
   if (!loaded) return <p className="sub">{t("loading")}</p>;
 
-  const summary = id === null ? null : summarizeStation(loaded.scores, id, shown);
+  const byDay = id === null ? [] : summarizeStationByDay(loaded.scores, id, shown);
   // Older forecasts, and slots that did not earn it, have no chance above the standard.
   const hasChance = id !== null && DAY_LABELS.some((label) => (dayValue(loaded, id, label, shown)?.chances.length ?? 0) > 0);
   const choose = (next: number) => {
@@ -196,28 +196,38 @@ export default function StationView() {
           {hasChance && <p className="note">{t("chanceAboveNote")}</p>}
 
           <h2>{t("stationAccuracyTitle")}</h2>
-          {summary && summary.days > 0 ? (
-            <div className="grid">
-              <div className="card">
-                <div className="label">{t("scoredDays")}</div>
-                <div className="value">{summary.days}</div>
-              </div>
-              <div className="card">
-                <div className="label">MAE</div>
-                <div className="value">
-                  {fmt(summary.mae)} <span className="unit">µg/m³</span>
-                </div>
-              </div>
-              <div className="card">
-                <div className="label">{t("baselineMae")}</div>
-                <div className="value">
-                  {fmt(summary.baselineMae)} <span className="unit">µg/m³</span>
-                </div>
-              </div>
-              <div className="card">
-                <div className="label">{t("withinRange")}</div>
-                <div className="value">{summary.coverage === null ? "n/a" : `${Math.round(summary.coverage * 100)}%`}</div>
-              </div>
+          {byDay.length > 0 ? (
+            <div className="table-wrap">
+              <table className="week">
+                <thead>
+                  <tr>
+                    <th>{t("horizon")}</th>
+                    <th>{t("scoredDays")}</th>
+                    <th>MAE (µg/m³)</th>
+                    <th>{t("baselineMae")} (µg/m³)</th>
+                    <th>{t("withinRange")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {byDay.map((row) => (
+                    <tr key={row.label}>
+                      <td>
+                        <strong>{dayLabel(row.label, t)}</strong>
+                      </td>
+                      <td>{row.days}</td>
+                      <td>
+                        {row.mae !== null && row.baselineMae !== null && row.mae < row.baselineMae ? (
+                          <strong>{fmt(row.mae)}</strong>
+                        ) : (
+                          fmt(row.mae)
+                        )}
+                      </td>
+                      <td>{fmt(row.baselineMae)}</td>
+                      <td>{row.coverage === null ? "n/a" : `${Math.round(row.coverage * 100)}%`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
             <p className="note">{t("stationNoScores")}</p>

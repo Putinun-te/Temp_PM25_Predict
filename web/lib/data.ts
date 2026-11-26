@@ -1,4 +1,4 @@
-import type { HourlyForecast } from "./types";
+import { DAY_LABELS, type DayLabel, type HourlyForecast } from "./types";
 import type {
   AccuracySummary,
   ChanceAbove,
@@ -26,15 +26,47 @@ export function toNumber(value: string | undefined): number | null {
   return Number.isFinite(number) ? number : null;
 }
 
-/** Parse the simple CSV files written by the pipeline (no quoted commas). */
+/** Split one CSV line. A field in double quotes may hold commas, and "" inside it is one quote. */
+export function splitCsvLine(line: string): string[] {
+  const values: string[] = [];
+  let value = "";
+  let quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (quoted) {
+      if (char === '"' && line[i + 1] === '"') {
+        value += '"';
+        i++;
+      } else if (char === '"') {
+        quoted = false;
+      } else {
+        value += char;
+      }
+    } else if (char === '"') {
+      quoted = true;
+    } else if (char === ",") {
+      values.push(value);
+      value = "";
+    } else {
+      value += char;
+    }
+  }
+  values.push(value);
+  return values;
+}
+
+/**
+ * Parse the CSV files written by the pipeline. Fields may be quoted: the chance
+ * columns hold JSON lists with commas. No field spans lines.
+ */
 export function parseCsv(text: string): Record<string, string>[] {
   const [header, ...lines] = text.trim().split(/\r?\n/);
   if (!header) return [];
-  const keys = header.split(",");
+  const keys = splitCsvLine(header);
   return lines
     .filter((line) => line.length > 0)
     .map((line) => {
-      const values = line.split(",");
+      const values = splitCsvLine(line);
       return Object.fromEntries(keys.map((key, i) => [key, values[i] ?? ""]));
     });
 }
@@ -176,9 +208,20 @@ export interface StationSummary {
   coverage: number | null;
 }
 
-/** Mean error, baseline error and range coverage of one station's scored forecasts for a target. */
-export function summarizeStation(rows: ScoredStationForecast[], id: number, target: string): StationSummary {
-  const mine = rows.filter((row) => row.location_id === id && row.target === target && row.abs_error !== null);
+/** Mean error, baseline error and range coverage of one station's scored forecasts for a target, optionally for one day ahead. */
+export function summarizeStation(
+  rows: ScoredStationForecast[],
+  id: number,
+  target: string,
+  label?: string,
+): StationSummary {
+  const mine = rows.filter(
+    (row) =>
+      row.location_id === id &&
+      row.target === target &&
+      row.abs_error !== null &&
+      (label === undefined || row.label === label),
+  );
   const mean = (values: number[]) => (values.length ? values.reduce((a, b) => a + b, 0) / values.length : null);
   const ranged = mine.filter((row) => row.in_range !== null);
   return {
@@ -187,6 +230,20 @@ export function summarizeStation(rows: ScoredStationForecast[], id: number, targ
     baselineMae: mean(mine.filter((row) => row.persistence_abs_error !== null).map((row) => row.persistence_abs_error as number)),
     coverage: ranged.length ? ranged.filter((row) => row.in_range).length / ranged.length : null,
   };
+}
+
+/**
+ * The same summary for each day ahead that has scored forecasts, today first.
+ * Errors grow with the days ahead, so one number for all of them would not compare fairly with the baseline.
+ */
+export function summarizeStationByDay(
+  rows: ScoredStationForecast[],
+  id: number,
+  target: string,
+): (StationSummary & { label: DayLabel })[] {
+  return DAY_LABELS.map((label) => ({ label, ...summarizeStation(rows, id, target, label) })).filter(
+    (summary) => summary.days > 0,
+  );
 }
 
 /** Dates `as_of` + 0 to 6 as YYYY-MM-DD, matching the labels today to day6. */

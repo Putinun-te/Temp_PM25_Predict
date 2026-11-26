@@ -10,6 +10,17 @@ describe("parseCsv", () => {
     ]);
   });
 
+  it("keeps commas and doubled quotes inside a quoted field", () => {
+    const text = 'period,p_above,abs_error\n2026-11-20,"[{""threshold"": 25.0, ""p"": 0.46}, {""threshold"": 37.5, ""p"": 0.02}]",4.6\n';
+    expect(parseCsv(text)).toEqual([
+      {
+        period: "2026-11-20",
+        p_above: '[{"threshold": 25.0, "p": 0.46}, {"threshold": 37.5, "p": 0.02}]',
+        abs_error: "4.6",
+      },
+    ]);
+  });
+
   it("returns nothing for an empty file", () => {
     expect(parseCsv("")).toEqual([]);
   });
@@ -85,6 +96,20 @@ describe("station page helpers", () => {
       { location_id: "2", target: "pm25", abs_error: "9", persistence_abs_error: "9", in_range: "True" },
     ]);
     expect(summarizeStation(rows, 1, "pm25")).toEqual({ days: 2, mae: 3, baselineMae: 5, coverage: 0.5 });
+  });
+
+  it("summarises one station's scores per day ahead, today first", async () => {
+    const { summarizeStationByDay, toScoredStationRows } = await import("./data");
+    const rows = toScoredStationRows([
+      { location_id: "1", target: "pm25", label: "tomorrow", abs_error: "6", persistence_abs_error: "4", in_range: "False" },
+      { location_id: "1", target: "pm25", label: "today", abs_error: "2", persistence_abs_error: "4", in_range: "True" },
+      { location_id: "1", target: "pm25", label: "today", abs_error: "4", persistence_abs_error: "6", in_range: "True" },
+      { location_id: "1", target: "pm10", label: "day2", abs_error: "9", persistence_abs_error: "9", in_range: "True" },
+    ]);
+    expect(summarizeStationByDay(rows, 1, "pm25")).toEqual([
+      { label: "today", days: 2, mae: 3, baselineMae: 5, coverage: 1 },
+      { label: "tomorrow", days: 1, mae: 6, baselineMae: 4, coverage: 0 },
+    ]);
   });
 
   it("writes chances so a small one never reads as zero", async () => {
