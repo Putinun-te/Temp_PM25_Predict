@@ -220,7 +220,7 @@ def train_slot(
             entry["reason"] += f" ({ranked[0]} had the lower MAE over all folds but failed the gate)"
 
     entry["candidates"] = names
-    for stale in ("residual_q80_by_level", "exceedance"):
+    for stale in ("residual_q80_by_level", "residual_q80_recent", "exceedance"):
         entry.pop(stale, None)
     range_fields, range_report = range_entry(frame["actual"], frame[entry["method"]], horizon, target)
     entry.update(range_fields)

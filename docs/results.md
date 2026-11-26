@@ -51,7 +51,7 @@ Each forecast has a range meant to hold 80 % of outcomes. Six ways of sizing it 
 | Humidity today | 69 % | 84 % | 69 % |
 | Humidity tomorrow | 70 % | 81 % | 72 % |
 
-PM ranges hold up. Humidity ranges do not: chosen a year ago, they would have held about 70 %. Humidity errors grew in the newest year, so the published figure is optimistic until live coverage confirms it.
+PM ranges hold up. Humidity ranges do not: chosen a year ago, they would have held about 70 %. Humidity errors grew in the newest year, so the published figure is optimistic until live coverage confirms it. Since 26 November 2026 the weather targets also try a range from the newest 90 days of errors, refitted weekly; scored the way it would have been published, it held 76 to 78 % for humidity two to five days ahead where the earlier choice held 67 to 71 %.
 
 The PM2.5 forecast also says how likely the day is to go above the colour-band edges of 25 and 37.5 µg/m³ (the Thai standard), from how past forecasts at the same level missed. Each edge is published only where it beat quoting the historical rate on the newest year: above the standard, Brier 0.027 against 0.054 for today and 0.049 against 0.054 for tomorrow; above 25, 0.070 against 0.209 for today. With only 18 days above the standard in that year, that chance is a rough guide. Published chances are scored every day against what was measured.
 

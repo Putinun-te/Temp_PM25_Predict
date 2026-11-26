@@ -78,6 +78,15 @@ RANGE_COVERAGE_TOLERANCE = 0.07
 # Calibration windows: every past forecast, or only the newest two years or one
 # year, for targets whose errors have drifted (humidity has).
 RANGE_WINDOWS: tuple[int | None, ...] = (None, 730, 365)
+# A "recent" range is the 80 % error of the newest days at each weekly retrain.
+# It follows drift within the year (humidity's errors grow and shrink for weeks
+# at a time), so it is tried for the weather targets, whose daily index has one
+# row per day. Scored as it would have been published: refitted once a week,
+# so a forecast uses errors up to its horizon plus seven days old.
+RECENT_RANGE_DAYS = 90
+RECENT_RANGE_MIN_ROWS = 45
+RECENT_RANGE_REFIT_DAYS = 7
+RECENT_RANGE_TARGETS = ("temp_c", "rh_pct")
 # Thai 24-hour standards in µg/m³; the chance of going above them is published.
 STANDARDS = {"pm25": 37.5, "pm10": 120.0}
 # Edges of the Pollution Control Department colour bands, standard included. A
@@ -136,6 +145,10 @@ def _fit_spec(kind: str, frame: pd.DataFrame, horizon: int | None) -> dict[str, 
     """Fit one kind of range on `frame`: flat, season (needs a horizon) or level."""
     if frame.empty:
         return None
+    if kind == "recent":
+        if len(frame) < RECENT_RANGE_MIN_ROWS:
+            return None
+        return {"residual_q80_recent": residual_q80(frame["actual"], frame["predicted"])}
     if kind == "level":
         spec = level_q80(frame["actual"], frame["predicted"])
         return None if spec is None else {"residual_q80_by_level": spec}
@@ -152,6 +165,20 @@ def _widths(kind: str, spec: Mapping[str, object], frame: pd.DataFrame, horizon:
         days = frame.index + pd.Timedelta(days=horizon)
         return pd.Series([range_for(spec, day) for day in days], index=frame.index, dtype=float)
     return pd.Series(spec["residual_q80"], index=frame.index, dtype=float)
+
+
+def recent_widths(paired: pd.DataFrame, horizon: int | None, days: int = RECENT_RANGE_DAYS) -> pd.Series:
+    """The recent range each origin of `paired` would have been published with.
+
+    The error of origin o is known at o + horizon, and the range is refitted at
+    most RECENT_RANGE_REFIT_DAYS before it is used, so origin t sees the errors
+    of origins up to t - horizon - RECENT_RANGE_REFIT_DAYS.
+    """
+    error = (paired["actual"] - paired["predicted"]).abs().sort_index()
+    error.index = error.index + pd.Timedelta(days=(horizon or 0) + RECENT_RANGE_REFIT_DAYS)
+    width = error.rolling(f"{days}D", min_periods=RECENT_RANGE_MIN_ROWS).quantile(0.8)
+    width = width[~width.index.duplicated(keep="last")]
+    return width.reindex(width.index.union(paired.index)).ffill().reindex(paired.index)
 
 
 def compare_ranges(
@@ -185,11 +212,16 @@ def compare_ranges(
     result: dict[str, object] = {"holdout_days": int(newer.index.nunique())}
     scores: dict[str, dict[str, float]] = {}
     for kind in kinds:
-        for days in RANGE_WINDOWS:
-            spec = _fit_spec(kind, _window(older, days), horizon)
-            if spec is None:
-                continue
-            width = _widths(kind, spec, newer, horizon)
+        for days in (RECENT_RANGE_DAYS,) if kind == "recent" else RANGE_WINDOWS:
+            if kind == "recent":
+                width = recent_widths(paired, horizon, days).reindex(newer.index)
+                if width.isna().any():
+                    continue
+            else:
+                spec = _fit_spec(kind, _window(older, days), horizon)
+                if spec is None:
+                    continue
+                width = _widths(kind, spec, newer, horizon)
             low = (newer["predicted"] - width).clip(lower=0)
             high = newer["predicted"] + width
             inside = (newer["actual"] >= low) & (newer["actual"] <= high)
@@ -289,7 +321,8 @@ def range_entry(
     actual: pd.Series, predicted: pd.Series, horizon: int, target: str | None = None
 ) -> tuple[dict[str, object], dict[str, object]]:
     """Return the registry fields for the published range and the comparison behind them."""
-    fitted, comparison = fitted_range(actual, predicted, horizon)
+    kinds = ("season", "level", "recent") if target in RECENT_RANGE_TARGETS else ("season", "level")
+    fitted, comparison = fitted_range(actual, predicted, horizon, kinds)
     fields: dict[str, object] = {
         # The all-year and seasonal values stay as the fallback for any forecast without a value.
         "residual_q80": residual_q80(actual, predicted),
@@ -320,6 +353,8 @@ def range_for(entry: Mapping[str, object], target_date: pd.Timestamp, value: flo
     Slots whose newest year scored better with level bands use them; the rest,
     and entries trained before bands existed, use the season of the target date.
     """
+    if str(entry.get("range_method", "")).startswith("recent") and entry.get("residual_q80_recent") is not None:
+        return entry["residual_q80_recent"]  # type: ignore[return-value]
     by_level = entry.get("residual_q80_by_level")
     if str(entry.get("range_method", "")).startswith("level") and by_level and value is not None and not pd.isna(value):
         return _level_width(by_level, float(value))  # type: ignore[arg-type]

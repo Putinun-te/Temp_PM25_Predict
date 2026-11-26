@@ -214,8 +214,39 @@ def test_a_recent_window_wins_when_errors_have_grown():
     comparison = compare_ranges(actual, predicted, horizon=1)
     assert comparison["season"]["coverage"] < 0.73
     assert comparison["chosen"] in {"season_365", "level_365"}
-    fields, _ = range_entry(actual, predicted, 1, "rh_pct")
-    assert fields["range_method"] == comparison["chosen"] and "exceedance" not in fields
+    # Weather targets also try the range of the newest 90 days, which follows the growth too.
+    fields, report = range_entry(actual, predicted, 1, "rh_pct")
+    assert fields["range_method"] == report["chosen"] in {"season_365", "level_365", "recent_90"}
+    assert "exceedance" not in fields
+    pm_fields, pm_report = range_entry(actual, predicted, 1, "pm25")
+    assert pm_fields["range_method"] == comparison["chosen"] and "recent_90" not in pm_report
+
+
+def test_recent_range_only_uses_errors_known_a_week_before():
+    from pm25.evaluate import RECENT_RANGE_REFIT_DAYS, recent_widths
+
+    rng = np.random.default_rng(2)
+    index = pd.date_range("2024-01-01", periods=300, freq="D")
+    predicted = pd.Series(50.0, index=index)
+    actual = predicted + rng.normal(0, 3, len(index))
+    paired = pd.DataFrame({"actual": actual, "predicted": predicted})
+    horizon = 2
+    day = index[200]
+    before = recent_widths(paired, horizon).loc[day]
+    changed = paired.copy()
+    # Origins whose outcome was not yet known a week before `day` cannot move its range.
+    changed.loc[day - pd.Timedelta(days=horizon + RECENT_RANGE_REFIT_DAYS - 1):, "actual"] = 1e6
+    assert recent_widths(changed, horizon).loc[day] == before
+    assert np.isnan(recent_widths(paired, horizon).iloc[0])
+
+
+def test_recent_range_is_used_when_chosen():
+    from pm25.evaluate import range_for
+
+    entry = {"range_method": "recent_90", "residual_q80_recent": 3.5, "residual_q80": 9.0,
+             "residual_q80_by_level": {"edges": [50.0], "q80": [1.0, 2.0]}}
+    assert range_for(entry, pd.Timestamp("2026-11-26"), 80.0) == 3.5
+    assert range_for({**entry, "range_method": "level"}, pd.Timestamp("2026-11-26"), 80.0) == 2.0
 
 
 def test_chance_above_the_standard_follows_past_errors():
