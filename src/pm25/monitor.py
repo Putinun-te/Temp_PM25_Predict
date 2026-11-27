@@ -14,6 +14,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 from pm25.evaluate import STANDARDS
 from pm25.features import ALL_TARGETS
@@ -36,8 +37,11 @@ TMD_TARGETS = {"tmd_temp_c": "temp_c", "tmd_rh_pct": "rh_pct"}
 # A model is flagged only after enough scored days, so one bad week does not alert.
 DEGRADATION_WINDOW = 30
 DEGRADATION_MIN_DAYS = 14
-# Ranges aim to hold 80 % of outcomes; below this over 30 days they have drifted.
-MIN_LIVE_COVERAGE = 0.65
+# An alert needs a shortfall that chance alone would give less than 5 % of the
+# time: 15 to 30 scored days are few, and small gaps come and go.
+ALERT_P_VALUE = 0.05
+# Ranges aim to hold 80 % of outcomes.
+RANGE_LEVEL = 0.8
 ACCURACY_COLUMNS = [
     "as_of",
     "period",
@@ -136,8 +140,27 @@ def chance_scores(rows: pd.DataFrame) -> dict[str, Any]:
     return result
 
 
+def coverage_shortfall_p(coverage: float, days: int) -> float:
+    """Chance that a range holding 80 % of outcomes holds this share or less over `days`.
+
+    Hours of one day miss together, so days, not hours, count as outcomes.
+    """
+    held = int(round(coverage * days))
+    return float(stats.binom.cdf(held, days, RANGE_LEVEL))
+
+
+def worse_than_persistence_p(differences: pd.Series) -> float:
+    """One-sided paired t-test that the forecast's absolute error exceeds persistence's.
+
+    Errors on nearby days are related, so the test is if anything too ready to alert.
+    """
+    if len(differences) < 3 or differences.std() == 0:
+        return 0.0 if differences.mean() > 0 else 1.0
+    return float(stats.ttest_1samp(differences, 0.0, alternative="greater").pvalue)
+
+
 def coverage_alerts(name: str, rows: list[dict[str, Any]]) -> list[str]:
-    """Alerts for ranges that held too few outcomes over the last 30 days."""
+    """Alerts for ranges that held clearly too few outcomes over the last 30 days."""
     alerts = []
     for row in rows:
         days = row.get("days", row["n"])
@@ -146,12 +169,14 @@ def coverage_alerts(name: str, rows: list[dict[str, Any]]) -> list[str]:
             row["window_days"] == DEGRADATION_WINDOW
             and days >= DEGRADATION_MIN_DAYS
             and coverage is not None
-            and coverage < MIN_LIVE_COVERAGE
+            and coverage < RANGE_LEVEL
         ):
-            alerts.append(
-                f"{name} {row['label']}: the 80 % range held only {coverage:.0%} of outcomes "
-                f"over the last {DEGRADATION_WINDOW} days ({days} days scored)"
-            )
+            p = coverage_shortfall_p(coverage, days)
+            if p < ALERT_P_VALUE:
+                alerts.append(
+                    f"{name} {row['label']}: the 80 % range held only {coverage:.0%} of outcomes "
+                    f"over the last {DEGRADATION_WINDOW} days ({days} days scored, chance p={p:.3f})"
+                )
     return alerts
 
 
@@ -250,10 +275,13 @@ def summarize(scored: pd.DataFrame, generated_at: str) -> dict[str, Any]:
                 and len(paired) >= DEGRADATION_MIN_DAYS
                 and paired_mae > persistence_mae
             ):
-                summary["alerts"].append(
-                    f"{target} {label}: published forecast MAE {paired_mae:.2f} is worse than "
-                    f"persistence {persistence_mae:.2f} over the last {window} days ({len(paired)} days scored)"
-                )
+                p = worse_than_persistence_p(paired["abs_error"] - paired["persistence_abs_error"])
+                if p < ALERT_P_VALUE:
+                    summary["alerts"].append(
+                        f"{target} {label}: published forecast MAE {paired_mae:.2f} is worse than "
+                        f"persistence {persistence_mae:.2f} over the last {window} days "
+                        f"({len(paired)} days scored, chance p={p:.3f})"
+                    )
     return summary
 
 

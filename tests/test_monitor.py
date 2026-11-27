@@ -318,7 +318,7 @@ def test_coverage_alert_needs_enough_days_and_low_coverage():
         {"label": "today", "window_days": 7, "n": 70, "days": 7, "coverage": 0.1},
     ]
     alerts = coverage_alerts("stations", rows)
-    assert alerts == ["stations today: the 80 % range held only 60% of outcomes over the last 30 days (20 days scored)"]
+    assert alerts == ["stations today: the 80 % range held only 60% of outcomes over the last 30 days (20 days scored, chance p=0.032)"]
 
 
 def test_every_band_edge_gets_its_own_live_score():
@@ -341,3 +341,33 @@ def test_every_band_edge_gets_its_own_live_score():
     assert by_edge[37.5]["chance_n"] == 2 and by_edge[37.5]["brier"] == pytest.approx((0.16 + 0.01) / 2)
     # The top level keeps scoring the standard.
     assert row["chance_n"] == 2
+
+
+def test_small_gaps_from_persistence_and_the_range_do_not_alert():
+    days = pd.date_range("2026-10-01", periods=16, freq="D")
+    # Worse than persistence on average, but only by luck of a few days.
+    errors = [7.0, 2.0, 5.0, 3.0, 7.0, 1.0, 4.0, 6.0, 2.0, 5.0, 3.0, 6.0, 1.0, 5.0, 4.0, 6.0]
+    persistence = [5.0, 3.0, 4.0, 4.0, 6.0, 2.0, 4.0, 5.0, 3.0, 5.0, 3.0, 5.0, 2.0, 4.0, 5.0, 6.0]
+    scored = pd.DataFrame(
+        {
+            "as_of": [(d - pd.Timedelta(days=1)).date().isoformat() for d in days],
+            "period": [d.date().isoformat() for d in days],
+            "label": "tomorrow",
+            "target": "pm25",
+            "source": "forecast",
+            "method": "random_forest",
+            "forecast": 20.0,
+            "low": 15.0,
+            "high": 25.0,
+            "actual": 10.0,
+            "persistence": 11.0,
+            "abs_error": errors,
+            "persistence_abs_error": persistence,
+            # 12 of 16 held: 75 % against an 80 % aim is well within chance.
+            "in_range": [True] * 12 + [False] * 4,
+        }
+    )
+    summary = summarize(scored, "2026-11-13T07:30:00+07:00")
+    month = next(r for r in summary["rows"] if r["window_days"] == 30)
+    assert month["mae"] > month["persistence_mae"]
+    assert summary["alerts"] == []
