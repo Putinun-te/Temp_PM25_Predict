@@ -103,11 +103,16 @@ def test_models_on_an_older_feature_list_are_reported():
         "daily": {
             "pm25_h1": new,
             "pm25_h2": {**new, "promoted_at": "2026-11-11T06:00", "features": None},
-            "temp_c_h1": {**new, "promoted_at": "2026-11-13T06:00", "features": ["a"]},
+            "temp_c_h1": new,
+            "temp_c_h2": {**new, "promoted_at": "2026-11-13T06:00", "features": ["a"]},
+            # Judged by the newest retrain and kept: it reads its own list.
+            "temp_c_h3": {**new, "promoted_at": "2026-11-13T06:00", "features": ["a"], "reason": "kept: candidate does not beat baseline mean7"},
+            # Another target may use another list.
+            "pm10_h1": {**new, "promoted_at": "2026-11-13T06:00", "features": ["a"]},
             "pm10_h5": {"method": "mean7", "reason": "baseline used"},
         }
     }
     problems = check_health(FORECAST, QUALITY, None, TODAY, HOURLY, registry=registry)
-    assert len(problems) == 1 and "pm25_h2, temp_c_h1." in problems[0]
+    assert len(problems) == 1 and "pm25_h2, temp_c_h2." in problems[0]
     registry["daily"] = {"pm25_h1": new, "pm25_h2": {**new, "promoted_at": "2026-11-12T06:00"}}
     assert check_health(FORECAST, QUALITY, None, TODAY, HOURLY, registry=registry) == []

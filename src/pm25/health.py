@@ -108,17 +108,28 @@ def _hourly_problems(hourly: dict[str, Any] | None, today: date, now: datetime |
 
 
 def _model_problems(registry: dict[str, Any] | None) -> list[str]:
-    """Daily models whose inputs differ from the newest promoted model's.
+    """Daily models whose inputs differ from the newest promoted model of the same target.
 
-    Every daily slot is built from the same feature list, so a model on another
-    list was saved before a feature was added or removed and is still serving.
+    Every slot of one target is built from the same feature list (targets differ:
+    only temperature and humidity get the weather-forecast error columns), so a
+    model on another list was saved before a feature was added or removed. A
+    retrain that judged it and kept it anyway ("kept: ...") already decided it
+    still serves best; it reads its own list, so only unjudged models are reported.
     """
-    models = {slot: entry for slot, entry in (registry or {}).get("daily", {}).items() if "train_end" in entry}
-    if not models:
-        return []
-    newest = max(models.values(), key=lambda entry: entry.get("promoted_at") or "")
-    reference = newest.get("features")
-    stale = sorted(slot for slot, entry in models.items() if entry.get("features") != reference)
+    by_target: dict[str, dict[str, dict]] = {}
+    for slot, entry in (registry or {}).get("daily", {}).items():
+        if "train_end" in entry:
+            by_target.setdefault(slot.rsplit("_h", 1)[0], {})[slot] = entry
+    stale = []
+    for models in by_target.values():
+        newest = max(models.values(), key=lambda entry: entry.get("promoted_at") or "")
+        stale += [
+            slot
+            for slot, entry in models.items()
+            if entry.get("features") != newest.get("features")
+            and not str(entry.get("reason", "")).startswith("kept:")
+        ]
+    stale.sort()
     if not stale:
         return []
     return [
