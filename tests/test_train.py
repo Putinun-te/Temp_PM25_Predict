@@ -282,3 +282,16 @@ def test_previous_model_is_kept_when_no_candidate_passes(monkeypatch, tmp_path):
                 "method": "a", "candidates": ["a", "b"]}
     entry, _, _ = run(tmp_path, previous)
     assert entry["method"] == "a" and entry["reason"].startswith("kept: candidate")
+
+
+def test_temperature_range_is_fitted_around_the_corrected_forecast(monkeypatch, tmp_path):
+    use(monkeypatch, OffByTenModel)
+    features, labels, baselines = inputs()
+    # Persistence wins and always reads 3 too high; half of that is taken back once 15 days are scored.
+    entry, report, _ = train_slot("temp_c", 1, features, labels, baselines, None, tmp_path, NOW)
+    assert entry["method"] == "persistence" and entry["bias_correction"] is True
+    assert report["bias_correction"]["raw"]["mae"] == pytest.approx(3.0)
+    assert report["bias_correction"]["corrected"]["mae_newest_year"] == pytest.approx(1.5, abs=0.1)  # the first 15 days stay uncorrected
+    assert entry["residual_q80"] == pytest.approx(1.5)
+    pm25, _, _ = train_slot("pm25", 1, features, labels, baselines, None, tmp_path, NOW)
+    assert "bias_correction" not in pm25 and pm25["residual_q80"] == pytest.approx(3.0)

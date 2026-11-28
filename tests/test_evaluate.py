@@ -311,3 +311,18 @@ def test_range_choice_is_also_scored_as_if_made_a_year_earlier():
     # Too little history for a choice a year earlier: no honest score.
     short = compare_ranges(actual.iloc[-500:], predicted.iloc[-500:], 1)
     assert "honest" not in short
+
+
+def test_walk_forward_bias_uses_only_errors_measured_by_each_origin():
+    from pm25.evaluate import recent_bias, walk_forward_bias
+
+    index = pd.date_range("2025-01-01", periods=60, freq="D")
+    predicted = pd.Series(10.0, index=index)
+    actual = pd.Series(np.where(index < "2025-01-31", 12.0, 8.0), index=index)
+    horizon = 2
+    shift = walk_forward_bias(actual, predicted, horizon)
+    # 15 errors are measured by origin 2025-01-01 + 14 + horizon.
+    assert shift.loc["2025-01-16"] == 0.0 and shift.loc["2025-01-17"] == 1.0
+    errors = (actual - predicted).set_axis(index + pd.Timedelta(days=horizon))
+    for origin in index[20:]:
+        assert shift.loc[origin] == pytest.approx(recent_bias(errors, origin))

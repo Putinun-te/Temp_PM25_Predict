@@ -253,7 +253,7 @@ Recommended Realtime Database rules, which let anyone read forecasts and nobody 
 }
 ```
 
-`status` becomes `stale` and values become `null` when the latest station data is older than the forecast origin. The range covers 80 % of past out-of-sample errors.
+`status` becomes `stale` and values become `null` when the latest station data is older than the forecast origin. The range covers 80 % of past out-of-sample errors. Temperature rows also carry `temp_c_model` and `temp_c_bias`, the forecast before and the amount of the bias correction (see Forecast ranges).
 
 ## Model card
 
@@ -352,6 +352,8 @@ Coverage on the newest year, run of 22 November 2026: the old method (seasons, a
 | Hourly PM2.5 today, evening run | 94 % | 85 %, one value, newest year | 94 %, one value |
 
 For PM and temperature the honest figure is close to 80 % or above it, so the published ranges are about right or slightly wide. Humidity is the exception: a year ago the choice would have kept seasonal ranges, which held only 69 to 73 % of outcomes in the newest year. Humidity errors grew in the newest year, and only a choice that has already seen that year adapts to it, so the published 81 to 84 % is likely to be optimistic for the coming months; live coverage on the accuracy page is the check, and the health check alerts when coverage falls clearly below 80 % (binomial test, p < 0.05).
+
+**Temperature bias correction.** Temperature errors run one way for weeks during a warm or cool spell: from 13 to 24 November 2026 every forecast for tomorrow was too cold, by 1.4 °C on average, and the live range held 40 % of outcomes. So every temperature forecast is moved by half the mean error of that day's forecasts measured in the last 30 days, and by nothing until 15 are measured. The error is that of the model's own output before the correction, kept in `forecast_history.csv` as `model_value`; the document carries it as `temp_c_model` and the correction as `temp_c_bias`. Training applies the same rule to the walk-forward forecasts, each origin using only errors measured by then, and fits the range around the corrected forecast; `metrics.json` keeps both MAEs under `bias_correction`. Eight variants were compared on the walk-forward forecasts (3, 7, 14 or 30 days; the full or half the error). Half the 30-day error lowered MAE at every horizon in four or five of the five years, On the newest year today went from 0.511 to 0.507 °C, tomorrow stayed at 0.62 and five days ahead fell from 0.861 to 0.818; tomorrow was lower in each earlier year (0.654 to 0.648, 0.572 to 0.561, 0.610 to 0.562, 0.719 to 0.696). Shorter windows and the full error chased noise and raised MAE; humidity gained three to seven days ahead and lost today and tomorrow, so it is not corrected. Over the warm spell itself it helps less than it does over a year: tomorrow's range would have held 67 % of the last 30 days instead of 60 %, and an 80 % range made for every year still misses more during such a spell.
 
 ### Chance above the standard
 

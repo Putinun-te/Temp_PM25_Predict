@@ -24,7 +24,9 @@ from pm25.evaluate import (
     metrics,
     monthly_walk_forward,
     promotion_gate,
+    BIAS_TARGETS,
     range_entry,
+    walk_forward_bias,
     residual_q80,
     season_errors,
     skill,
@@ -222,7 +224,23 @@ def train_slot(
     entry["candidates"] = names
     for stale in ("residual_q80_by_level", "residual_q80_recent", "exceedance"):
         entry.pop(stale, None)
-    range_fields, range_report = range_entry(frame["actual"], frame[entry["method"]], horizon, target)
+    published = frame[entry["method"]]
+    bias_report = None
+    entry.pop("bias_correction", None)
+    if target in BIAS_TARGETS:
+        # The range is fitted around the forecast as it is published, after the correction.
+        corrected = published + walk_forward_bias(frame["actual"], published, horizon)
+        newest = frame.index > frame.index.max() - pd.Timedelta(days=365)
+        bias_report = {
+            name: {
+                "mae": float((frame["actual"] - values).abs().mean()),
+                "mae_newest_year": float((frame["actual"] - values)[newest].abs().mean()),
+            }
+            for name, values in (("raw", published), ("corrected", corrected))
+        }
+        published = corrected
+        entry["bias_correction"] = True
+    range_fields, range_report = range_entry(frame["actual"], published, horizon, target)
     entry.update(range_fields)
     report: dict[str, Any] = {
         "published_method": entry["method"],
@@ -236,6 +254,8 @@ def train_slot(
         "by_season": season_errors(frame, methods, horizon),
         "range": range_report,
     }
+    if bias_report is not None:
+        report["bias_correction"] = bias_report
     if reference is not None:
         paired = pd.DataFrame({"actual": frame["actual"], "cams": reference}).dropna()
         report["cams_hindsight_not_a_forecast"] = metrics(paired["actual"], paired["cams"])

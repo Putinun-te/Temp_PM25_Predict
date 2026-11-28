@@ -398,7 +398,9 @@ def _predict(args: argparse.Namespace, config: Config) -> int:
         log.error("No trained methods found, run the train command first")
         return 2
     tmd = _fetch_tmd(config, as_of)
-    forecast = build_forecast(*inputs, registry, config.models_dir, as_of, _generated_at(), tmd)
+    history_path = layer(config.data_dir, GOLD) / HISTORY_FILENAME
+    history = pd.read_csv(history_path, dtype=str) if history_path.exists() else None
+    forecast = build_forecast(*inputs, registry, config.models_dir, as_of, _generated_at(), tmd, history)
     try:
         # Kept so a forecast can be explained later; see pm25.served.
         append_served(layer(config.data_dir, GOLD) / SERVED_FILENAME, served_rows(*inputs, as_of))

@@ -20,7 +20,7 @@ from pm25.features import (
     monthly_targets,
     with_weather_targets,
 )
-from pm25.evaluate import entry_chance_above, entry_chances_above, range_for
+from pm25.evaluate import entry_chance_above, entry_chances_above, range_for, recent_bias
 from pm25.train import CANDIDATES, model_path
 
 FORECAST_FILENAME = "forecast.json"
@@ -42,6 +42,23 @@ def _with_range(row: dict[str, Any], target: str, value: float, q80: float | Non
     row[f"{target}_high"] = _rounded(value + q80) if q80 is not None else None
 
 
+def recent_errors(history: pd.DataFrame | None, measured: pd.Series, target: str, label: str) -> pd.Series:
+    """Errors of the model's own past daily forecasts for one day label, indexed by the date measured.
+
+    `model_value` is the forecast before any correction; rows saved before that
+    column existed were published uncorrected, so their `value` is the same.
+    """
+    if history is None or history.empty:
+        return pd.Series(dtype=float)
+    rows = history[(history["kind"] == "daily") & (history["target"] == target) & (history["label"] == label)]
+    raw = pd.to_numeric(rows["value"], errors="coerce")
+    if "model_value" in rows:
+        raw = pd.to_numeric(rows["model_value"], errors="coerce").fillna(raw)
+    periods = pd.to_datetime(rows["period"])
+    errors = pd.Series(measured.reindex(periods).to_numpy() - raw.to_numpy(), index=periods)
+    return errors[~errors.index.duplicated(keep="last")].dropna().sort_index()
+
+
 def _daily_row(
     origin: pd.Timestamp,
     horizon: int,
@@ -50,6 +67,7 @@ def _daily_row(
     registry: dict[str, Any],
     models_dir: Path,
     tmd: dict[str, dict[str, float]],
+    history: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
     target_date = origin + pd.Timedelta(days=horizon)
     date_key = target_date.date().isoformat()
@@ -65,6 +83,12 @@ def _daily_row(
             value = joblib.load(model_path(models_dir, slot)).predict(model_inputs(features, entry))[0]
         else:
             value = daily_baselines(targets[target], horizon)[method].loc[origin]
+        if entry.get("bias_correction") and not pd.isna(value):
+            errors = recent_errors(history, targets[target], target, DAILY_LABELS[horizon])
+            bias = recent_bias(errors, origin)
+            row[f"{target}_model"] = _rounded(value)
+            row[f"{target}_bias"] = round(bias, 2)
+            value = value + bias
         _with_range(row, target, value, range_for(entry, target_date, value))
         row[f"{target}_method"] = method
         if entry.get("exceedance"):
@@ -123,8 +147,13 @@ def build_forecast(
     as_of: pd.Timestamp,
     generated_at: str,
     tmd: dict[str, dict[str, float]] | None = None,
+    history: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
-    """Return the forecast document, using only data complete before `as_of`."""
+    """Return the forecast document, using only data complete before `as_of`.
+
+    `history` is the forecast history; it gives the recent errors behind the
+    temperature correction.
+    """
     targets = with_weather_targets(targets, exogenous)
     origin = as_of - pd.Timedelta(days=1)
     latest = targets["pm25"].last_valid_index()
@@ -139,7 +168,7 @@ def build_forecast(
         "status": "ok" if age_days == 0 else "stale",
         "units": dict(UNITS),
         "daily": [
-            _daily_row(origin, horizon, targets, exogenous, registry, models_dir, tmd or {})
+            _daily_row(origin, horizon, targets, exogenous, registry, models_dir, tmd or {}, history)
             for horizon in DAILY_LABELS
         ],
         "monthly": [_monthly_row(ahead, as_of, monthly, registry) for ahead in MONTHS_AHEAD],

@@ -87,6 +87,15 @@ RECENT_RANGE_DAYS = 90
 RECENT_RANGE_MIN_ROWS = 45
 RECENT_RANGE_REFIT_DAYS = 7
 RECENT_RANGE_TARGETS = ("temp_c", "rh_pct")
+# Temperature errors run one way for weeks during warm and cool spells. Its
+# forecast is moved by half the mean error of the forecasts scored in the last
+# 30 days (none until 15 are scored). The newest-year walk-forward lowered MAE at
+# every horizon in nearly every year; shorter windows or the full error chased
+# noise, and humidity gained at some horizons and lost at others.
+BIAS_TARGETS = ("temp_c",)
+BIAS_DAYS = 30
+BIAS_SHARE = 0.5
+BIAS_MIN_DAYS = 15
 # Thai 24-hour standards in µg/m³; the chance of going above them is published.
 STANDARDS = {"pm25": 37.5, "pm10": 120.0}
 # Edges of the Pollution Control Department colour bands, standard included. A
@@ -165,6 +174,26 @@ def _widths(kind: str, spec: Mapping[str, object], frame: pd.DataFrame, horizon:
         days = frame.index + pd.Timedelta(days=horizon)
         return pd.Series([range_for(spec, day) for day in days], index=frame.index, dtype=float)
     return pd.Series(spec["residual_q80"], index=frame.index, dtype=float)
+
+
+def recent_bias(errors: pd.Series, origin: pd.Timestamp) -> float:
+    """Correction for a forecast issued at `origin`, from errors indexed by the date they were measured."""
+    window = errors[(errors.index > origin - pd.Timedelta(days=BIAS_DAYS)) & (errors.index <= origin)].dropna()
+    return BIAS_SHARE * float(window.mean()) if len(window) >= BIAS_MIN_DAYS else 0.0
+
+
+def walk_forward_bias(actual: pd.Series, predicted: pd.Series, horizon: int) -> pd.Series:
+    """The correction each origin would have been published with.
+
+    The error of origin o is measured at o + horizon, so origin t uses only the
+    errors measured up to t, as `recent_bias` does at forecast time.
+    """
+    error = (actual - predicted).dropna().sort_index()
+    error.index = error.index + pd.Timedelta(days=horizon)
+    mean = error.rolling(f"{BIAS_DAYS}D", min_periods=BIAS_MIN_DAYS).mean()
+    mean = mean[~mean.index.duplicated(keep="last")]
+    mean = mean.reindex(mean.index.union(predicted.index)).ffill().reindex(predicted.index)
+    return (BIAS_SHARE * mean).fillna(0.0)
 
 
 def recent_widths(paired: pd.DataFrame, horizon: int | None, days: int = RECENT_RANGE_DAYS) -> pd.Series:

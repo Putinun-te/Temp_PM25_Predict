@@ -174,3 +174,39 @@ def test_chance_above_the_standard_is_published_only_for_slots_that_earned_it():
     assert "pm25_p_above_standard" not in tomorrow and "pm10_p_above_standard" not in today
     assert today["pm25_p_above"] == [{"threshold": 37.5, "p": 0.0}]
     assert "pm25_p_above" not in tomorrow
+
+
+def bias_history(errors, model_value=True):
+    """Past `today` forecasts of PM2.5 whose measured value was 20, the persistence forecast here."""
+    periods = pd.date_range(end=AS_OF - pd.Timedelta(days=1), periods=len(errors), freq="D")
+    rows = []
+    for period, error in zip(periods, errors):
+        raw = 20.0 - error
+        rows.append({"as_of": period.date().isoformat(), "kind": "daily", "period": period.date().isoformat(),
+                     "label": "today", "target": "pm25",
+                     # Published values were corrected; the correction is learned from the raw ones.
+                     "value": str(raw + 5.0) if model_value else str(raw),
+                     "model_value": str(raw) if model_value else None})
+    return pd.DataFrame(rows)
+
+
+def test_a_corrected_slot_moves_by_half_its_recent_mean_error():
+    reg = registry()
+    reg["daily"]["pm25_h1"]["bias_correction"] = True
+    targets, exogenous = inputs()
+    result = build_forecast(targets, exogenous, reg, "unused", AS_OF, NOW, history=bias_history([2.0] * 20))
+    today = result["daily"][0]
+    assert (today["pm25_model"], today["pm25_bias"], today["pm25"]) == (20.0, 1.0, 21.0)
+    assert (today["pm25_low"], today["pm25_high"]) == (16.0, 26.0)
+    # Other slots are left alone.
+    assert "pm25_bias" not in result["daily"][1] and "pm10_bias" not in today
+
+
+def test_the_correction_waits_for_enough_days_and_reads_old_rows_by_value():
+    reg = registry()
+    reg["daily"]["pm25_h1"]["bias_correction"] = True
+    targets, exogenous = inputs()
+    few = build_forecast(targets, exogenous, reg, "unused", AS_OF, NOW, history=bias_history([2.0] * 14))
+    assert few["daily"][0]["pm25_bias"] == 0.0 and few["daily"][0]["pm25"] == 20.0
+    old = build_forecast(targets, exogenous, reg, "unused", AS_OF, NOW, history=bias_history([-4.0] * 20, False))
+    assert old["daily"][0]["pm25_bias"] == -2.0
