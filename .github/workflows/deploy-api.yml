@@ -40,6 +40,9 @@ jobs:
           npm test
           npm run build
 
+      - name: Check the published data against the OpenAPI description
+        run: npm run check:live
+
       - name: Package
         run: |
           mkdir -p ../package
@@ -65,7 +68,7 @@ jobs:
           host=$(az functionapp list -g "${{ vars.AZURE_RESOURCE_GROUP }}" \
             --query "[?name=='${{ vars.AZURE_FUNCTIONAPP_NAME }}'].defaultHostName | [0]" -o tsv)
           test -n "$host"
-          for path in help forecast accuracy; do
+          for path in help openapi.json forecast accuracy; do
             for attempt in 1 2 3 4 5 6; do
               code=$(curl -s -o /dev/null -w "%{http_code}" "https://$host/api/$path" || true)
               [ "$code" = "200" ] && break

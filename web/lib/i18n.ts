@@ -103,6 +103,7 @@ const STRINGS = {
   coverage: { en: "Inside range", th: "อยู่ในช่วงที่คาด" },
   ourForecast: { en: "Our forecast", th: "พยากรณ์ของเรา" },
   tmd: { en: "TMD", th: "กรมอุตุฯ" },
+  biasNote: { en: "Adjusted {b} °C for recent errors", th: "ปรับ {b} °C ตามความคลาดเคลื่อนช่วงหลัง" },
   alerts: { en: "Alerts", th: "การแจ้งเตือน" },
   noScores: { en: "No published forecast has been scored yet.", th: "ยังไม่มีค่าพยากรณ์ที่ให้คะแนนได้" },
   extraTitle: { en: "Hourly and station PM2.5 forecasts", th: "พยากรณ์ PM2.5 รายชั่วโมงและรายสถานี" },

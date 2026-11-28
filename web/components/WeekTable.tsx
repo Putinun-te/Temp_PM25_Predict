@@ -2,7 +2,7 @@
 
 import { bandFor, STANDARDS, type Pollutant } from "@/lib/aqi";
 import { chanceList } from "@/lib/data";
-import { dayLabel, fmt, methodName } from "@/lib/format";
+import { biasNote, dayLabel, fmt, methodName } from "@/lib/format";
 import type { ChanceAbove, DailyForecast } from "@/lib/types";
 import ChanceLines from "./ChanceLines";
 import { useLang } from "./LangProvider";
@@ -16,9 +16,10 @@ interface ValueProps {
   /** Chances above the band edges, shown only for slots that publish them. */
   chances?: ChanceAbove[];
   pollutant?: Pollutant;
+  note?: string | null;
 }
 
-function Value({ value, low, high, method, digits = 1, chances, pollutant }: ValueProps) {
+function Value({ value, low, high, method, digits = 1, chances, pollutant, note }: ValueProps) {
   return (
     <>
       <strong>{fmt(value, digits)}</strong>{" "}
@@ -27,6 +28,7 @@ function Value({ value, low, high, method, digits = 1, chances, pollutant }: Val
       </span>
       {pollutant && chances && chances.length > 0 && <ChanceLines pollutant={pollutant} chances={chances} />}
       <div className="method">{methodName(method)}</div>
+      {note && <div className="method">{note}</div>}
     </>
   );
 }
@@ -80,7 +82,13 @@ export default function WeekTable({ days }: { days: DailyForecast[] }) {
                   />
                 </td>
                 <td>
-                  <Value value={day.temp_c} low={day.temp_c_low} high={day.temp_c_high} method={day.temp_c_method} />
+                  <Value
+                    value={day.temp_c}
+                    low={day.temp_c_low}
+                    high={day.temp_c_high}
+                    method={day.temp_c_method}
+                    note={biasNote(day.temp_c_bias, t)}
+                  />
                 </td>
                 <td>
                   <Value value={day.rh_pct} low={day.rh_pct_low} high={day.rh_pct_high} method={day.rh_pct_method} digits={0} />

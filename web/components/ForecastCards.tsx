@@ -1,7 +1,7 @@
 "use client";
 
 import { bandFor, type Pollutant } from "@/lib/aqi";
-import { fmt, methodName } from "@/lib/format";
+import { biasNote, fmt, methodName } from "@/lib/format";
 import type { DailyForecast } from "@/lib/types";
 import { AqiBadge } from "./AqiBadge";
 import { useLang } from "./LangProvider";
@@ -14,10 +14,12 @@ interface CardProps {
   low: number | null | undefined;
   high: number | null | undefined;
   note: string;
+  /** A second note line, such as the bias correction. */
+  extra?: string | null;
   pollutant?: Pollutant;
 }
 
-function Card({ title, value, digits = 1, unit, low, high, note, pollutant }: CardProps) {
+function Card({ title, value, digits = 1, unit, low, high, note, extra, pollutant }: CardProps) {
   const { t } = useLang();
   const band = pollutant ? bandFor(pollutant, value) : null;
   return (
@@ -32,6 +34,7 @@ function Card({ title, value, digits = 1, unit, low, high, note, pollutant }: Ca
       </div>
       {pollutant && <AqiBadge pollutant={pollutant} value={value} />}
       <div className="method">{note}</div>
+      {extra && <div className="method">{extra}</div>}
     </div>
   );
 }
@@ -51,7 +54,7 @@ export default function ForecastCards({ days }: { days: DailyForecast[] }) {
         return [
           <Card key={`${day.date}-pm25`} title={`${when} · PM2.5`} value={day.pm25} unit="µg/m³" low={day.pm25_low} high={day.pm25_high} note={methodName(day.pm25_method)} pollutant="pm25" />,
           <Card key={`${day.date}-pm10`} title={`${when} · PM10`} value={day.pm10} unit="µg/m³" low={day.pm10_low} high={day.pm10_high} note={methodName(day.pm10_method)} pollutant="pm10" />,
-          <Card key={`${day.date}-temp`} title={`${when} · ${t("temperature")}`} value={day.temp_c} unit="°C" low={day.temp_c_low} high={day.temp_c_high} note={tmdTemperature} />,
+          <Card key={`${day.date}-temp`} title={`${when} · ${t("temperature")}`} value={day.temp_c} unit="°C" low={day.temp_c_low} high={day.temp_c_high} note={tmdTemperature} extra={biasNote(day.temp_c_bias, t)} />,
           <Card key={`${day.date}-rh`} title={`${when} · ${t("humidity")}`} value={day.rh_pct} digits={0} unit="%" low={day.rh_pct_low} high={day.rh_pct_high} note={tmdHumidity} />,
         ];
       })}

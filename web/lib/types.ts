@@ -31,6 +31,9 @@ export interface DailyForecast {
   temp_c_low?: number | null;
   temp_c_high?: number | null;
   temp_c_method?: Method;
+  /** Model forecast before the bias correction, and the correction added to it (°C). */
+  temp_c_model?: number | null;
+  temp_c_bias?: number | null;
   rh_pct?: number | null;
   rh_pct_low?: number | null;
   rh_pct_high?: number | null;

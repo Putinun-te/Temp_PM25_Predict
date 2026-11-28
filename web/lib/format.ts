@@ -16,3 +16,12 @@ export function dayLabel(label: string, t: (key: "today" | "tomorrow" | "inDays"
   const days = /^day(\d+)$/.exec(label)?.[1];
   return days ? t("inDays").replace("{n}", days) : label;
 }
+
+/** Corrections smaller than this round to nothing at one decimal place, so they are not shown. */
+const MIN_SHOWN_BIAS = 0.05;
+
+/** "Adjusted +0.5 °C …" when the temperature forecast carries a bias correction, else null. */
+export function biasNote(bias: number | null | undefined, t: (key: "biasNote") => string): string | null {
+  if (bias === null || bias === undefined || Number.isNaN(bias) || Math.abs(bias) < MIN_SHOWN_BIAS) return null;
+  return t("biasNote").replace("{b}", `${bias > 0 ? "+" : "−"}${Math.abs(bias).toFixed(1)}`);
+}

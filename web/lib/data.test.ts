@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dataBase, dayBeforeForecasts, measuredSeries, parseCsv, toDailyRows, toHistoryRows, toNumber } from "./data";
-import { fmt, methodName, range } from "./format";
+import { biasNote, fmt, methodName, range } from "./format";
 
 describe("parseCsv", () => {
   it("maps header names to values and keeps empty cells", () => {
@@ -147,5 +147,17 @@ describe("hourly chances", () => {
     ]);
     expect(peakChances(hours, "pm10")).toEqual([{ threshold: 80, p: 0.05, time: "2026-11-26T08:00" }]);
     expect(hourChances({ time: "x", day: "today", pm25: 1, low: 0, high: 2 }, "pm25")).toEqual([]);
+  });
+});
+
+describe("biasNote", () => {
+  const t = () => "Adjusted {b} °C for recent errors";
+  it("shows a signed correction at one decimal place, and nothing when it rounds to zero", () => {
+    expect(biasNote(0.52, t)).toBe("Adjusted +0.5 °C for recent errors");
+    expect(biasNote(-0.16, t)).toBe("Adjusted −0.2 °C for recent errors");
+    expect(biasNote(0.04, t)).toBeNull();
+    expect(biasNote(0, t)).toBeNull();
+    expect(biasNote(null, t)).toBeNull();
+    expect(biasNote(undefined, t)).toBeNull();
   });
 });

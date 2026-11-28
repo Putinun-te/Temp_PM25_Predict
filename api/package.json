@@ -9,13 +9,15 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check:live": "CHECK_LIVE=1 vitest run src/lib/openapi.test.ts"
   },
   "dependencies": {
     "@azure/functions": "4.17.0"
   },
   "devDependencies": {
     "@types/node": "24.19.2",
+    "ajv": "8.17.1",
     "typescript": "5.9.3",
     "vitest": "4.1.12"
   }

@@ -69,6 +69,7 @@ Base URL: https://func-pm25-api-d0b8.azurewebsites.net/api
 | Endpoint | Returns |
 |---|---|
 | `/help` | The list of endpoints |
+| `/openapi.json` | An OpenAPI 3.1 description of every endpoint and response, for client generators and API tools |
 | `/forecast` | The next seven days, the next three months, and each station |
 | `/hourly` | Hourly PM2.5 and PM10 to 23:00 tomorrow: from 04:00 after the morning run, from 10:00 after the afternoon update, from 17:00 after the evening update |
 | `/measured?target=pm25&from=2026-11-01&to=2026-11-12` | Measured Bangkok daily values; `target` is `pm25`, `pm10`, `temp_c` or `rh_pct` |
@@ -76,7 +77,7 @@ Base URL: https://func-pm25-api-d0b8.azurewebsites.net/api
 | `/accuracy` | Live accuracy over 7, 30 and 90 days |
 | `/stations` | Daily values per reference station for the last 14 days |
 
-Ranges default to the last 30 days and can cover at most 400 days. Bad parameters return 400 with a message. `.github/workflows/deploy-api.yml` tests, builds and deploys on every change to `api/`. After Azure ends, the same JSON stays available directly from the `data` branch on raw.githubusercontent.com.
+Ranges default to the last 30 days and can cover at most 400 days. Bad parameters return 400 with a message. Responses may gain fields; the description lists the ones clients can rely on. `.github/workflows/deploy-api.yml` tests, builds and deploys on every change to `api/`. Before deploying it checks the published JSON files against the description (`npm run check:live` in `api/`), so a pipeline change that breaks the contract stops the deploy. After Azure ends, the same JSON stays available directly from the `data` branch on raw.githubusercontent.com.
 
 ## Azure resources
 
