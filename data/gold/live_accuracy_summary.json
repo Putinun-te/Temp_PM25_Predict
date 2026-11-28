@@ -1,0 +1,3471 @@
+{
+  "generated_at": "2026-11-28T14:29:49+07:00",
+  "latest_scored": "2026-11-27",
+  "windows": [
+    7,
+    30,
+    90
+  ],
+  "rows": [
+    {
+      "target": "pm10",
+      "label": "day2",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 12.795,
+      "mape_pct": 43.211,
+      "persistence_mae": 5.356,
+      "skill_vs_persistence": -1.389,
+      "coverage": 0.429
+    },
+    {
+      "target": "pm10",
+      "label": "day2",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 8,
+      "mae": 12.353,
+      "mape_pct": 42.089,
+      "persistence_mae": 5.203,
+      "skill_vs_persistence": -1.374,
+      "coverage": 0.5
+    },
+    {
+      "target": "pm10",
+      "label": "day2",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 8,
+      "mae": 12.353,
+      "mape_pct": 42.089,
+      "persistence_mae": 5.203,
+      "skill_vs_persistence": -1.374,
+      "coverage": 0.5
+    },
+    {
+      "target": "pm10",
+      "label": "day3",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 12.852,
+      "mape_pct": 42.754,
+      "persistence_mae": 5.388,
+      "skill_vs_persistence": -1.385,
+      "coverage": 0.571
+    },
+    {
+      "target": "pm10",
+      "label": "day3",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 7,
+      "mae": 12.852,
+      "mape_pct": 42.754,
+      "persistence_mae": 5.388,
+      "skill_vs_persistence": -1.385,
+      "coverage": 0.571
+    },
+    {
+      "target": "pm10",
+      "label": "day3",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 7,
+      "mae": 12.852,
+      "mape_pct": 42.754,
+      "persistence_mae": 5.388,
+      "skill_vs_persistence": -1.385,
+      "coverage": 0.571
+    },
+    {
+      "target": "pm10",
+      "label": "day4",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 6,
+      "mae": 6.387,
+      "mape_pct": 19.707,
+      "persistence_mae": 7.576,
+      "skill_vs_persistence": 0.157,
+      "coverage": 0.833
+    },
+    {
+      "target": "pm10",
+      "label": "day4",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 6,
+      "mae": 6.387,
+      "mape_pct": 19.707,
+      "persistence_mae": 7.576,
+      "skill_vs_persistence": 0.157,
+      "coverage": 0.833
+    },
+    {
+      "target": "pm10",
+      "label": "day4",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 6,
+      "mae": 6.387,
+      "mape_pct": 19.707,
+      "persistence_mae": 7.576,
+      "skill_vs_persistence": 0.157,
+      "coverage": 0.833
+    },
+    {
+      "target": "pm10",
+      "label": "day5",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 5,
+      "mae": 10.139,
+      "mape_pct": 31.111,
+      "persistence_mae": 9.091,
+      "skill_vs_persistence": -0.115,
+      "coverage": 0.8
+    },
+    {
+      "target": "pm10",
+      "label": "day5",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 5,
+      "mae": 10.139,
+      "mape_pct": 31.111,
+      "persistence_mae": 9.091,
+      "skill_vs_persistence": -0.115,
+      "coverage": 0.8
+    },
+    {
+      "target": "pm10",
+      "label": "day5",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 5,
+      "mae": 10.139,
+      "mape_pct": 31.111,
+      "persistence_mae": 9.091,
+      "skill_vs_persistence": -0.115,
+      "coverage": 0.8
+    },
+    {
+      "target": "pm10",
+      "label": "day6",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 4,
+      "mae": 9.852,
+      "mape_pct": 28.697,
+      "persistence_mae": 9.43,
+      "skill_vs_persistence": -0.045,
+      "coverage": 0.75
+    },
+    {
+      "target": "pm10",
+      "label": "day6",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 4,
+      "mae": 9.852,
+      "mape_pct": 28.697,
+      "persistence_mae": 9.43,
+      "skill_vs_persistence": -0.045,
+      "coverage": 0.75
+    },
+    {
+      "target": "pm10",
+      "label": "day6",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 4,
+      "mae": 9.852,
+      "mape_pct": 28.697,
+      "persistence_mae": 9.43,
+      "skill_vs_persistence": -0.045,
+      "coverage": 0.75
+    },
+    {
+      "target": "pm10",
+      "label": "today",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 5.344,
+      "mape_pct": 18.403,
+      "persistence_mae": 4.743,
+      "skill_vs_persistence": -0.127,
+      "coverage": 0.714
+    },
+    {
+      "target": "pm10",
+      "label": "today",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 17,
+      "mae": 5.166,
+      "mape_pct": 19.317,
+      "persistence_mae": 5.154,
+      "skill_vs_persistence": -0.002,
+      "coverage": 0.765
+    },
+    {
+      "target": "pm10",
+      "label": "today",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 17,
+      "mae": 5.166,
+      "mape_pct": 19.317,
+      "persistence_mae": 5.154,
+      "skill_vs_persistence": -0.002,
+      "coverage": 0.765
+    },
+    {
+      "target": "pm10",
+      "label": "tomorrow",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 8.901,
+      "mape_pct": 31.191,
+      "persistence_mae": 6.145,
+      "skill_vs_persistence": -0.449,
+      "coverage": 0.571
+    },
+    {
+      "target": "pm10",
+      "label": "tomorrow",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 16,
+      "mae": 7.105,
+      "mape_pct": 25.239,
+      "persistence_mae": 6.739,
+      "skill_vs_persistence": -0.054,
+      "coverage": 0.812
+    },
+    {
+      "target": "pm10",
+      "label": "tomorrow",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 16,
+      "mae": 7.105,
+      "mape_pct": 25.239,
+      "persistence_mae": 6.739,
+      "skill_vs_persistence": -0.054,
+      "coverage": 0.812
+    },
+    {
+      "target": "pm25",
+      "label": "day2",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 8.533,
+      "mape_pct": 49.662,
+      "persistence_mae": 4.476,
+      "skill_vs_persistence": -0.906,
+      "coverage": 0.429,
+      "chance_n": 6,
+      "chance_events": 0,
+      "brier": 0.014,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 6,
+          "chance_events": 0,
+          "brier": 0.274,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 6,
+          "chance_events": 0,
+          "brier": 0.014,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "day2",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 8,
+      "mae": 8.348,
+      "mape_pct": 48.984,
+      "persistence_mae": 3.95,
+      "skill_vs_persistence": -1.113,
+      "coverage": 0.5,
+      "chance_n": 6,
+      "chance_events": 0,
+      "brier": 0.014,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 6,
+          "chance_events": 0,
+          "brier": 0.274,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 6,
+          "chance_events": 0,
+          "brier": 0.014,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "day2",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 8,
+      "mae": 8.348,
+      "mape_pct": 48.984,
+      "persistence_mae": 3.95,
+      "skill_vs_persistence": -1.113,
+      "coverage": 0.5,
+      "chance_n": 6,
+      "chance_events": 0,
+      "brier": 0.014,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 6,
+          "chance_events": 0,
+          "brier": 0.274,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 6,
+          "chance_events": 0,
+          "brier": 0.014,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "day3",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 9.375,
+      "mape_pct": 52.923,
+      "persistence_mae": 3.951,
+      "skill_vs_persistence": -1.373,
+      "coverage": 0.571,
+      "chance_n": 5,
+      "chance_events": 0,
+      "brier": 0.033,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 5,
+          "chance_events": 0,
+          "brier": 0.389,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 5,
+          "chance_events": 0,
+          "brier": 0.033,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "day3",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 7,
+      "mae": 9.375,
+      "mape_pct": 52.923,
+      "persistence_mae": 3.951,
+      "skill_vs_persistence": -1.373,
+      "coverage": 0.571,
+      "chance_n": 5,
+      "chance_events": 0,
+      "brier": 0.033,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 5,
+          "chance_events": 0,
+          "brier": 0.389,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 5,
+          "chance_events": 0,
+          "brier": 0.033,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "day3",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 7,
+      "mae": 9.375,
+      "mape_pct": 52.923,
+      "persistence_mae": 3.951,
+      "skill_vs_persistence": -1.373,
+      "coverage": 0.571,
+      "chance_n": 5,
+      "chance_events": 0,
+      "brier": 0.033,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 5,
+          "chance_events": 0,
+          "brier": 0.389,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 5,
+          "chance_events": 0,
+          "brier": 0.033,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "day4",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 6,
+      "mae": 8.109,
+      "mape_pct": 44.325,
+      "persistence_mae": 4.018,
+      "skill_vs_persistence": -1.018,
+      "coverage": 0.833,
+      "chance_n": 4,
+      "chance_events": 0,
+      "brier": 0.021,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 4,
+          "chance_events": 0,
+          "brier": 0.268,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 4,
+          "chance_events": 0,
+          "brier": 0.021,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "day4",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 6,
+      "mae": 8.109,
+      "mape_pct": 44.325,
+      "persistence_mae": 4.018,
+      "skill_vs_persistence": -1.018,
+      "coverage": 0.833,
+      "chance_n": 4,
+      "chance_events": 0,
+      "brier": 0.021,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 4,
+          "chance_events": 0,
+          "brier": 0.268,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 4,
+          "chance_events": 0,
+          "brier": 0.021,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "day4",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 6,
+      "mae": 8.109,
+      "mape_pct": 44.325,
+      "persistence_mae": 4.018,
+      "skill_vs_persistence": -1.018,
+      "coverage": 0.833,
+      "chance_n": 4,
+      "chance_events": 0,
+      "brier": 0.021,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 4,
+          "chance_events": 0,
+          "brier": 0.268,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 4,
+          "chance_events": 0,
+          "brier": 0.021,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "day5",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 5,
+      "mae": 8.058,
+      "mape_pct": 42.091,
+      "persistence_mae": 4.632,
+      "skill_vs_persistence": -0.74,
+      "coverage": 0.8,
+      "chance_n": 3,
+      "chance_events": 0,
+      "brier": 0.022,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 3,
+          "chance_events": 0,
+          "brier": 0.274,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 3,
+          "chance_events": 0,
+          "brier": 0.022,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "day5",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 5,
+      "mae": 8.058,
+      "mape_pct": 42.091,
+      "persistence_mae": 4.632,
+      "skill_vs_persistence": -0.74,
+      "coverage": 0.8,
+      "chance_n": 3,
+      "chance_events": 0,
+      "brier": 0.022,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 3,
+          "chance_events": 0,
+          "brier": 0.274,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 3,
+          "chance_events": 0,
+          "brier": 0.022,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "day5",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 5,
+      "mae": 8.058,
+      "mape_pct": 42.091,
+      "persistence_mae": 4.632,
+      "skill_vs_persistence": -0.74,
+      "coverage": 0.8,
+      "chance_n": 3,
+      "chance_events": 0,
+      "brier": 0.022,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 3,
+          "chance_events": 0,
+          "brier": 0.274,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 3,
+          "chance_events": 0,
+          "brier": 0.022,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "day6",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 4,
+      "mae": 7.553,
+      "mape_pct": 37.481,
+      "persistence_mae": 5.566,
+      "skill_vs_persistence": -0.357,
+      "coverage": 1.0,
+      "chance_n": 2,
+      "chance_events": 0,
+      "brier": 0.029,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 2,
+          "chance_events": 0,
+          "brier": 0.314,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 2,
+          "chance_events": 0,
+          "brier": 0.029,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "day6",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 4,
+      "mae": 7.553,
+      "mape_pct": 37.481,
+      "persistence_mae": 5.566,
+      "skill_vs_persistence": -0.357,
+      "coverage": 1.0,
+      "chance_n": 2,
+      "chance_events": 0,
+      "brier": 0.029,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 2,
+          "chance_events": 0,
+          "brier": 0.314,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 2,
+          "chance_events": 0,
+          "brier": 0.029,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "day6",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 4,
+      "mae": 7.553,
+      "mape_pct": 37.481,
+      "persistence_mae": 5.566,
+      "skill_vs_persistence": -0.357,
+      "coverage": 1.0,
+      "chance_n": 2,
+      "chance_events": 0,
+      "brier": 0.029,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 2,
+          "chance_events": 0,
+          "brier": 0.314,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 2,
+          "chance_events": 0,
+          "brier": 0.029,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "today",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 2.977,
+      "mape_pct": 17.612,
+      "persistence_mae": 3.53,
+      "skill_vs_persistence": 0.157,
+      "coverage": 0.714,
+      "chance_n": 7,
+      "chance_events": 0,
+      "brier": 0.001,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 7,
+          "chance_events": 0,
+          "brier": 0.086,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 7,
+          "chance_events": 0,
+          "brier": 0.001,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "today",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 17,
+      "mae": 2.881,
+      "mape_pct": 17.028,
+      "persistence_mae": 3.85,
+      "skill_vs_persistence": 0.252,
+      "coverage": 0.765,
+      "chance_n": 8,
+      "chance_events": 0,
+      "brier": 0.001,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 8,
+          "chance_events": 0,
+          "brier": 0.077,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 8,
+          "chance_events": 0,
+          "brier": 0.001,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "today",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 17,
+      "mae": 2.881,
+      "mape_pct": 17.028,
+      "persistence_mae": 3.85,
+      "skill_vs_persistence": 0.252,
+      "coverage": 0.765,
+      "chance_n": 8,
+      "chance_events": 0,
+      "brier": 0.001,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 8,
+          "chance_events": 0,
+          "brier": 0.077,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 8,
+          "chance_events": 0,
+          "brier": 0.001,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "tomorrow",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 7.275,
+      "mape_pct": 43.713,
+      "persistence_mae": 4.879,
+      "skill_vs_persistence": -0.491,
+      "coverage": 0.429,
+      "chance_n": 7,
+      "chance_events": 0,
+      "brier": 0.006,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 7,
+          "chance_events": 0,
+          "brier": 0.203,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 7,
+          "chance_events": 0,
+          "brier": 0.006,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "tomorrow",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 16,
+      "mae": 5.75,
+      "mape_pct": 32.451,
+      "persistence_mae": 5.459,
+      "skill_vs_persistence": -0.053,
+      "coverage": 0.625,
+      "chance_n": 7,
+      "chance_events": 0,
+      "brier": 0.006,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 7,
+          "chance_events": 0,
+          "brier": 0.203,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 7,
+          "chance_events": 0,
+          "brier": 0.006,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "pm25",
+      "label": "tomorrow",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 16,
+      "mae": 5.75,
+      "mape_pct": 32.451,
+      "persistence_mae": 5.459,
+      "skill_vs_persistence": -0.053,
+      "coverage": 0.625,
+      "chance_n": 7,
+      "chance_events": 0,
+      "brier": 0.006,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 7,
+          "chance_events": 0,
+          "brier": 0.203,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 7,
+          "chance_events": 0,
+          "brier": 0.006,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "target": "rh_pct",
+      "label": "day2",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 1.98,
+      "mape_pct": 3.427,
+      "persistence_mae": 2.107,
+      "skill_vs_persistence": 0.06,
+      "coverage": 1.0
+    },
+    {
+      "target": "rh_pct",
+      "label": "day2",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 8,
+      "mae": 2.859,
+      "mape_pct": 4.973,
+      "persistence_mae": 3.948,
+      "skill_vs_persistence": 0.276,
+      "coverage": 0.875
+    },
+    {
+      "target": "rh_pct",
+      "label": "day2",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 8,
+      "mae": 2.859,
+      "mape_pct": 4.973,
+      "persistence_mae": 3.948,
+      "skill_vs_persistence": 0.276,
+      "coverage": 0.875
+    },
+    {
+      "target": "rh_pct",
+      "label": "day3",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 3.223,
+      "mape_pct": 5.535,
+      "persistence_mae": 3.75,
+      "skill_vs_persistence": 0.141,
+      "coverage": 1.0
+    },
+    {
+      "target": "rh_pct",
+      "label": "day3",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 7,
+      "mae": 3.223,
+      "mape_pct": 5.535,
+      "persistence_mae": 3.75,
+      "skill_vs_persistence": 0.141,
+      "coverage": 1.0
+    },
+    {
+      "target": "rh_pct",
+      "label": "day3",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 7,
+      "mae": 3.223,
+      "mape_pct": 5.535,
+      "persistence_mae": 3.75,
+      "skill_vs_persistence": 0.141,
+      "coverage": 1.0
+    },
+    {
+      "target": "rh_pct",
+      "label": "day4",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 6,
+      "mae": 3.411,
+      "mape_pct": 5.876,
+      "persistence_mae": 3.549,
+      "skill_vs_persistence": 0.039,
+      "coverage": 1.0
+    },
+    {
+      "target": "rh_pct",
+      "label": "day4",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 6,
+      "mae": 3.411,
+      "mape_pct": 5.876,
+      "persistence_mae": 3.549,
+      "skill_vs_persistence": 0.039,
+      "coverage": 1.0
+    },
+    {
+      "target": "rh_pct",
+      "label": "day4",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 6,
+      "mae": 3.411,
+      "mape_pct": 5.876,
+      "persistence_mae": 3.549,
+      "skill_vs_persistence": 0.039,
+      "coverage": 1.0
+    },
+    {
+      "target": "rh_pct",
+      "label": "day5",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 5,
+      "mae": 4.222,
+      "mape_pct": 7.386,
+      "persistence_mae": 4.325,
+      "skill_vs_persistence": 0.024,
+      "coverage": 1.0
+    },
+    {
+      "target": "rh_pct",
+      "label": "day5",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 5,
+      "mae": 4.222,
+      "mape_pct": 7.386,
+      "persistence_mae": 4.325,
+      "skill_vs_persistence": 0.024,
+      "coverage": 1.0
+    },
+    {
+      "target": "rh_pct",
+      "label": "day5",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 5,
+      "mae": 4.222,
+      "mape_pct": 7.386,
+      "persistence_mae": 4.325,
+      "skill_vs_persistence": 0.024,
+      "coverage": 1.0
+    },
+    {
+      "target": "rh_pct",
+      "label": "day6",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 4,
+      "mae": 3.048,
+      "mape_pct": 5.244,
+      "persistence_mae": 5.875,
+      "skill_vs_persistence": 0.481,
+      "coverage": 1.0
+    },
+    {
+      "target": "rh_pct",
+      "label": "day6",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 4,
+      "mae": 3.048,
+      "mape_pct": 5.244,
+      "persistence_mae": 5.875,
+      "skill_vs_persistence": 0.481,
+      "coverage": 1.0
+    },
+    {
+      "target": "rh_pct",
+      "label": "day6",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 4,
+      "mae": 3.048,
+      "mape_pct": 5.244,
+      "persistence_mae": 5.875,
+      "skill_vs_persistence": 0.481,
+      "coverage": 1.0
+    },
+    {
+      "target": "rh_pct",
+      "label": "today",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 2.668,
+      "mape_pct": 4.587,
+      "persistence_mae": 2.197,
+      "skill_vs_persistence": -0.215,
+      "coverage": 0.857
+    },
+    {
+      "target": "rh_pct",
+      "label": "today",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 17,
+      "mae": 3.195,
+      "mape_pct": 5.212,
+      "persistence_mae": 3.637,
+      "skill_vs_persistence": 0.122,
+      "coverage": 0.765
+    },
+    {
+      "target": "rh_pct",
+      "label": "today",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 17,
+      "mae": 3.195,
+      "mape_pct": 5.212,
+      "persistence_mae": 3.637,
+      "skill_vs_persistence": 0.122,
+      "coverage": 0.765
+    },
+    {
+      "target": "rh_pct",
+      "label": "today",
+      "source": "tmd",
+      "window_days": 7,
+      "n": 7,
+      "mae": 3.335,
+      "mape_pct": 5.764,
+      "persistence_mae": 2.197,
+      "skill_vs_persistence": -0.518,
+      "coverage": null
+    },
+    {
+      "target": "rh_pct",
+      "label": "today",
+      "source": "tmd",
+      "window_days": 30,
+      "n": 17,
+      "mae": 4.099,
+      "mape_pct": 6.828,
+      "persistence_mae": 3.637,
+      "skill_vs_persistence": -0.127,
+      "coverage": null
+    },
+    {
+      "target": "rh_pct",
+      "label": "today",
+      "source": "tmd",
+      "window_days": 90,
+      "n": 17,
+      "mae": 4.099,
+      "mape_pct": 6.828,
+      "persistence_mae": 3.637,
+      "skill_vs_persistence": -0.127,
+      "coverage": null
+    },
+    {
+      "target": "rh_pct",
+      "label": "tomorrow",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 1.806,
+      "mape_pct": 3.077,
+      "persistence_mae": 2.381,
+      "skill_vs_persistence": 0.242,
+      "coverage": 1.0
+    },
+    {
+      "target": "rh_pct",
+      "label": "tomorrow",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 16,
+      "mae": 4.948,
+      "mape_pct": 7.98,
+      "persistence_mae": 4.685,
+      "skill_vs_persistence": -0.056,
+      "coverage": 0.688
+    },
+    {
+      "target": "rh_pct",
+      "label": "tomorrow",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 16,
+      "mae": 4.948,
+      "mape_pct": 7.98,
+      "persistence_mae": 4.685,
+      "skill_vs_persistence": -0.056,
+      "coverage": 0.688
+    },
+    {
+      "target": "rh_pct",
+      "label": "tomorrow",
+      "source": "tmd",
+      "window_days": 7,
+      "n": 7,
+      "mae": 2.413,
+      "mape_pct": 4.126,
+      "persistence_mae": 2.381,
+      "skill_vs_persistence": -0.013,
+      "coverage": null
+    },
+    {
+      "target": "rh_pct",
+      "label": "tomorrow",
+      "source": "tmd",
+      "window_days": 30,
+      "n": 16,
+      "mae": 3.557,
+      "mape_pct": 5.753,
+      "persistence_mae": 4.685,
+      "skill_vs_persistence": 0.241,
+      "coverage": null
+    },
+    {
+      "target": "rh_pct",
+      "label": "tomorrow",
+      "source": "tmd",
+      "window_days": 90,
+      "n": 16,
+      "mae": 3.557,
+      "mape_pct": 5.753,
+      "persistence_mae": 4.685,
+      "skill_vs_persistence": 0.241,
+      "coverage": null
+    },
+    {
+      "target": "temp_c",
+      "label": "day2",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 1.011,
+      "mape_pct": 3.29,
+      "persistence_mae": 0.982,
+      "skill_vs_persistence": -0.029,
+      "coverage": 0.571
+    },
+    {
+      "target": "temp_c",
+      "label": "day2",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 8,
+      "mae": 1.141,
+      "mape_pct": 3.701,
+      "persistence_mae": 1.098,
+      "skill_vs_persistence": -0.039,
+      "coverage": 0.5
+    },
+    {
+      "target": "temp_c",
+      "label": "day2",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 8,
+      "mae": 1.141,
+      "mape_pct": 3.701,
+      "persistence_mae": 1.098,
+      "skill_vs_persistence": -0.039,
+      "coverage": 0.5
+    },
+    {
+      "target": "temp_c",
+      "label": "day3",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 1.326,
+      "mape_pct": 4.342,
+      "persistence_mae": 0.597,
+      "skill_vs_persistence": -1.222,
+      "coverage": 0.571
+    },
+    {
+      "target": "temp_c",
+      "label": "day3",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 7,
+      "mae": 1.326,
+      "mape_pct": 4.342,
+      "persistence_mae": 0.597,
+      "skill_vs_persistence": -1.222,
+      "coverage": 0.571
+    },
+    {
+      "target": "temp_c",
+      "label": "day3",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 7,
+      "mae": 1.326,
+      "mape_pct": 4.342,
+      "persistence_mae": 0.597,
+      "skill_vs_persistence": -1.222,
+      "coverage": 0.571
+    },
+    {
+      "target": "temp_c",
+      "label": "day4",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 6,
+      "mae": 1.535,
+      "mape_pct": 4.994,
+      "persistence_mae": 0.318,
+      "skill_vs_persistence": -3.826,
+      "coverage": 0.5
+    },
+    {
+      "target": "temp_c",
+      "label": "day4",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 6,
+      "mae": 1.535,
+      "mape_pct": 4.994,
+      "persistence_mae": 0.318,
+      "skill_vs_persistence": -3.826,
+      "coverage": 0.5
+    },
+    {
+      "target": "temp_c",
+      "label": "day4",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 6,
+      "mae": 1.535,
+      "mape_pct": 4.994,
+      "persistence_mae": 0.318,
+      "skill_vs_persistence": -3.826,
+      "coverage": 0.5
+    },
+    {
+      "target": "temp_c",
+      "label": "day5",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 5,
+      "mae": 1.777,
+      "mape_pct": 5.765,
+      "persistence_mae": 0.778,
+      "skill_vs_persistence": -1.283,
+      "coverage": 0.2
+    },
+    {
+      "target": "temp_c",
+      "label": "day5",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 5,
+      "mae": 1.777,
+      "mape_pct": 5.765,
+      "persistence_mae": 0.778,
+      "skill_vs_persistence": -1.283,
+      "coverage": 0.2
+    },
+    {
+      "target": "temp_c",
+      "label": "day5",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 5,
+      "mae": 1.777,
+      "mape_pct": 5.765,
+      "persistence_mae": 0.778,
+      "skill_vs_persistence": -1.283,
+      "coverage": 0.2
+    },
+    {
+      "target": "temp_c",
+      "label": "day6",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 4,
+      "mae": 1.617,
+      "mape_pct": 5.254,
+      "persistence_mae": 1.126,
+      "skill_vs_persistence": -0.436,
+      "coverage": 0.5
+    },
+    {
+      "target": "temp_c",
+      "label": "day6",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 4,
+      "mae": 1.617,
+      "mape_pct": 5.254,
+      "persistence_mae": 1.126,
+      "skill_vs_persistence": -0.436,
+      "coverage": 0.5
+    },
+    {
+      "target": "temp_c",
+      "label": "day6",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 4,
+      "mae": 1.617,
+      "mape_pct": 5.254,
+      "persistence_mae": 1.126,
+      "skill_vs_persistence": -0.436,
+      "coverage": 0.5
+    },
+    {
+      "target": "temp_c",
+      "label": "today",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 0.331,
+      "mape_pct": 1.079,
+      "persistence_mae": 0.537,
+      "skill_vs_persistence": 0.384,
+      "coverage": 0.857
+    },
+    {
+      "target": "temp_c",
+      "label": "today",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 17,
+      "mae": 0.708,
+      "mape_pct": 2.385,
+      "persistence_mae": 0.753,
+      "skill_vs_persistence": 0.06,
+      "coverage": 0.706
+    },
+    {
+      "target": "temp_c",
+      "label": "today",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 17,
+      "mae": 0.708,
+      "mape_pct": 2.385,
+      "persistence_mae": 0.753,
+      "skill_vs_persistence": 0.06,
+      "coverage": 0.706
+    },
+    {
+      "target": "temp_c",
+      "label": "today",
+      "source": "tmd",
+      "window_days": 7,
+      "n": 7,
+      "mae": 1.498,
+      "mape_pct": 4.895,
+      "persistence_mae": 0.537,
+      "skill_vs_persistence": -1.787,
+      "coverage": null
+    },
+    {
+      "target": "temp_c",
+      "label": "today",
+      "source": "tmd",
+      "window_days": 30,
+      "n": 17,
+      "mae": 1.247,
+      "mape_pct": 4.118,
+      "persistence_mae": 0.753,
+      "skill_vs_persistence": -0.655,
+      "coverage": null
+    },
+    {
+      "target": "temp_c",
+      "label": "today",
+      "source": "tmd",
+      "window_days": 90,
+      "n": 17,
+      "mae": 1.247,
+      "mape_pct": 4.118,
+      "persistence_mae": 0.753,
+      "skill_vs_persistence": -0.655,
+      "coverage": null
+    },
+    {
+      "target": "temp_c",
+      "label": "tomorrow",
+      "source": "forecast",
+      "window_days": 7,
+      "n": 7,
+      "mae": 0.725,
+      "mape_pct": 2.353,
+      "persistence_mae": 1.011,
+      "skill_vs_persistence": 0.283,
+      "coverage": 0.571
+    },
+    {
+      "target": "temp_c",
+      "label": "tomorrow",
+      "source": "forecast",
+      "window_days": 30,
+      "n": 16,
+      "mae": 1.161,
+      "mape_pct": 3.826,
+      "persistence_mae": 1.062,
+      "skill_vs_persistence": -0.093,
+      "coverage": 0.438
+    },
+    {
+      "target": "temp_c",
+      "label": "tomorrow",
+      "source": "forecast",
+      "window_days": 90,
+      "n": 16,
+      "mae": 1.161,
+      "mape_pct": 3.826,
+      "persistence_mae": 1.062,
+      "skill_vs_persistence": -0.093,
+      "coverage": 0.438
+    },
+    {
+      "target": "temp_c",
+      "label": "tomorrow",
+      "source": "tmd",
+      "window_days": 7,
+      "n": 7,
+      "mae": 0.955,
+      "mape_pct": 3.128,
+      "persistence_mae": 1.011,
+      "skill_vs_persistence": 0.055,
+      "coverage": null
+    },
+    {
+      "target": "temp_c",
+      "label": "tomorrow",
+      "source": "tmd",
+      "window_days": 30,
+      "n": 16,
+      "mae": 0.791,
+      "mape_pct": 2.596,
+      "persistence_mae": 1.062,
+      "skill_vs_persistence": 0.255,
+      "coverage": null
+    },
+    {
+      "target": "temp_c",
+      "label": "tomorrow",
+      "source": "tmd",
+      "window_days": 90,
+      "n": 16,
+      "mae": 0.791,
+      "mape_pct": 2.596,
+      "persistence_mae": 1.062,
+      "skill_vs_persistence": 0.255,
+      "coverage": null
+    }
+  ],
+  "alerts": [
+    "temp_c tomorrow: the 80 % range held only 44% of outcomes over the last 30 days (16 days scored, chance p=0.001)"
+  ],
+  "hourly": [
+    {
+      "label": "today",
+      "window_days": 7,
+      "n": 128,
+      "days": 7,
+      "mae": 1.88,
+      "mape_pct": 9.157,
+      "paired_mae": 1.88,
+      "persistence_mae": 4.254,
+      "coverage": 0.812,
+      "chance_n": 48,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 48,
+          "chance_events": 8,
+          "brier": 0.029,
+          "base_rate_brier": 0.139
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 48,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "today",
+      "window_days": 30,
+      "n": 227,
+      "days": 12,
+      "mae": 2.283,
+      "mape_pct": 13.417,
+      "paired_mae": 2.288,
+      "persistence_mae": 4.629,
+      "coverage": 0.731,
+      "chance_n": 48,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 48,
+          "chance_events": 8,
+          "brier": 0.029,
+          "base_rate_brier": 0.139
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 48,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "today",
+      "window_days": 90,
+      "n": 227,
+      "days": 12,
+      "mae": 2.283,
+      "mape_pct": 13.417,
+      "paired_mae": 2.288,
+      "persistence_mae": 4.629,
+      "coverage": 0.731,
+      "chance_n": 48,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 48,
+          "chance_events": 8,
+          "brier": 0.029,
+          "base_rate_brier": 0.139
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 48,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 7,
+      "n": 156,
+      "days": 7,
+      "mae": 3.7,
+      "mape_pct": 18.867,
+      "paired_mae": 3.7,
+      "persistence_mae": 5.138,
+      "coverage": 0.801,
+      "chance_n": 36,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 36,
+          "chance_events": 10,
+          "brier": 0.199,
+          "base_rate_brier": 0.201
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 36,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 30,
+      "n": 251,
+      "days": 11,
+      "mae": 4.095,
+      "mape_pct": 23.118,
+      "paired_mae": 4.096,
+      "persistence_mae": 5.208,
+      "coverage": 0.781,
+      "chance_n": 36,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 36,
+          "chance_events": 10,
+          "brier": 0.199,
+          "base_rate_brier": 0.201
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 36,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 90,
+      "n": 251,
+      "days": 11,
+      "mae": 4.095,
+      "mape_pct": 23.118,
+      "paired_mae": 4.096,
+      "persistence_mae": 5.208,
+      "coverage": 0.781,
+      "chance_n": 36,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 36,
+          "chance_events": 10,
+          "brier": 0.199,
+          "base_rate_brier": 0.201
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 36,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    }
+  ],
+  "hourly_afternoon": [
+    {
+      "label": "today",
+      "window_days": 7,
+      "n": 86,
+      "days": 7,
+      "mae": 1.419,
+      "mape_pct": 7.157,
+      "paired_mae": 1.419,
+      "persistence_mae": 4.203,
+      "coverage": 0.884,
+      "chance_n": 16,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 16,
+          "chance_events": 2,
+          "brier": 0.02,
+          "base_rate_brier": 0.109
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 16,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "today",
+      "window_days": 30,
+      "n": 155,
+      "days": 12,
+      "mae": 1.646,
+      "mape_pct": 9.95,
+      "paired_mae": 1.652,
+      "persistence_mae": 4.643,
+      "coverage": 0.877,
+      "chance_n": 16,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 16,
+          "chance_events": 2,
+          "brier": 0.02,
+          "base_rate_brier": 0.109
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 16,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "today",
+      "window_days": 90,
+      "n": 155,
+      "days": 12,
+      "mae": 1.646,
+      "mape_pct": 9.95,
+      "paired_mae": 1.652,
+      "persistence_mae": 4.643,
+      "coverage": 0.877,
+      "chance_n": 16,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 16,
+          "chance_events": 2,
+          "brier": 0.02,
+          "base_rate_brier": 0.109
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 16,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 7,
+      "n": 156,
+      "days": 7,
+      "mae": 3.601,
+      "mape_pct": 17.675,
+      "paired_mae": 3.601,
+      "persistence_mae": 4.619,
+      "coverage": 0.782,
+      "chance_n": 12,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 12,
+          "chance_events": 10,
+          "brier": 0.585,
+          "base_rate_brier": 0.139
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 12,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 30,
+      "n": 251,
+      "days": 11,
+      "mae": 3.779,
+      "mape_pct": 21.251,
+      "paired_mae": 3.766,
+      "persistence_mae": 4.666,
+      "coverage": 0.753,
+      "chance_n": 12,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 12,
+          "chance_events": 10,
+          "brier": 0.585,
+          "base_rate_brier": 0.139
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 12,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 90,
+      "n": 251,
+      "days": 11,
+      "mae": 3.779,
+      "mape_pct": 21.251,
+      "paired_mae": 3.766,
+      "persistence_mae": 4.666,
+      "coverage": 0.753,
+      "chance_n": 12,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 12,
+          "chance_events": 10,
+          "brier": 0.585,
+          "base_rate_brier": 0.139
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 12,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    }
+  ],
+  "hourly_evening": [
+    {
+      "label": "today",
+      "window_days": 7,
+      "n": 42,
+      "days": 6,
+      "mae": 0.882,
+      "mape_pct": 4.458,
+      "paired_mae": 0.882,
+      "persistence_mae": 4.386,
+      "coverage": 0.976,
+      "chance_n": 14,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 14,
+          "chance_events": 0,
+          "brier": 0.006,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 14,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "today",
+      "window_days": 30,
+      "n": 62,
+      "days": 9,
+      "mae": 1.041,
+      "mape_pct": 5.803,
+      "paired_mae": 1.039,
+      "persistence_mae": 3.643,
+      "coverage": 0.887,
+      "chance_n": 14,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 14,
+          "chance_events": 0,
+          "brier": 0.006,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 14,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "today",
+      "window_days": 90,
+      "n": 62,
+      "days": 9,
+      "mae": 1.041,
+      "mape_pct": 5.803,
+      "paired_mae": 1.039,
+      "persistence_mae": 3.643,
+      "coverage": 0.887,
+      "chance_n": 14,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 14,
+          "chance_events": 0,
+          "brier": 0.006,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 14,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 7,
+      "n": 156,
+      "days": 7,
+      "mae": 2.501,
+      "mape_pct": 12.391,
+      "paired_mae": 2.501,
+      "persistence_mae": 4.448,
+      "coverage": 0.917,
+      "chance_n": 36,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 36,
+          "chance_events": 10,
+          "brier": 0.173,
+          "base_rate_brier": 0.201
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 36,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 30,
+      "n": 204,
+      "days": 9,
+      "mae": 3.034,
+      "mape_pct": 17.384,
+      "paired_mae": 3.014,
+      "persistence_mae": 4.092,
+      "coverage": 0.809,
+      "chance_n": 36,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 36,
+          "chance_events": 10,
+          "brier": 0.173,
+          "base_rate_brier": 0.201
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 36,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 90,
+      "n": 204,
+      "days": 9,
+      "mae": 3.034,
+      "mape_pct": 17.384,
+      "paired_mae": 3.014,
+      "persistence_mae": 4.092,
+      "coverage": 0.809,
+      "chance_n": 36,
+      "chance_events": 0,
+      "brier": 0.0,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 36,
+          "chance_events": 10,
+          "brier": 0.173,
+          "base_rate_brier": 0.201
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 36,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    }
+  ],
+  "hourly_pm10": [
+    {
+      "label": "today",
+      "window_days": 7,
+      "n": 123,
+      "days": 7,
+      "mae": 3.322,
+      "mape_pct": 9.798,
+      "paired_mae": 3.132,
+      "persistence_mae": 5.983,
+      "coverage": 0.813
+    },
+    {
+      "label": "today",
+      "window_days": 30,
+      "n": 202,
+      "days": 11,
+      "mae": 3.317,
+      "mape_pct": 11.269,
+      "paired_mae": 3.209,
+      "persistence_mae": 5.408,
+      "coverage": 0.807
+    },
+    {
+      "label": "today",
+      "window_days": 90,
+      "n": 202,
+      "days": 11,
+      "mae": 3.317,
+      "mape_pct": 11.269,
+      "paired_mae": 3.209,
+      "persistence_mae": 5.408,
+      "coverage": 0.807
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 7,
+      "n": 147,
+      "days": 7,
+      "mae": 6.404,
+      "mape_pct": 19.079,
+      "paired_mae": 6.154,
+      "persistence_mae": 7.304,
+      "coverage": 0.789
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 30,
+      "n": 218,
+      "days": 10,
+      "mae": 6.411,
+      "mape_pct": 21.245,
+      "paired_mae": 6.234,
+      "persistence_mae": 6.68,
+      "coverage": 0.78
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 90,
+      "n": 218,
+      "days": 10,
+      "mae": 6.411,
+      "mape_pct": 21.245,
+      "paired_mae": 6.234,
+      "persistence_mae": 6.68,
+      "coverage": 0.78
+    }
+  ],
+  "hourly_pm10_afternoon": [
+    {
+      "label": "today",
+      "window_days": 7,
+      "n": 82,
+      "days": 7,
+      "mae": 3.094,
+      "mape_pct": 8.912,
+      "paired_mae": 2.786,
+      "persistence_mae": 5.821,
+      "coverage": 0.683
+    },
+    {
+      "label": "today",
+      "window_days": 30,
+      "n": 137,
+      "days": 11,
+      "mae": 3.013,
+      "mape_pct": 9.99,
+      "paired_mae": 2.848,
+      "persistence_mae": 5.167,
+      "coverage": 0.701
+    },
+    {
+      "label": "today",
+      "window_days": 90,
+      "n": 137,
+      "days": 11,
+      "mae": 3.013,
+      "mape_pct": 9.99,
+      "paired_mae": 2.848,
+      "persistence_mae": 5.167,
+      "coverage": 0.701
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 7,
+      "n": 147,
+      "days": 7,
+      "mae": 5.32,
+      "mape_pct": 15.927,
+      "paired_mae": 4.993,
+      "persistence_mae": 6.529,
+      "coverage": 0.837
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 30,
+      "n": 218,
+      "days": 10,
+      "mae": 5.659,
+      "mape_pct": 19.03,
+      "paired_mae": 5.442,
+      "persistence_mae": 6.161,
+      "coverage": 0.78
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 90,
+      "n": 218,
+      "days": 10,
+      "mae": 5.659,
+      "mape_pct": 19.03,
+      "paired_mae": 5.442,
+      "persistence_mae": 6.161,
+      "coverage": 0.78
+    }
+  ],
+  "hourly_pm10_evening": [
+    {
+      "label": "today",
+      "window_days": 7,
+      "n": 38,
+      "days": 6,
+      "mae": 1.163,
+      "mape_pct": 3.485,
+      "paired_mae": 0.935,
+      "persistence_mae": 5.618,
+      "coverage": 0.974
+    },
+    {
+      "label": "today",
+      "window_days": 30,
+      "n": 58,
+      "days": 9,
+      "mae": 1.376,
+      "mape_pct": 4.587,
+      "paired_mae": 1.266,
+      "persistence_mae": 4.434,
+      "coverage": 0.948
+    },
+    {
+      "label": "today",
+      "window_days": 90,
+      "n": 58,
+      "days": 9,
+      "mae": 1.376,
+      "mape_pct": 4.587,
+      "paired_mae": 1.266,
+      "persistence_mae": 4.434,
+      "coverage": 0.948
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 7,
+      "n": 147,
+      "days": 7,
+      "mae": 3.82,
+      "mape_pct": 11.717,
+      "paired_mae": 3.747,
+      "persistence_mae": 6.21,
+      "coverage": 0.871
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 30,
+      "n": 195,
+      "days": 9,
+      "mae": 4.344,
+      "mape_pct": 14.88,
+      "paired_mae": 4.299,
+      "persistence_mae": 5.495,
+      "coverage": 0.779
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 90,
+      "n": 195,
+      "days": 9,
+      "mae": 4.344,
+      "mape_pct": 14.88,
+      "paired_mae": 4.299,
+      "persistence_mae": 5.495,
+      "coverage": 0.779
+    }
+  ],
+  "stations": [
+    {
+      "label": "day2",
+      "window_days": 7,
+      "n": 137,
+      "days": 7,
+      "mae": 8.543,
+      "mape_pct": 49.179,
+      "paired_mae": 8.526,
+      "persistence_mae": 5.631,
+      "coverage": 0.504,
+      "chance_n": 117,
+      "chance_events": 0,
+      "brier": 0.038,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 117,
+          "chance_events": 23,
+          "brier": 0.265,
+          "base_rate_brier": 0.158
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 117,
+          "chance_events": 0,
+          "brier": 0.038,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day2",
+      "window_days": 30,
+      "n": 147,
+      "days": 8,
+      "mae": 8.276,
+      "mape_pct": 47.772,
+      "paired_mae": 8.256,
+      "persistence_mae": 5.375,
+      "coverage": 0.537,
+      "chance_n": 117,
+      "chance_events": 0,
+      "brier": 0.038,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 117,
+          "chance_events": 23,
+          "brier": 0.265,
+          "base_rate_brier": 0.158
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 117,
+          "chance_events": 0,
+          "brier": 0.038,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day2",
+      "window_days": 90,
+      "n": 147,
+      "days": 8,
+      "mae": 8.276,
+      "mape_pct": 47.772,
+      "paired_mae": 8.256,
+      "persistence_mae": 5.375,
+      "coverage": 0.537,
+      "chance_n": 117,
+      "chance_events": 0,
+      "brier": 0.038,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 117,
+          "chance_events": 23,
+          "brier": 0.265,
+          "base_rate_brier": 0.158
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 117,
+          "chance_events": 0,
+          "brier": 0.038,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day3",
+      "window_days": 7,
+      "n": 127,
+      "days": 7,
+      "mae": 8.382,
+      "mape_pct": 47.163,
+      "paired_mae": 8.413,
+      "persistence_mae": 4.578,
+      "coverage": 0.622,
+      "chance_n": 97,
+      "chance_events": 0,
+      "brier": 0.043,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 97,
+          "chance_events": 23,
+          "brier": 0.268,
+          "base_rate_brier": 0.181
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 97,
+          "chance_events": 0,
+          "brier": 0.043,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day3",
+      "window_days": 30,
+      "n": 127,
+      "days": 7,
+      "mae": 8.382,
+      "mape_pct": 47.163,
+      "paired_mae": 8.413,
+      "persistence_mae": 4.578,
+      "coverage": 0.622,
+      "chance_n": 97,
+      "chance_events": 0,
+      "brier": 0.043,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 97,
+          "chance_events": 23,
+          "brier": 0.268,
+          "base_rate_brier": 0.181
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 97,
+          "chance_events": 0,
+          "brier": 0.043,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day3",
+      "window_days": 90,
+      "n": 127,
+      "days": 7,
+      "mae": 8.382,
+      "mape_pct": 47.163,
+      "paired_mae": 8.413,
+      "persistence_mae": 4.578,
+      "coverage": 0.622,
+      "chance_n": 97,
+      "chance_events": 0,
+      "brier": 0.043,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 97,
+          "chance_events": 23,
+          "brier": 0.268,
+          "base_rate_brier": 0.181
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 97,
+          "chance_events": 0,
+          "brier": 0.043,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day4",
+      "window_days": 7,
+      "n": 107,
+      "days": 6,
+      "mae": 8.02,
+      "mape_pct": 42.953,
+      "paired_mae": 8.02,
+      "persistence_mae": 4.521,
+      "coverage": 0.682,
+      "chance_n": 78,
+      "chance_events": 0,
+      "brier": 0.03,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 78,
+          "chance_events": 22,
+          "brier": 0.244,
+          "base_rate_brier": 0.202
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 78,
+          "chance_events": 0,
+          "brier": 0.03,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day4",
+      "window_days": 30,
+      "n": 107,
+      "days": 6,
+      "mae": 8.02,
+      "mape_pct": 42.953,
+      "paired_mae": 8.02,
+      "persistence_mae": 4.521,
+      "coverage": 0.682,
+      "chance_n": 78,
+      "chance_events": 0,
+      "brier": 0.03,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 78,
+          "chance_events": 22,
+          "brier": 0.244,
+          "base_rate_brier": 0.202
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 78,
+          "chance_events": 0,
+          "brier": 0.03,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day4",
+      "window_days": 90,
+      "n": 107,
+      "days": 6,
+      "mae": 8.02,
+      "mape_pct": 42.953,
+      "paired_mae": 8.02,
+      "persistence_mae": 4.521,
+      "coverage": 0.682,
+      "chance_n": 78,
+      "chance_events": 0,
+      "brier": 0.03,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 78,
+          "chance_events": 22,
+          "brier": 0.244,
+          "base_rate_brier": 0.202
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 78,
+          "chance_events": 0,
+          "brier": 0.03,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day5",
+      "window_days": 7,
+      "n": 87,
+      "days": 5,
+      "mae": 6.317,
+      "mape_pct": 33.912,
+      "paired_mae": 6.317,
+      "persistence_mae": 4.873,
+      "coverage": 0.782,
+      "chance_n": 59,
+      "chance_events": 0,
+      "brier": 0.016,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 59,
+          "chance_events": 12,
+          "brier": 0.212,
+          "base_rate_brier": 0.162
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 59,
+          "chance_events": 0,
+          "brier": 0.016,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day5",
+      "window_days": 30,
+      "n": 87,
+      "days": 5,
+      "mae": 6.317,
+      "mape_pct": 33.912,
+      "paired_mae": 6.317,
+      "persistence_mae": 4.873,
+      "coverage": 0.782,
+      "chance_n": 59,
+      "chance_events": 0,
+      "brier": 0.016,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 59,
+          "chance_events": 12,
+          "brier": 0.212,
+          "base_rate_brier": 0.162
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 59,
+          "chance_events": 0,
+          "brier": 0.016,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day5",
+      "window_days": 90,
+      "n": 87,
+      "days": 5,
+      "mae": 6.317,
+      "mape_pct": 33.912,
+      "paired_mae": 6.317,
+      "persistence_mae": 4.873,
+      "coverage": 0.782,
+      "chance_n": 59,
+      "chance_events": 0,
+      "brier": 0.016,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 59,
+          "chance_events": 12,
+          "brier": 0.212,
+          "base_rate_brier": 0.162
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 59,
+          "chance_events": 0,
+          "brier": 0.016,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day6",
+      "window_days": 7,
+      "n": 68,
+      "days": 4,
+      "mae": 7.038,
+      "mape_pct": 37.396,
+      "paired_mae": 7.038,
+      "persistence_mae": 4.602,
+      "coverage": 0.853,
+      "chance_n": 39,
+      "chance_events": 0,
+      "brier": 0.025,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 39,
+          "chance_events": 4,
+          "brier": 0.258,
+          "base_rate_brier": 0.092
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 39,
+          "chance_events": 0,
+          "brier": 0.025,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 75.0,
+          "chance_n": 39,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day6",
+      "window_days": 30,
+      "n": 68,
+      "days": 4,
+      "mae": 7.038,
+      "mape_pct": 37.396,
+      "paired_mae": 7.038,
+      "persistence_mae": 4.602,
+      "coverage": 0.853,
+      "chance_n": 39,
+      "chance_events": 0,
+      "brier": 0.025,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 39,
+          "chance_events": 4,
+          "brier": 0.258,
+          "base_rate_brier": 0.092
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 39,
+          "chance_events": 0,
+          "brier": 0.025,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 75.0,
+          "chance_n": 39,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day6",
+      "window_days": 90,
+      "n": 68,
+      "days": 4,
+      "mae": 7.038,
+      "mape_pct": 37.396,
+      "paired_mae": 7.038,
+      "persistence_mae": 4.602,
+      "coverage": 0.853,
+      "chance_n": 39,
+      "chance_events": 0,
+      "brier": 0.025,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 39,
+          "chance_events": 4,
+          "brier": 0.258,
+          "base_rate_brier": 0.092
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 39,
+          "chance_events": 0,
+          "brier": 0.025,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 75.0,
+          "chance_n": 39,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "today",
+      "window_days": 7,
+      "n": 137,
+      "days": 7,
+      "mae": 2.915,
+      "mape_pct": 16.09,
+      "paired_mae": 2.915,
+      "persistence_mae": 3.746,
+      "coverage": 0.796,
+      "chance_n": 137,
+      "chance_events": 0,
+      "brier": 0.004,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 137,
+          "chance_events": 23,
+          "brier": 0.082,
+          "base_rate_brier": 0.14
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 137,
+          "chance_events": 0,
+          "brier": 0.004,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 75.0,
+          "chance_n": 137,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "today",
+      "window_days": 30,
+      "n": 197,
+      "days": 11,
+      "mae": 3.068,
+      "mape_pct": 17.473,
+      "paired_mae": 3.069,
+      "persistence_mae": 3.943,
+      "coverage": 0.817,
+      "chance_n": 157,
+      "chance_events": 0,
+      "brier": 0.004,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 157,
+          "chance_events": 23,
+          "brier": 0.076,
+          "base_rate_brier": 0.125
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 157,
+          "chance_events": 0,
+          "brier": 0.004,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 75.0,
+          "chance_n": 157,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "today",
+      "window_days": 90,
+      "n": 197,
+      "days": 11,
+      "mae": 3.068,
+      "mape_pct": 17.473,
+      "paired_mae": 3.069,
+      "persistence_mae": 3.943,
+      "coverage": 0.817,
+      "chance_n": 157,
+      "chance_events": 0,
+      "brier": 0.004,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 157,
+          "chance_events": 23,
+          "brier": 0.076,
+          "base_rate_brier": 0.125
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 157,
+          "chance_events": 0,
+          "brier": 0.004,
+          "base_rate_brier": 0.0
+        },
+        {
+          "threshold": 75.0,
+          "chance_n": 157,
+          "chance_events": 0,
+          "brier": 0.0,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 7,
+      "n": 137,
+      "days": 7,
+      "mae": 6.434,
+      "mape_pct": 39.093,
+      "paired_mae": 6.446,
+      "persistence_mae": 5.543,
+      "coverage": 0.613,
+      "chance_n": 137,
+      "chance_events": 0,
+      "brier": 0.01,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 137,
+          "chance_events": 23,
+          "brier": 0.179,
+          "base_rate_brier": 0.14
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 137,
+          "chance_events": 0,
+          "brier": 0.01,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 30,
+      "n": 177,
+      "days": 10,
+      "mae": 5.926,
+      "mape_pct": 36.074,
+      "paired_mae": 5.929,
+      "persistence_mae": 5.354,
+      "coverage": 0.667,
+      "chance_n": 137,
+      "chance_events": 0,
+      "brier": 0.01,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 137,
+          "chance_events": 23,
+          "brier": 0.179,
+          "base_rate_brier": 0.14
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 137,
+          "chance_events": 0,
+          "brier": 0.01,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 90,
+      "n": 177,
+      "days": 10,
+      "mae": 5.926,
+      "mape_pct": 36.074,
+      "paired_mae": 5.929,
+      "persistence_mae": 5.354,
+      "coverage": 0.667,
+      "chance_n": 137,
+      "chance_events": 0,
+      "brier": 0.01,
+      "base_rate_brier": 0.0,
+      "chances": [
+        {
+          "threshold": 25.0,
+          "chance_n": 137,
+          "chance_events": 23,
+          "brier": 0.179,
+          "base_rate_brier": 0.14
+        },
+        {
+          "threshold": 37.5,
+          "chance_n": 137,
+          "chance_events": 0,
+          "brier": 0.01,
+          "base_rate_brier": 0.0
+        }
+      ]
+    }
+  ],
+  "stations_pm10": [
+    {
+      "label": "day2",
+      "window_days": 7,
+      "n": 54,
+      "days": 7,
+      "mae": 12.734,
+      "mape_pct": 35.082,
+      "paired_mae": 12.919,
+      "persistence_mae": 8.333,
+      "coverage": 0.611,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 46,
+          "chance_events": 1,
+          "brier": 0.023,
+          "base_rate_brier": 0.021
+        }
+      ]
+    },
+    {
+      "label": "day2",
+      "window_days": 30,
+      "n": 57,
+      "days": 8,
+      "mae": 12.455,
+      "mape_pct": 34.749,
+      "paired_mae": 12.625,
+      "persistence_mae": 8.119,
+      "coverage": 0.632,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 46,
+          "chance_events": 1,
+          "brier": 0.023,
+          "base_rate_brier": 0.021
+        }
+      ]
+    },
+    {
+      "label": "day2",
+      "window_days": 90,
+      "n": 57,
+      "days": 8,
+      "mae": 12.455,
+      "mape_pct": 34.749,
+      "paired_mae": 12.625,
+      "persistence_mae": 8.119,
+      "coverage": 0.632,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 46,
+          "chance_events": 1,
+          "brier": 0.023,
+          "base_rate_brier": 0.021
+        }
+      ]
+    },
+    {
+      "label": "day3",
+      "window_days": 7,
+      "n": 49,
+      "days": 7,
+      "mae": 11.87,
+      "mape_pct": 32.036,
+      "paired_mae": 11.87,
+      "persistence_mae": 7.553,
+      "coverage": 0.694,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 38,
+          "chance_events": 1,
+          "brier": 0.027,
+          "base_rate_brier": 0.026
+        }
+      ]
+    },
+    {
+      "label": "day3",
+      "window_days": 30,
+      "n": 49,
+      "days": 7,
+      "mae": 11.87,
+      "mape_pct": 32.036,
+      "paired_mae": 11.87,
+      "persistence_mae": 7.553,
+      "coverage": 0.694,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 38,
+          "chance_events": 1,
+          "brier": 0.027,
+          "base_rate_brier": 0.026
+        }
+      ]
+    },
+    {
+      "label": "day3",
+      "window_days": 90,
+      "n": 49,
+      "days": 7,
+      "mae": 11.87,
+      "mape_pct": 32.036,
+      "paired_mae": 11.87,
+      "persistence_mae": 7.553,
+      "coverage": 0.694,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 38,
+          "chance_events": 1,
+          "brier": 0.027,
+          "base_rate_brier": 0.026
+        }
+      ]
+    },
+    {
+      "label": "day4",
+      "window_days": 7,
+      "n": 41,
+      "days": 6,
+      "mae": 11.764,
+      "mape_pct": 30.875,
+      "paired_mae": 11.764,
+      "persistence_mae": 9.342,
+      "coverage": 0.707,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 30,
+          "chance_events": 1,
+          "brier": 0.032,
+          "base_rate_brier": 0.032
+        }
+      ]
+    },
+    {
+      "label": "day4",
+      "window_days": 30,
+      "n": 41,
+      "days": 6,
+      "mae": 11.764,
+      "mape_pct": 30.875,
+      "paired_mae": 11.764,
+      "persistence_mae": 9.342,
+      "coverage": 0.707,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 30,
+          "chance_events": 1,
+          "brier": 0.032,
+          "base_rate_brier": 0.032
+        }
+      ]
+    },
+    {
+      "label": "day4",
+      "window_days": 90,
+      "n": 41,
+      "days": 6,
+      "mae": 11.764,
+      "mape_pct": 30.875,
+      "paired_mae": 11.764,
+      "persistence_mae": 9.342,
+      "coverage": 0.707,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 30,
+          "chance_events": 1,
+          "brier": 0.032,
+          "base_rate_brier": 0.032
+        }
+      ]
+    },
+    {
+      "label": "day5",
+      "window_days": 7,
+      "n": 33,
+      "days": 5,
+      "mae": 9.985,
+      "mape_pct": 25.033,
+      "paired_mae": 9.985,
+      "persistence_mae": 10.544,
+      "coverage": 0.788,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 23,
+          "chance_events": 1,
+          "brier": 0.043,
+          "base_rate_brier": 0.042
+        }
+      ]
+    },
+    {
+      "label": "day5",
+      "window_days": 30,
+      "n": 33,
+      "days": 5,
+      "mae": 9.985,
+      "mape_pct": 25.033,
+      "paired_mae": 9.985,
+      "persistence_mae": 10.544,
+      "coverage": 0.788,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 23,
+          "chance_events": 1,
+          "brier": 0.043,
+          "base_rate_brier": 0.042
+        }
+      ]
+    },
+    {
+      "label": "day5",
+      "window_days": 90,
+      "n": 33,
+      "days": 5,
+      "mae": 9.985,
+      "mape_pct": 25.033,
+      "paired_mae": 9.985,
+      "persistence_mae": 10.544,
+      "coverage": 0.788,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 23,
+          "chance_events": 1,
+          "brier": 0.043,
+          "base_rate_brier": 0.042
+        }
+      ]
+    },
+    {
+      "label": "day6",
+      "window_days": 7,
+      "n": 25,
+      "days": 4,
+      "mae": 11.046,
+      "mape_pct": 27.032,
+      "paired_mae": 11.046,
+      "persistence_mae": 10.261,
+      "coverage": 0.76,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 16,
+          "chance_events": 0,
+          "brier": 0.002,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day6",
+      "window_days": 30,
+      "n": 25,
+      "days": 4,
+      "mae": 11.046,
+      "mape_pct": 27.032,
+      "paired_mae": 11.046,
+      "persistence_mae": 10.261,
+      "coverage": 0.76,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 16,
+          "chance_events": 0,
+          "brier": 0.002,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "day6",
+      "window_days": 90,
+      "n": 25,
+      "days": 4,
+      "mae": 11.046,
+      "mape_pct": 27.032,
+      "paired_mae": 11.046,
+      "persistence_mae": 10.261,
+      "coverage": 0.76,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 16,
+          "chance_events": 0,
+          "brier": 0.002,
+          "base_rate_brier": 0.0
+        }
+      ]
+    },
+    {
+      "label": "today",
+      "window_days": 7,
+      "n": 54,
+      "days": 7,
+      "mae": 4.596,
+      "mape_pct": 11.698,
+      "paired_mae": 4.583,
+      "persistence_mae": 6.786,
+      "coverage": 0.87,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 54,
+          "chance_events": 1,
+          "brier": 0.018,
+          "base_rate_brier": 0.018
+        }
+      ]
+    },
+    {
+      "label": "today",
+      "window_days": 30,
+      "n": 76,
+      "days": 11,
+      "mae": 4.612,
+      "mape_pct": 12.725,
+      "paired_mae": 4.603,
+      "persistence_mae": 6.795,
+      "coverage": 0.908,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 62,
+          "chance_events": 1,
+          "brier": 0.016,
+          "base_rate_brier": 0.016
+        }
+      ]
+    },
+    {
+      "label": "today",
+      "window_days": 90,
+      "n": 76,
+      "days": 11,
+      "mae": 4.612,
+      "mape_pct": 12.725,
+      "paired_mae": 4.603,
+      "persistence_mae": 6.795,
+      "coverage": 0.908,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 62,
+          "chance_events": 1,
+          "brier": 0.016,
+          "base_rate_brier": 0.016
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 7,
+      "n": 54,
+      "days": 7,
+      "mae": 8.434,
+      "mape_pct": 23.771,
+      "paired_mae": 8.67,
+      "persistence_mae": 9.24,
+      "coverage": 0.722,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 54,
+          "chance_events": 1,
+          "brier": 0.018,
+          "base_rate_brier": 0.018
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 30,
+      "n": 68,
+      "days": 10,
+      "mae": 8.183,
+      "mape_pct": 23.779,
+      "paired_mae": 8.362,
+      "persistence_mae": 8.649,
+      "coverage": 0.75,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 54,
+          "chance_events": 1,
+          "brier": 0.018,
+          "base_rate_brier": 0.018
+        }
+      ]
+    },
+    {
+      "label": "tomorrow",
+      "window_days": 90,
+      "n": 68,
+      "days": 10,
+      "mae": 8.183,
+      "mape_pct": 23.779,
+      "paired_mae": 8.362,
+      "persistence_mae": 8.649,
+      "coverage": 0.75,
+      "chances": [
+        {
+          "threshold": 80.0,
+          "chance_n": 54,
+          "chance_events": 1,
+          "brier": 0.018,
+          "base_rate_brier": 0.018
+        }
+      ]
+    }
+  ]
+}

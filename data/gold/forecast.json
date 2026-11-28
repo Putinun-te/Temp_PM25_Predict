@@ -1,0 +1,3660 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-11-28T14:29:39+07:00",
+  "as_of": "2026-11-28",
+  "latest_data_date": "2026-11-27",
+  "data_age_days": 0,
+  "status": "ok",
+  "units": {
+    "pm25": "ug/m3",
+    "pm10": "ug/m3",
+    "temp_c": "C",
+    "rh_pct": "%"
+  },
+  "daily": [
+    {
+      "date": "2026-11-28",
+      "label": "today",
+      "horizon_days": 1,
+      "pm25": 23.4,
+      "pm25_low": 18.2,
+      "pm25_high": 28.5,
+      "pm25_method": "random_forest_change",
+      "pm25_p_above_standard": 0.0,
+      "pm25_p_above": [
+        {
+          "threshold": 25.0,
+          "p": 0.24
+        },
+        {
+          "threshold": 37.5,
+          "p": 0.0
+        }
+      ],
+      "pm10": 37.6,
+      "pm10_low": 31.3,
+      "pm10_high": 43.9,
+      "pm10_method": "random_forest_change",
+      "temp_c_model": 30.0,
+      "temp_c_bias": 0.16,
+      "temp_c": 30.2,
+      "temp_c_low": 29.5,
+      "temp_c_high": 31.0,
+      "temp_c_method": "gradient_boosting_change",
+      "rh_pct": 59.8,
+      "rh_pct_low": 55.3,
+      "rh_pct_high": 64.4,
+      "rh_pct_method": "gradient_boosting_change",
+      "tmd_temp_c": 29.6,
+      "tmd_temp_c_min": 25.2,
+      "tmd_temp_c_max": 36.7,
+      "tmd_rh_pct": 53.7
+    },
+    {
+      "date": "2026-11-29",
+      "label": "tomorrow",
+      "horizon_days": 2,
+      "pm25": 23.7,
+      "pm25_low": 16.7,
+      "pm25_high": 30.8,
+      "pm25_method": "gradient_boosting_change",
+      "pm25_p_above_standard": 0.02,
+      "pm25_p_above": [
+        {
+          "threshold": 25.0,
+          "p": 0.3
+        },
+        {
+          "threshold": 37.5,
+          "p": 0.02
+        }
+      ],
+      "pm10": 39.1,
+      "pm10_low": 29.8,
+      "pm10_high": 48.4,
+      "pm10_method": "random_forest_change",
+      "temp_c_model": 28.9,
+      "temp_c_bias": 0.52,
+      "temp_c": 29.4,
+      "temp_c_low": 28.3,
+      "temp_c_high": 30.5,
+      "temp_c_method": "gradient_boosting",
+      "rh_pct": 60.4,
+      "rh_pct_low": 52.7,
+      "rh_pct_high": 68.2,
+      "rh_pct_method": "gradient_boosting_change",
+      "tmd_temp_c": 27.8,
+      "tmd_temp_c_min": 24.6,
+      "tmd_temp_c_max": 33.6,
+      "tmd_rh_pct": 51.4
+    },
+    {
+      "date": "2026-11-30",
+      "label": "day2",
+      "horizon_days": 3,
+      "pm25": 26.7,
+      "pm25_low": 19.6,
+      "pm25_high": 33.8,
+      "pm25_method": "random_forest",
+      "pm25_p_above_standard": 0.08,
+      "pm25_p_above": [
+        {
+          "threshold": 25.0,
+          "p": 0.44
+        },
+        {
+          "threshold": 37.5,
+          "p": 0.08
+        }
+      ],
+      "pm10": 37.9,
+      "pm10_low": 28.0,
+      "pm10_high": 47.8,
+      "pm10_method": "random_forest_change",
+      "temp_c_model": 29.0,
+      "temp_c_bias": 0.0,
+      "temp_c": 29.0,
+      "temp_c_low": 27.8,
+      "temp_c_high": 30.3,
+      "temp_c_method": "gradient_boosting_change",
+      "rh_pct": 60.9,
+      "rh_pct_low": 52.3,
+      "rh_pct_high": 69.6,
+      "rh_pct_method": "random_forest"
+    },
+    {
+      "date": "2026-12-01",
+      "label": "day3",
+      "horizon_days": 4,
+      "pm25": 29.1,
+      "pm25_low": 17.7,
+      "pm25_high": 40.4,
+      "pm25_method": "random_forest",
+      "pm25_p_above_standard": 0.12,
+      "pm25_p_above": [
+        {
+          "threshold": 25.0,
+          "p": 0.56
+        },
+        {
+          "threshold": 37.5,
+          "p": 0.12
+        }
+      ],
+      "pm10": 38.8,
+      "pm10_low": 28.1,
+      "pm10_high": 49.5,
+      "pm10_method": "random_forest_blend",
+      "temp_c_model": 29.9,
+      "temp_c_bias": 0.0,
+      "temp_c": 29.9,
+      "temp_c_low": 28.3,
+      "temp_c_high": 31.4,
+      "temp_c_method": "random_forest",
+      "rh_pct": 60.3,
+      "rh_pct_low": 51.0,
+      "rh_pct_high": 69.6,
+      "rh_pct_method": "random_forest"
+    },
+    {
+      "date": "2026-12-02",
+      "label": "day4",
+      "horizon_days": 5,
+      "pm25": 29.0,
+      "pm25_low": 15.1,
+      "pm25_high": 42.8,
+      "pm25_method": "random_forest",
+      "pm25_p_above_standard": 0.14,
+      "pm25_p_above": [
+        {
+          "threshold": 25.0,
+          "p": 0.5
+        },
+        {
+          "threshold": 37.5,
+          "p": 0.14
+        }
+      ],
+      "pm10": 37.7,
+      "pm10_low": 27.3,
+      "pm10_high": 48.1,
+      "pm10_method": "random_forest_blend",
+      "temp_c_model": 30.5,
+      "temp_c_bias": 0.0,
+      "temp_c": 30.5,
+      "temp_c_low": 28.9,
+      "temp_c_high": 32.2,
+      "temp_c_method": "gradient_boosting",
+      "rh_pct": 58.9,
+      "rh_pct_low": 48.6,
+      "rh_pct_high": 69.2,
+      "rh_pct_method": "random_forest"
+    },
+    {
+      "date": "2026-12-03",
+      "label": "day5",
+      "horizon_days": 6,
+      "pm25": 23.4,
+      "pm25_low": 14.2,
+      "pm25_high": 32.7,
+      "pm25_method": "random_forest_blend",
+      "pm25_p_above_standard": 0.06,
+      "pm25_p_above": [
+        {
+          "threshold": 25.0,
+          "p": 0.28
+        },
+        {
+          "threshold": 37.5,
+          "p": 0.06
+        }
+      ],
+      "pm10": 37.0,
+      "pm10_low": 26.1,
+      "pm10_high": 47.9,
+      "pm10_method": "random_forest_blend",
+      "temp_c_model": 29.5,
+      "temp_c_bias": 0.0,
+      "temp_c": 29.5,
+      "temp_c_low": 28.3,
+      "temp_c_high": 30.8,
+      "temp_c_method": "random_forest",
+      "rh_pct": 59.7,
+      "rh_pct_low": 48.1,
+      "rh_pct_high": 71.2,
+      "rh_pct_method": "random_forest"
+    },
+    {
+      "date": "2026-12-04",
+      "label": "day6",
+      "horizon_days": 7,
+      "pm25": 20.9,
+      "pm25_low": 12.2,
+      "pm25_high": 29.6,
+      "pm25_method": "random_forest_blend",
+      "pm25_p_above_standard": 0.06,
+      "pm25_p_above": [
+        {
+          "threshold": 25.0,
+          "p": 0.24
+        },
+        {
+          "threshold": 37.5,
+          "p": 0.06
+        }
+      ],
+      "pm10": 32.4,
+      "pm10_low": 21.5,
+      "pm10_high": 43.3,
+      "pm10_method": "gradient_boosting_blend",
+      "temp_c_model": 29.2,
+      "temp_c_bias": 0.0,
+      "temp_c": 29.2,
+      "temp_c_low": 27.7,
+      "temp_c_high": 30.8,
+      "temp_c_method": "random_forest",
+      "rh_pct": 72.1,
+      "rh_pct_low": 61.6,
+      "rh_pct_high": 82.6,
+      "rh_pct_method": "random_forest"
+    }
+  ],
+  "monthly": [
+    {
+      "month": "2026-12",
+      "months_ahead": 1,
+      "pm25": 30.0,
+      "pm25_low": 24.6,
+      "pm25_high": 35.3,
+      "pm25_method": "climatology",
+      "pm10": 49.2,
+      "pm10_low": 40.9,
+      "pm10_high": 57.6,
+      "pm10_method": "climatology",
+      "temp_c": 27.2,
+      "temp_c_low": 26.0,
+      "temp_c_high": 28.4,
+      "temp_c_method": "anomaly",
+      "rh_pct": 61.1,
+      "rh_pct_low": 55.9,
+      "rh_pct_high": 66.2,
+      "rh_pct_method": "anomaly"
+    },
+    {
+      "month": "2027-01",
+      "months_ahead": 2,
+      "pm25": 33.5,
+      "pm25_low": 28.1,
+      "pm25_high": 38.9,
+      "pm25_method": "climatology",
+      "pm10": 53.4,
+      "pm10_low": 44.8,
+      "pm10_high": 62.0,
+      "pm10_method": "climatology",
+      "temp_c": 27.3,
+      "temp_c_low": 26.0,
+      "temp_c_high": 28.5,
+      "temp_c_method": "anomaly",
+      "rh_pct": 58.2,
+      "rh_pct_low": 52.4,
+      "rh_pct_high": 64.0,
+      "rh_pct_method": "climatology"
+    },
+    {
+      "month": "2027-02",
+      "months_ahead": 3,
+      "pm25": 29.7,
+      "pm25_low": 24.5,
+      "pm25_high": 35.0,
+      "pm25_method": "climatology",
+      "pm10": 44.9,
+      "pm10_low": 36.0,
+      "pm10_high": 53.8,
+      "pm10_method": "climatology",
+      "temp_c": 28.2,
+      "temp_c_low": 27.0,
+      "temp_c_high": 29.5,
+      "temp_c_method": "climatology",
+      "rh_pct": 68.8,
+      "rh_pct_low": 62.8,
+      "rh_pct_high": 74.8,
+      "rh_pct_method": "climatology"
+    }
+  ],
+  "gistda": {
+    "source": "GISTDA satellite estimate",
+    "observed_at": "2026-11-28T14:00+07:00",
+    "pm25_hourly": 18.6,
+    "pm25_24h_mean": 32.1
+  },
+  "station_forecasts": [
+    {
+      "location_id": 701,
+      "today": {
+        "pm25": 21.3,
+        "low": 16.4,
+        "high": 26.1,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.12
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      },
+      "tomorrow": {
+        "pm25": 18.4,
+        "low": 13.5,
+        "high": 23.3,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.06
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ]
+      },
+      "day2": {
+        "pm25": 19.2,
+        "low": 12.8,
+        "high": 25.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.08
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ]
+      },
+      "day3": {
+        "pm25": 23.8,
+        "low": 16.3,
+        "high": 31.3,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.34
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ]
+      },
+      "day4": {
+        "pm25": 25.1,
+        "low": 17.2,
+        "high": 33.0,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.4
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          }
+        ]
+      },
+      "day5": {
+        "pm25": 25.9,
+        "low": 17.1,
+        "high": 34.8,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.08,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.4
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.08
+          }
+        ]
+      },
+      "day6": {
+        "pm25": 19.0,
+        "low": 12.9,
+        "high": 25.0,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.1
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "location_id": 2375,
+      "today": {
+        "pm25": 21.4,
+        "low": 16.5,
+        "high": 26.2,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.14
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      },
+      "tomorrow": {
+        "pm25": 17.7,
+        "low": 12.8,
+        "high": 22.5,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.06
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ]
+      },
+      "day2": {
+        "pm25": 18.0,
+        "low": 11.6,
+        "high": 24.4,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.06
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ]
+      },
+      "day3": {
+        "pm25": 21.6,
+        "low": 14.1,
+        "high": 29.2,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.24
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ]
+      },
+      "day4": {
+        "pm25": 24.7,
+        "low": 16.8,
+        "high": 32.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.38
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          }
+        ]
+      },
+      "day5": {
+        "pm25": 25.6,
+        "low": 16.8,
+        "high": 34.5,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.08,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.38
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.08
+          }
+        ]
+      },
+      "day6": {
+        "pm25": 19.0,
+        "low": 12.9,
+        "high": 25.1,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.1
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "location_id": 906,
+      "today": {
+        "pm25": 23.1,
+        "low": 18.3,
+        "high": 28.0,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.22
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      },
+      "tomorrow": {
+        "pm25": 19.6,
+        "low": 14.7,
+        "high": 24.5,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.14
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ]
+      },
+      "day2": {
+        "pm25": 18.1,
+        "low": 11.8,
+        "high": 24.5,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.06
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ]
+      },
+      "day3": {
+        "pm25": 24.0,
+        "low": 16.4,
+        "high": 31.5,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.36
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ]
+      },
+      "day4": {
+        "pm25": 24.6,
+        "low": 16.7,
+        "high": 32.5,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.38
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          }
+        ]
+      },
+      "day5": {
+        "pm25": 25.4,
+        "low": 16.5,
+        "high": 34.2,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.38
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          }
+        ]
+      },
+      "day6": {
+        "pm25": 18.9,
+        "low": 12.8,
+        "high": 25.0,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.1
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "location_id": 2167,
+      "today": {
+        "pm25": 29.5,
+        "low": 22.5,
+        "high": 36.6,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.1,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.72
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.1
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      },
+      "tomorrow": {
+        "pm25": 26.0,
+        "low": 18.9,
+        "high": 33.1,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.46
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ]
+      },
+      "day2": {
+        "pm25": 26.6,
+        "low": 19.0,
+        "high": 34.1,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.48
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          }
+        ]
+      },
+      "day3": {
+        "pm25": 31.8,
+        "low": 20.9,
+        "high": 42.6,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.22,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.68
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.22
+          }
+        ]
+      },
+      "day4": {
+        "pm25": 33.3,
+        "low": 20.1,
+        "high": 46.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.24,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.64
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.24
+          }
+        ]
+      },
+      "day5": {
+        "pm25": 31.9,
+        "low": 20.0,
+        "high": 43.8,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.18,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.6
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.18
+          }
+        ]
+      },
+      "day6": {
+        "pm25": 28.3,
+        "low": 18.2,
+        "high": 38.3,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.1,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.54
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.1
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "location_id": 5545,
+      "today": {
+        "pm25": 25.2,
+        "low": 20.4,
+        "high": 30.0,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.4
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      },
+      "tomorrow": {
+        "pm25": 22.4,
+        "low": 15.3,
+        "high": 29.5,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.24
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          }
+        ]
+      },
+      "day2": {
+        "pm25": 23.2,
+        "low": 15.6,
+        "high": 30.8,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.28
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ]
+      },
+      "day3": {
+        "pm25": 28.2,
+        "low": 20.6,
+        "high": 35.7,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.14,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.52
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.14
+          }
+        ]
+      },
+      "day4": {
+        "pm25": 31.1,
+        "low": 17.8,
+        "high": 44.3,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.18,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.56
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.18
+          }
+        ]
+      },
+      "day5": {
+        "pm25": 29.8,
+        "low": 20.9,
+        "high": 38.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.14,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.5
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.14
+          }
+        ]
+      },
+      "day6": {
+        "pm25": 24.5,
+        "low": 14.5,
+        "high": 34.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.34
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "location_id": 225612,
+      "today": {
+        "pm25": 19.3,
+        "low": 15.8,
+        "high": 22.8,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.06
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      },
+      "tomorrow": {
+        "pm25": 16.7,
+        "low": 11.8,
+        "high": 21.5,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ]
+      },
+      "day2": {
+        "pm25": 18.6,
+        "low": 12.2,
+        "high": 24.9,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.06
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ]
+      },
+      "day3": {
+        "pm25": 21.3,
+        "low": 13.8,
+        "high": 28.9,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.24
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          }
+        ]
+      },
+      "day4": {
+        "pm25": 23.6,
+        "low": 15.7,
+        "high": 31.5,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.32
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          }
+        ]
+      },
+      "day5": {
+        "pm25": 25.1,
+        "low": 16.3,
+        "high": 34.0,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.36
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          }
+        ]
+      },
+      "day6": {
+        "pm25": 17.9,
+        "low": 11.8,
+        "high": 23.9,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.08
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "location_id": 225629,
+      "today": {
+        "pm25": 18.5,
+        "low": 15.1,
+        "high": 22.0,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.02
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 39.2,
+          "low": 31.4,
+          "high": 47.0,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "tomorrow": {
+        "pm25": 15.8,
+        "low": 10.9,
+        "high": 20.6,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 35.1,
+          "low": 26.5,
+          "high": 43.7,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day2": {
+        "pm25": 17.5,
+        "low": 11.1,
+        "high": 23.9,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 33.5,
+          "low": 24.2,
+          "high": 42.8,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day3": {
+        "pm25": 20.1,
+        "low": 14.1,
+        "high": 26.2,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.18
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          }
+        ],
+        "pm10": {
+          "pm10": 39.1,
+          "low": 27.6,
+          "high": 50.7,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day4": {
+        "pm25": 22.5,
+        "low": 14.7,
+        "high": 30.4,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.28
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ],
+        "pm10": {
+          "pm10": 43.1,
+          "low": 29.3,
+          "high": 57.0,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day5": {
+        "pm25": 22.4,
+        "low": 15.9,
+        "high": 28.9,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.24
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ],
+        "pm10": {
+          "pm10": 41.6,
+          "low": 26.9,
+          "high": 56.3,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day6": {
+        "pm25": 15.7,
+        "low": 9.6,
+        "high": 21.8,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 30.5,
+          "low": 19.1,
+          "high": 41.9,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "location_id": 225637,
+      "today": {
+        "pm25": 18.5,
+        "low": 15.0,
+        "high": 21.9,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.02
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 36.1,
+          "low": 28.3,
+          "high": 43.9,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "tomorrow": {
+        "pm25": 15.8,
+        "low": 10.9,
+        "high": 20.6,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 27.6,
+          "low": 19.0,
+          "high": 36.2,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day2": {
+        "pm25": 17.5,
+        "low": 11.1,
+        "high": 23.9,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 30.5,
+          "low": 21.2,
+          "high": 39.8,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day3": {
+        "pm25": 20.0,
+        "low": 14.0,
+        "high": 26.0,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.18
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          }
+        ],
+        "pm10": {
+          "pm10": 37.6,
+          "low": 26.1,
+          "high": 49.2,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day4": {
+        "pm25": 22.5,
+        "low": 14.6,
+        "high": 30.4,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.28
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ],
+        "pm10": {
+          "pm10": 39.2,
+          "low": 25.4,
+          "high": 53.1,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day5": {
+        "pm25": 22.1,
+        "low": 15.6,
+        "high": 28.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.24
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ],
+        "pm10": {
+          "pm10": 38.0,
+          "low": 26.9,
+          "high": 49.1,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day6": {
+        "pm25": 16.0,
+        "low": 10.0,
+        "high": 22.1,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 26.9,
+          "low": 19.6,
+          "high": 34.3,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "location_id": 225650,
+      "today": {
+        "pm25": 17.8,
+        "low": 14.3,
+        "high": 21.3,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.02
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 36.0,
+          "low": 28.2,
+          "high": 43.8,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "tomorrow": {
+        "pm25": 15.1,
+        "low": 10.3,
+        "high": 20.0,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.02
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 32.7,
+          "low": 24.1,
+          "high": 41.3,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day2": {
+        "pm25": 17.5,
+        "low": 11.1,
+        "high": 23.9,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 32.8,
+          "low": 23.5,
+          "high": 42.1,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day3": {
+        "pm25": 19.4,
+        "low": 13.3,
+        "high": 25.4,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.16
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          }
+        ],
+        "pm10": {
+          "pm10": 37.4,
+          "low": 25.9,
+          "high": 49.0,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day4": {
+        "pm25": 22.4,
+        "low": 14.5,
+        "high": 30.2,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.26
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ],
+        "pm10": {
+          "pm10": 41.8,
+          "low": 27.9,
+          "high": 55.6,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day5": {
+        "pm25": 22.1,
+        "low": 15.6,
+        "high": 28.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.24
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ],
+        "pm10": {
+          "pm10": 40.7,
+          "low": 26.1,
+          "high": 55.4,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day6": {
+        "pm25": 15.9,
+        "low": 9.8,
+        "high": 22.0,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 27.9,
+          "low": 16.5,
+          "high": 39.3,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "location_id": 225653,
+      "today": {
+        "pm25": 23.7,
+        "low": 18.8,
+        "high": 28.5,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.26
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      },
+      "tomorrow": {
+        "pm25": 21.0,
+        "low": 13.9,
+        "high": 28.1,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.18
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          }
+        ]
+      },
+      "day2": {
+        "pm25": 22.6,
+        "low": 15.0,
+        "high": 30.1,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.26
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ]
+      },
+      "day3": {
+        "pm25": 26.4,
+        "low": 18.8,
+        "high": 33.9,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.5
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          }
+        ]
+      },
+      "day4": {
+        "pm25": 28.6,
+        "low": 20.7,
+        "high": 36.5,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.1,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.62
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.1
+          }
+        ]
+      },
+      "day5": {
+        "pm25": 28.3,
+        "low": 19.4,
+        "high": 37.1,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.1,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.54
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.1
+          }
+        ]
+      },
+      "day6": {
+        "pm25": 23.8,
+        "low": 13.7,
+        "high": 33.8,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.3
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "location_id": 225568,
+      "today": {
+        "pm25": 18.9,
+        "low": 15.4,
+        "high": 22.4,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.02
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      },
+      "tomorrow": {
+        "pm25": 17.2,
+        "low": 12.4,
+        "high": 22.1,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ]
+      },
+      "day2": {
+        "pm25": 22.0,
+        "low": 14.4,
+        "high": 29.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.24
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          }
+        ]
+      },
+      "day3": {
+        "pm25": 22.1,
+        "low": 14.6,
+        "high": 29.6,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.26
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ]
+      },
+      "day4": {
+        "pm25": 26.8,
+        "low": 18.9,
+        "high": 34.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.08,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.5
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.08
+          }
+        ]
+      },
+      "day5": {
+        "pm25": 26.8,
+        "low": 18.0,
+        "high": 35.7,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.08,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.44
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.08
+          }
+        ]
+      },
+      "day6": {
+        "pm25": 18.7,
+        "low": 12.6,
+        "high": 24.8,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.1
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "location_id": 225677,
+      "today": {
+        "pm25": 24.7,
+        "low": 19.9,
+        "high": 29.5,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.36
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      },
+      "tomorrow": {
+        "pm25": 22.0,
+        "low": 14.9,
+        "high": 29.1,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.22
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          }
+        ]
+      },
+      "day2": {
+        "pm25": 23.5,
+        "low": 15.9,
+        "high": 31.0,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.3
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ]
+      },
+      "day3": {
+        "pm25": 27.3,
+        "low": 19.8,
+        "high": 34.9,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.08,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.58
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.08
+          }
+        ]
+      },
+      "day4": {
+        "pm25": 30.5,
+        "low": 17.2,
+        "high": 43.8,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.16,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.52
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.16
+          }
+        ]
+      },
+      "day5": {
+        "pm25": 29.7,
+        "low": 20.9,
+        "high": 38.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.14,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.5
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.14
+          }
+        ]
+      },
+      "day6": {
+        "pm25": 24.5,
+        "low": 14.5,
+        "high": 34.5,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.34
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "location_id": 225671,
+      "today": {
+        "pm25": 23.1,
+        "low": 18.2,
+        "high": 27.9,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.22
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 54.6,
+          "low": 44.6,
+          "high": 64.6,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "tomorrow": {
+        "pm25": 20.8,
+        "low": 13.8,
+        "high": 27.9,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.18
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          }
+        ],
+        "pm10": {
+          "pm10": 52.6,
+          "low": 37.7,
+          "high": 67.4,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      },
+      "day2": {
+        "pm25": 22.6,
+        "low": 15.0,
+        "high": 30.1,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.26
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ],
+        "pm10": {
+          "pm10": 54.5,
+          "low": 37.9,
+          "high": 71.2,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      },
+      "day3": {
+        "pm25": 26.3,
+        "low": 18.8,
+        "high": 33.9,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.5
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          }
+        ],
+        "pm10": {
+          "pm10": 57.1,
+          "low": 41.4,
+          "high": 72.8,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.04
+            }
+          ]
+        }
+      },
+      "day4": {
+        "pm25": 29.4,
+        "low": 21.5,
+        "high": 37.2,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.14,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.48
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.14
+          }
+        ],
+        "pm10": {
+          "pm10": 63.0,
+          "low": 45.5,
+          "high": 80.6,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.06
+            }
+          ]
+        }
+      },
+      "day5": {
+        "pm25": 29.8,
+        "low": 20.9,
+        "high": 38.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.14,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.5
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.14
+          }
+        ],
+        "pm10": {
+          "pm10": 59.6,
+          "low": 41.4,
+          "high": 77.8,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.04
+            }
+          ]
+        }
+      },
+      "day6": {
+        "pm25": 24.3,
+        "low": 14.3,
+        "high": 34.4,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.32
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 50.2,
+          "low": 32.2,
+          "high": 68.2,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      }
+    },
+    {
+      "location_id": 225651,
+      "today": {
+        "pm25": 15.6,
+        "low": 12.1,
+        "high": 19.1,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.0
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      },
+      "tomorrow": {
+        "pm25": 13.6,
+        "low": 10.4,
+        "high": 16.7,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.02
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ]
+      },
+      "day2": {
+        "pm25": 17.6,
+        "low": 11.2,
+        "high": 24.0,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ]
+      },
+      "day3": {
+        "pm25": 17.6,
+        "low": 11.6,
+        "high": 23.7,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.06
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ]
+      },
+      "day4": {
+        "pm25": 22.6,
+        "low": 14.7,
+        "high": 30.5,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.28
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ]
+      },
+      "day5": {
+        "pm25": 22.6,
+        "low": 13.7,
+        "high": 31.4,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.26
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ]
+      },
+      "day6": {
+        "pm25": 16.1,
+        "low": 10.0,
+        "high": 22.1,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "location_id": 225604,
+      "today": {
+        "pm25": 26.8,
+        "low": 22.0,
+        "high": 31.6,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.58
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      },
+      "tomorrow": {
+        "pm25": 24.6,
+        "low": 17.5,
+        "high": 31.7,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.36
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ]
+      },
+      "day2": {
+        "pm25": 27.7,
+        "low": 20.1,
+        "high": 35.2,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.54
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          }
+        ]
+      },
+      "day3": {
+        "pm25": 29.5,
+        "low": 18.6,
+        "high": 40.4,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.18,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.58
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.18
+          }
+        ]
+      },
+      "day4": {
+        "pm25": 35.7,
+        "low": 22.4,
+        "high": 49.0,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.3,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.74
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.3
+          }
+        ]
+      },
+      "day5": {
+        "pm25": 34.2,
+        "low": 22.2,
+        "high": 46.1,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.24,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.7
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.24
+          }
+        ]
+      },
+      "day6": {
+        "pm25": 28.9,
+        "low": 18.8,
+        "high": 38.9,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.12,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.58
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.12
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "location_id": 225678,
+      "today": {
+        "pm25": 20.3,
+        "low": 15.5,
+        "high": 25.1,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.1
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 52.1,
+          "low": 42.1,
+          "high": 62.1,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "tomorrow": {
+        "pm25": 17.3,
+        "low": 12.4,
+        "high": 22.2,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.06
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 44.6,
+          "low": 33.1,
+          "high": 56.1,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day2": {
+        "pm25": 17.8,
+        "low": 11.5,
+        "high": 24.2,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.06
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 42.9,
+          "low": 31.1,
+          "high": 54.8,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day3": {
+        "pm25": 21.7,
+        "low": 14.2,
+        "high": 29.2,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.24
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ],
+        "pm10": {
+          "pm10": 52.3,
+          "low": 36.6,
+          "high": 68.0,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      },
+      "day4": {
+        "pm25": 24.0,
+        "low": 16.1,
+        "high": 31.8,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.34
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          }
+        ],
+        "pm10": {
+          "pm10": 51.5,
+          "low": 34.0,
+          "high": 69.0,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      },
+      "day5": {
+        "pm25": 23.8,
+        "low": 15.0,
+        "high": 32.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.3
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          }
+        ],
+        "pm10": {
+          "pm10": 53.9,
+          "low": 35.7,
+          "high": 72.1,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      },
+      "day6": {
+        "pm25": 17.2,
+        "low": 11.1,
+        "high": 23.3,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.06
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 44.3,
+          "low": 30.5,
+          "high": 58.0,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "location_id": 225621,
+      "today": {
+        "pm25": 22.6,
+        "low": 17.8,
+        "high": 27.4,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.2
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 51.7,
+          "low": 41.6,
+          "high": 61.7,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "tomorrow": {
+        "pm25": 20.2,
+        "low": 13.1,
+        "high": 27.3,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.16
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          }
+        ],
+        "pm10": {
+          "pm10": 44.6,
+          "low": 33.1,
+          "high": 56.1,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day2": {
+        "pm25": 22.5,
+        "low": 14.9,
+        "high": 30.0,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.24
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ],
+        "pm10": {
+          "pm10": 44.1,
+          "low": 32.2,
+          "high": 55.9,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day3": {
+        "pm25": 25.9,
+        "low": 18.4,
+        "high": 33.5,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.48
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          }
+        ],
+        "pm10": {
+          "pm10": 52.6,
+          "low": 36.9,
+          "high": 68.3,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      },
+      "day4": {
+        "pm25": 29.5,
+        "low": 21.6,
+        "high": 37.4,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.16,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.48
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.16
+          }
+        ],
+        "pm10": {
+          "pm10": 53.3,
+          "low": 35.8,
+          "high": 70.8,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      },
+      "day5": {
+        "pm25": 28.4,
+        "low": 19.5,
+        "high": 37.2,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.1,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.56
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.1
+          }
+        ],
+        "pm10": {
+          "pm10": 56.0,
+          "low": 37.8,
+          "high": 74.2,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      },
+      "day6": {
+        "pm25": 24.0,
+        "low": 14.0,
+        "high": 34.1,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.32
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 45.1,
+          "low": 31.4,
+          "high": 58.9,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      }
+    },
+    {
+      "location_id": 225595,
+      "today": {
+        "pm25": 26.0,
+        "low": 21.2,
+        "high": 30.9,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.5
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      },
+      "tomorrow": {
+        "pm25": 22.7,
+        "low": 15.6,
+        "high": 29.8,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.02,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.26
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.02
+          }
+        ]
+      },
+      "day2": {
+        "pm25": 22.5,
+        "low": 14.9,
+        "high": 30.0,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.26
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ]
+      },
+      "day3": {
+        "pm25": 27.9,
+        "low": 20.3,
+        "high": 35.4,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.08,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.6
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.08
+          }
+        ]
+      },
+      "day4": {
+        "pm25": 29.9,
+        "low": 16.6,
+        "high": 43.2,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.16,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.5
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.16
+          }
+        ]
+      },
+      "day5": {
+        "pm25": 29.0,
+        "low": 20.2,
+        "high": 37.8,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.14,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.48
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.14
+          }
+        ]
+      },
+      "day6": {
+        "pm25": 24.6,
+        "low": 14.5,
+        "high": 34.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.06,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.34
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.06
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "location_id": 225622,
+      "today": {
+        "pm25": 16.0,
+        "low": 12.6,
+        "high": 19.5,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.0
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 47.7,
+          "low": 37.6,
+          "high": 57.7,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "tomorrow": {
+        "pm25": 14.2,
+        "low": 9.3,
+        "high": 19.0,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.02
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 44.9,
+          "low": 33.3,
+          "high": 56.4,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day2": {
+        "pm25": 17.6,
+        "low": 11.2,
+        "high": 23.9,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 43.1,
+          "low": 31.2,
+          "high": 54.9,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day3": {
+        "pm25": 18.1,
+        "low": 12.1,
+        "high": 24.2,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.08
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 49.7,
+          "low": 34.0,
+          "high": 65.5,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day4": {
+        "pm25": 22.8,
+        "low": 14.9,
+        "high": 30.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.28
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ],
+        "pm10": {
+          "pm10": 53.4,
+          "low": 35.9,
+          "high": 70.9,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      },
+      "day5": {
+        "pm25": 22.5,
+        "low": 13.7,
+        "high": 31.3,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.26
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ],
+        "pm10": {
+          "pm10": 54.7,
+          "low": 36.5,
+          "high": 72.9,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      },
+      "day6": {
+        "pm25": 16.1,
+        "low": 10.0,
+        "high": 22.2,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 44.0,
+          "low": 30.3,
+          "high": 57.8,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "location_id": 225679,
+      "today": {
+        "pm25": 17.1,
+        "low": 13.6,
+        "high": 20.6,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.02
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 49.8,
+          "low": 39.8,
+          "high": 59.8,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "tomorrow": {
+        "pm25": 14.6,
+        "low": 9.7,
+        "high": 19.5,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.02
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 48.0,
+          "low": 33.2,
+          "high": 62.8,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day2": {
+        "pm25": 17.5,
+        "low": 11.2,
+        "high": 23.9,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.04
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 45.7,
+          "low": 33.8,
+          "high": 57.5,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.0
+            }
+          ]
+        }
+      },
+      "day3": {
+        "pm25": 18.8,
+        "low": 12.8,
+        "high": 24.9,
+        "method": "gradient_boosting_change",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.1
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 53.5,
+          "low": 37.8,
+          "high": 69.3,
+          "method": "gradient_boosting_change",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      },
+      "day4": {
+        "pm25": 22.7,
+        "low": 14.9,
+        "high": 30.6,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.28
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ],
+        "pm10": {
+          "pm10": 55.8,
+          "low": 38.3,
+          "high": 73.3,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      },
+      "day5": {
+        "pm25": 22.2,
+        "low": 15.7,
+        "high": 28.7,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.04,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.24
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.04
+          }
+        ],
+        "pm10": {
+          "pm10": 56.5,
+          "low": 38.3,
+          "high": 74.7,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      },
+      "day6": {
+        "pm25": 16.3,
+        "low": 10.2,
+        "high": 22.3,
+        "method": "gradient_boosting",
+        "p_above_standard": 0.0,
+        "p_above": [
+          {
+            "threshold": 25.0,
+            "p": 0.06
+          },
+          {
+            "threshold": 37.5,
+            "p": 0.0
+          },
+          {
+            "threshold": 75.0,
+            "p": 0.0
+          }
+        ],
+        "pm10": {
+          "pm10": 46.0,
+          "low": 32.2,
+          "high": 59.7,
+          "method": "gradient_boosting",
+          "p_above_standard": null,
+          "p_above": [
+            {
+              "threshold": 80.0,
+              "p": 0.02
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
